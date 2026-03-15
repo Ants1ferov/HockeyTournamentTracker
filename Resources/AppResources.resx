@@ -232,6 +232,9 @@
   <data name="StandingsColPoints" xml:space="preserve">
     <value>О</value>
   </data>
+  <data name="RulesTournamentTitle" xml:space="preserve">
+    <value>Правила турнира</value>
+  </data>
   <data name="RulesScoringTitle" xml:space="preserve">
     <value>Правила начисления очков</value>
   </data>
@@ -257,16 +260,16 @@
     <value>Изменить</value>
   </data>
   <data name="StandingsColGoalsFor" xml:space="preserve">
-    <value>Заб</value>
+    <value>ГЗ</value>
   </data>
   <data name="StandingsColGoalsAgainst" xml:space="preserve">
-    <value>Проп</value>
+    <value>ГП</value>
   </data>
   <data name="StandingsColGoalDiff" xml:space="preserve">
     <value>+/−</value>
   </data>
   <data name="StandingsColLast5" xml:space="preserve">
-    <value>Посл. 5</value>
+    <value>Результаты</value>
   </data>
   <data name="StandingsColPct" xml:space="preserve">
     <value>%</value>
@@ -287,10 +290,10 @@
     <value>Победы в основное время</value>
   </data>
   <data name="SortCriterionWinsOvertime" xml:space="preserve">
-    <value>Победы в овертайме</value>
+    <value>Победы в овертаймах</value>
   </data>
   <data name="SortCriterionWinsShootout" xml:space="preserve">
-    <value>Победы по буллитам</value>
+    <value>Победы в буллитах</value>
   </data>
   <data name="SortCriterionGoalDifference" xml:space="preserve">
     <value>Разница шайб</value>

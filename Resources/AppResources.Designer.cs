@@ -89,6 +89,7 @@ public static class AppResources
     public static string PeriodScoresTitle => GetString(nameof(PeriodScoresTitle));
     public static string Period => GetString(nameof(Period));
     public static string Overtime => GetString(nameof(Overtime));
+    public static string RulesTournamentTitle => GetString(nameof(RulesTournamentTitle));
     public static string RulesScoringTitle => GetString(nameof(RulesScoringTitle));
     public static string PointsWinReg => GetString(nameof(PointsWinReg));
     public static string PointsWinOt => GetString(nameof(PointsWinOt));

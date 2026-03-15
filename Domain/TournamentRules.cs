@@ -26,6 +26,8 @@ public sealed class TournamentRules
     {
         StandingSortCriterion.Points,
         StandingSortCriterion.WinsRegulation,
+        StandingSortCriterion.WinsOvertime,
+        StandingSortCriterion.WinsShootout,
         StandingSortCriterion.GoalDifference,
         StandingSortCriterion.GoalsFor
     };

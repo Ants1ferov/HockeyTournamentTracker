@@ -27,9 +27,12 @@
                 </Picker.Items>
             </Picker>
 
-            <Label Text="{x:Static res:AppResources.RulesScoringTitle}"
+            <Label Text="{x:Static res:AppResources.RulesTournamentTitle}"
                    FontAttributes="Bold"
                    FontSize="14" />
+            <Label Text="{x:Static res:AppResources.RulesScoringTitle}"
+                   FontAttributes="Bold"
+                   FontSize="12" />
             <VerticalStackLayout Spacing="4">
                 <Label FontSize="12">
                     <Label.Text>
@@ -80,6 +83,19 @@
                     </Label.Text>
                 </Label>
             </VerticalStackLayout>
+            <Label Text="{x:Static res:AppResources.SortOrderTitle}"
+                   FontAttributes="Bold"
+                   FontSize="12" />
+            <CollectionView ItemsSource="{Binding SortOrderDisplay}"
+                            Margin="0,4,0,0">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Label FontSize="12"
+                               Text="{Binding Converter={StaticResource StandingSortCriterionToString}}"
+                               Margin="0,2,0,0" />
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
             <Button Text="{x:Static res:AppResources.EditRules}"
                     Clicked="OnEditRulesClicked" />
 
@@ -93,42 +109,55 @@
 
             <ScrollView Orientation="Horizontal"
                         HorizontalScrollBarVisibility="Default">
-                <VerticalStackLayout Spacing="4" MinimumWidthRequest="750">
-                    <Grid ColumnDefinitions="28,36,100,28,28,28,28,28,28,28,32,32,36,58,40,36" Padding="0,4" ColumnSpacing="2">
+                <VerticalStackLayout Spacing="4" MinimumWidthRequest="720">
+                    <Grid ColumnDefinitions="28,120,32,32,28,28,28,28,28,28,32,32,36,72,*" Padding="0,4" ColumnSpacing="2">
                         <Label Grid.Column="0" Text="{x:Static res:AppResources.StandingsColPlace}" FontSize="12" FontAttributes="Bold" />
-                        <Label Grid.Column="1" Text="{x:Static res:AppResources.StandingsColGroup}" FontSize="11" FontAttributes="Bold" />
-                        <Label Grid.Column="2" Text="{x:Static res:AppResources.StandingsColTeam}" FontSize="12" FontAttributes="Bold" />
-                        <Label Grid.Column="2" Text="{x:Static res:AppResources.StandingsColGames}" FontSize="12" FontAttributes="Bold" />
-                        <Label Grid.Column="3" Text="{x:Static res:AppResources.StandingsColW}" FontSize="12" FontAttributes="Bold" />
-                        <Label Grid.Column="4" Text="{x:Static res:AppResources.StandingsColWot}" FontSize="12" FontAttributes="Bold" />
-                        <Label Grid.Column="5" Text="{x:Static res:AppResources.StandingsColWso}" FontSize="12" FontAttributes="Bold" />
-                        <Label Grid.Column="6" Text="{x:Static res:AppResources.StandingsColL}" FontSize="12" FontAttributes="Bold" />
-                        <Label Grid.Column="7" Text="{x:Static res:AppResources.StandingsColLot}" FontSize="12" FontAttributes="Bold" />
-                        <Label Grid.Column="8" Text="{x:Static res:AppResources.StandingsColLso}" FontSize="12" FontAttributes="Bold" />
-                        <Label Grid.Column="9" Text="{x:Static res:AppResources.StandingsColGoalsFor}" FontSize="12" FontAttributes="Bold" />
-                        <Label Grid.Column="10" Text="{x:Static res:AppResources.StandingsColGoalsAgainst}" FontSize="12" FontAttributes="Bold" />
-                        <Label Grid.Column="11" Text="{x:Static res:AppResources.StandingsColGoalDiff}" FontSize="12" FontAttributes="Bold" />
+                        <Label Grid.Column="1" Text="{x:Static res:AppResources.StandingsColTeam}" FontSize="12" FontAttributes="Bold" />
+                        <Label Grid.Column="2" Text="{x:Static res:AppResources.StandingsColPoints}" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="End" />
+                        <Label Grid.Column="3" Text="{x:Static res:AppResources.StandingsColGames}" FontSize="12" FontAttributes="Bold" />
+                        <Label Grid.Column="4" Text="{x:Static res:AppResources.StandingsColW}" FontSize="12" FontAttributes="Bold" />
+                        <Label Grid.Column="5" Text="{x:Static res:AppResources.StandingsColWot}" FontSize="12" FontAttributes="Bold" />
+                        <Label Grid.Column="6" Text="{x:Static res:AppResources.StandingsColWso}" FontSize="12" FontAttributes="Bold" />
+                        <Label Grid.Column="7" Text="{x:Static res:AppResources.StandingsColLso}" FontSize="12" FontAttributes="Bold" />
+                        <Label Grid.Column="8" Text="{x:Static res:AppResources.StandingsColLot}" FontSize="12" FontAttributes="Bold" />
+                        <Label Grid.Column="9" Text="{x:Static res:AppResources.StandingsColL}" FontSize="12" FontAttributes="Bold" />
+                        <Label Grid.Column="10" Text="{x:Static res:AppResources.StandingsColGoalsFor}" FontSize="12" FontAttributes="Bold" />
+                        <Label Grid.Column="11" Text="{x:Static res:AppResources.StandingsColGoalsAgainst}" FontSize="12" FontAttributes="Bold" />
                         <Label Grid.Column="12" Text="{x:Static res:AppResources.StandingsColGoalDiff}" FontSize="12" FontAttributes="Bold" />
                         <Label Grid.Column="13" Text="{x:Static res:AppResources.StandingsColLast5}" FontSize="11" FontAttributes="Bold" />
                         <Label Grid.Column="14" Text="{x:Static res:AppResources.StandingsColPct}" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="End" />
-                        <Label Grid.Column="15" Text="{x:Static res:AppResources.StandingsColPoints}" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="End" />
                     </Grid>
-                    <CollectionView ItemsSource="{Binding Standings}"
-                                   VerticalOptions="Start">
+                    <CollectionView ItemsSource="{Binding StandingsByGroup}"
+                                    IsGrouped="True"
+                                    VerticalOptions="Start">
+                        <CollectionView.GroupHeaderTemplate>
+                            <DataTemplate>
+                                <Label Text="{Binding GroupName}"
+                                       FontAttributes="Bold"
+                                       FontSize="14"
+                                       Margin="0,12,0,4"
+                                       IsVisible="{Binding GroupName, Converter={StaticResource GroupNameToVisibility}}" />
+                            </DataTemplate>
+                        </CollectionView.GroupHeaderTemplate>
                         <CollectionView.ItemTemplate>
                             <DataTemplate>
-                                <Grid ColumnDefinitions="28,36,100,28,28,28,28,28,28,28,32,32,36,58,40,36"
+                                <Grid ColumnDefinitions="28,120,32,32,28,28,28,28,28,28,32,32,36,72,*"
                                       Padding="0,4" ColumnSpacing="2">
                                     <Label Grid.Column="0" Text="{Binding Place}" FontSize="12" />
-                                    <Label Grid.Column="1" Text="{Binding GroupName}" FontSize="11" LineBreakMode="TailTruncation" />
-                                    <Label Grid.Column="2" Text="{Binding TeamName}" FontSize="12" LineBreakMode="TailTruncation" />
+                                    <HorizontalStackLayout Grid.Column="1" Spacing="6" VerticalOptions="Center">
+                                        <Image WidthRequest="24" HeightRequest="24"
+                                               Source="{Binding TeamIconPath, Converter={StaticResource PathToImageSource}}"
+                                               Aspect="AspectFill" />
+                                        <Label Text="{Binding TeamName}" FontSize="12" LineBreakMode="TailTruncation" VerticalTextAlignment="Center" />
+                                    </HorizontalStackLayout>
+                                    <Label Grid.Column="2" Text="{Binding Points}" FontSize="12" HorizontalTextAlignment="End" />
                                     <Label Grid.Column="3" Text="{Binding Games}" FontSize="12" />
                                     <Label Grid.Column="4" Text="{Binding WinsReg}" FontSize="12" />
                                     <Label Grid.Column="5" Text="{Binding WinsOt}" FontSize="12" />
                                     <Label Grid.Column="6" Text="{Binding WinsSo}" FontSize="12" />
-                                    <Label Grid.Column="7" Text="{Binding LossesReg}" FontSize="12" />
+                                    <Label Grid.Column="7" Text="{Binding LossesSo}" FontSize="12" />
                                     <Label Grid.Column="8" Text="{Binding LossesOt}" FontSize="12" />
-                                    <Label Grid.Column="9" Text="{Binding LossesSo}" FontSize="12" />
+                                    <Label Grid.Column="9" Text="{Binding LossesReg}" FontSize="12" />
                                     <Label Grid.Column="10" Text="{Binding GoalsFor}" FontSize="12" />
                                     <Label Grid.Column="11" Text="{Binding GoalsAgainst}" FontSize="12" />
                                     <Label Grid.Column="12" Text="{Binding GoalDiff}" FontSize="12" />
@@ -142,7 +171,6 @@
                                         </BindableLayout.ItemTemplate>
                                     </HorizontalStackLayout>
                                     <Label Grid.Column="14" Text="{Binding PointsPct}" FontSize="12" HorizontalTextAlignment="End" />
-                                    <Label Grid.Column="15" Text="{Binding Points}" FontSize="12" HorizontalTextAlignment="End" />
                                 </Grid>
                             </DataTemplate>
                         </CollectionView.ItemTemplate>

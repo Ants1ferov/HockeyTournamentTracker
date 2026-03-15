@@ -15,6 +15,7 @@
             <converters:MatchStatusToStartButtonVisibleConverter x:Key="MatchStatusToStartVisible" />
             <converters:LastResultToColorConverter x:Key="LastResultToColor" />
             <converters:StandingSortCriterionToStringConverter x:Key="StandingSortCriterionToString" />
+            <converters:StringToVisibilityConverter x:Key="GroupNameToVisibility" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>
