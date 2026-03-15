@@ -253,4 +253,7 @@
   <data name="PointsLossSo" xml:space="preserve">
     <value>Поражение по буллитам (ПБ)</value>
   </data>
+  <data name="EditRules" xml:space="preserve">
+    <value>Изменить</value>
+  </data>
 </root>

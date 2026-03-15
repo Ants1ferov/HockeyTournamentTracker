@@ -23,6 +23,13 @@ public partial class TournamentDetailsPage : ContentPage, IQueryAttributable
         }
     }
 
+    protected override async void OnAppearing()
+    {
+        base.OnAppearing();
+        if (_viewModel.Tournament is { } t)
+            await _viewModel.LoadAsync(t.Id);
+    }
+
     private async void OnTeamsClicked(object? sender, EventArgs e)
     {
         if (_viewModel.Tournament is null) return;
@@ -49,6 +56,13 @@ public partial class TournamentDetailsPage : ContentPage, IQueryAttributable
             return;
 
         await Shell.Current.GoToAsync($"{nameof(MatchEditPage)}?TournamentId={_viewModel.Tournament.Id}");
+    }
+
+    private async void OnEditRulesClicked(object? sender, EventArgs e)
+    {
+        if (_viewModel.Tournament is null)
+            return;
+        await Shell.Current.GoToAsync($"{nameof(TournamentRulesEditPage)}?TournamentId={_viewModel.Tournament.Id}");
     }
 }
 

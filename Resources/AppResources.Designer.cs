@@ -72,6 +72,7 @@ public static class AppResources
     public static string PointsLossReg => GetString(nameof(PointsLossReg));
     public static string PointsLossOt => GetString(nameof(PointsLossOt));
     public static string PointsLossSo => GetString(nameof(PointsLossSo));
+    public static string EditRules => GetString(nameof(EditRules));
 
     public static string GetString(string key) =>
         ResourceManager.GetString(key) ?? key;

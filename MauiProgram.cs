@@ -57,6 +57,9 @@ public static class MauiProgram
 		builder.Services.AddTransient<TeamEditViewModel>();
 		builder.Services.AddTransient<TeamEditPage>();
 
+		builder.Services.AddTransient<TournamentRulesEditViewModel>();
+		builder.Services.AddTransient<TournamentRulesEditPage>();
+
 		return builder.Build();
 	}
 }

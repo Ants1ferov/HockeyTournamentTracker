@@ -14,6 +14,12 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
     private readonly StatsService _statsService;
 
     private Tournament? _tournament;
+    private string _pointsRegWinText = "—";
+    private string _pointsOtWinText = "—";
+    private string _pointsSoWinText = "—";
+    private string _pointsRegLossText = "—";
+    private string _pointsOtLossText = "—";
+    private string _pointsSoLossText = "—";
 
     public Tournament? Tournament
     {
@@ -21,9 +27,19 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
         private set
         {
             if (SetField(ref _tournament, value))
+            {
                 OnPropertyChanged(nameof(StatusIndex));
+                UpdateRulesDisplay();
+            }
         }
     }
+
+    public string PointsRegWinText { get => _pointsRegWinText; private set => SetField(ref _pointsRegWinText, value); }
+    public string PointsOtWinText { get => _pointsOtWinText; private set => SetField(ref _pointsOtWinText, value); }
+    public string PointsSoWinText { get => _pointsSoWinText; private set => SetField(ref _pointsSoWinText, value); }
+    public string PointsRegLossText { get => _pointsRegLossText; private set => SetField(ref _pointsRegLossText, value); }
+    public string PointsOtLossText { get => _pointsOtLossText; private set => SetField(ref _pointsOtLossText, value); }
+    public string PointsSoLossText { get => _pointsSoLossText; private set => SetField(ref _pointsSoLossText, value); }
 
     public int StatusIndex
     {
@@ -129,6 +145,25 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
         match.Status = status;
         await _matchRepository.SaveAsync(match);
         await LoadAsync(Tournament.Id);
+    }
+
+    private void UpdateRulesDisplay()
+    {
+        var r = Tournament?.Rules;
+        if (r is null)
+        {
+            PointsRegWinText = PointsOtWinText = PointsSoWinText = "—";
+            PointsRegLossText = PointsOtLossText = PointsSoLossText = "—";
+        }
+        else
+        {
+            PointsRegWinText = r.PointsForRegulationWin.ToString();
+            PointsOtWinText = r.PointsForOvertimeWin.ToString();
+            PointsSoWinText = r.PointsForShootoutWin.ToString();
+            PointsRegLossText = r.PointsForRegulationLoss.ToString();
+            PointsOtLossText = r.PointsForOvertimeLoss.ToString();
+            PointsSoLossText = r.PointsForShootoutLoss.ToString();
+        }
     }
 
     private static string BuildScoreText(Match match)

@@ -25,6 +25,62 @@
                 </Picker.Items>
             </Picker>
 
+            <Label Text="{x:Static res:AppResources.RulesScoringTitle}"
+                   FontAttributes="Bold"
+                   FontSize="14" />
+            <VerticalStackLayout Spacing="4">
+                <Label FontSize="12">
+                    <Label.Text>
+                        <MultiBinding StringFormat="{}{0}: {1}">
+                            <Binding Source="{x:Static res:AppResources.StandingsColW}" />
+                            <Binding Path="PointsRegWinText" />
+                        </MultiBinding>
+                    </Label.Text>
+                </Label>
+                <Label FontSize="12">
+                    <Label.Text>
+                        <MultiBinding StringFormat="{}{0}: {1}">
+                            <Binding Source="{x:Static res:AppResources.StandingsColWot}" />
+                            <Binding Path="PointsOtWinText" />
+                        </MultiBinding>
+                    </Label.Text>
+                </Label>
+                <Label FontSize="12">
+                    <Label.Text>
+                        <MultiBinding StringFormat="{}{0}: {1}">
+                            <Binding Source="{x:Static res:AppResources.StandingsColWso}" />
+                            <Binding Path="PointsSoWinText" />
+                        </MultiBinding>
+                    </Label.Text>
+                </Label>
+                <Label FontSize="12">
+                    <Label.Text>
+                        <MultiBinding StringFormat="{}{0}: {1}">
+                            <Binding Source="{x:Static res:AppResources.StandingsColL}" />
+                            <Binding Path="PointsRegLossText" />
+                        </MultiBinding>
+                    </Label.Text>
+                </Label>
+                <Label FontSize="12">
+                    <Label.Text>
+                        <MultiBinding StringFormat="{}{0}: {1}">
+                            <Binding Source="{x:Static res:AppResources.StandingsColLot}" />
+                            <Binding Path="PointsOtLossText" />
+                        </MultiBinding>
+                    </Label.Text>
+                </Label>
+                <Label FontSize="12">
+                    <Label.Text>
+                        <MultiBinding StringFormat="{}{0}: {1}">
+                            <Binding Source="{x:Static res:AppResources.StandingsColLso}" />
+                            <Binding Path="PointsSoLossText" />
+                        </MultiBinding>
+                    </Label.Text>
+                </Label>
+            </VerticalStackLayout>
+            <Button Text="{x:Static res:AppResources.EditRules}"
+                    Clicked="OnEditRulesClicked" />
+
             <Label Text="{Binding Tournament.Description}"
                    FontSize="14"
                    TextColor="Gray" />
@@ -33,37 +89,40 @@
                    FontAttributes="Bold"
                    FontSize="18" />
 
-            <Grid ColumnDefinitions="30,*,40,40,40,40,40,40,40,50" Padding="0,4" ColumnSpacing="0">
-                <Label Grid.Column="0" Text="{x:Static res:AppResources.StandingsColPlace}" FontSize="12" FontAttributes="Bold" />
-                <Label Grid.Column="1" Text="{x:Static res:AppResources.StandingsColTeam}" FontSize="12" FontAttributes="Bold" />
-                <Label Grid.Column="2" Text="{x:Static res:AppResources.StandingsColGames}" FontSize="12" FontAttributes="Bold" />
-                <Label Grid.Column="3" Text="{x:Static res:AppResources.StandingsColW}" FontSize="12" FontAttributes="Bold" />
-                <Label Grid.Column="4" Text="{x:Static res:AppResources.StandingsColWot}" FontSize="12" FontAttributes="Bold" />
-                <Label Grid.Column="5" Text="{x:Static res:AppResources.StandingsColWso}" FontSize="12" FontAttributes="Bold" />
-                <Label Grid.Column="6" Text="{x:Static res:AppResources.StandingsColL}" FontSize="12" FontAttributes="Bold" />
-                <Label Grid.Column="7" Text="{x:Static res:AppResources.StandingsColLot}" FontSize="12" FontAttributes="Bold" />
-                <Label Grid.Column="8" Text="{x:Static res:AppResources.StandingsColLso}" FontSize="12" FontAttributes="Bold" />
-                <Label Grid.Column="9" Text="{x:Static res:AppResources.StandingsColPoints}" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="End" />
-            </Grid>
-            <CollectionView ItemsSource="{Binding Standings}">
-                <CollectionView.ItemTemplate>
-                    <DataTemplate>
-                        <Grid ColumnDefinitions="30,*,40,40,40,40,40,40,40,50"
-                              Padding="0,4">
-                            <Label Grid.Column="0" Text="{Binding Place}" FontSize="12" />
-                            <Label Grid.Column="1" Text="{Binding TeamName}" FontSize="12" LineBreakMode="TailTruncation" />
-                            <Label Grid.Column="2" Text="{Binding Games}" FontSize="12" />
-                            <Label Grid.Column="3" Text="{Binding WinsReg}" FontSize="12" />
-                            <Label Grid.Column="4" Text="{Binding WinsOt}" FontSize="12" />
-                            <Label Grid.Column="5" Text="{Binding WinsSo}" FontSize="12" />
-                            <Label Grid.Column="6" Text="{Binding LossesReg}" FontSize="12" />
-                            <Label Grid.Column="7" Text="{Binding LossesOt}" FontSize="12" />
-                            <Label Grid.Column="8" Text="{Binding LossesSo}" FontSize="12" />
-                            <Label Grid.Column="9" Text="{Binding Points}" FontSize="12" HorizontalTextAlignment="End" />
-                        </Grid>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
+            <VerticalStackLayout Spacing="4">
+                <Grid ColumnDefinitions="30,120,40,40,40,40,40,40,40,50" Padding="0,4" ColumnSpacing="0">
+                    <Label Grid.Column="0" Text="{x:Static res:AppResources.StandingsColPlace}" FontSize="12" FontAttributes="Bold" />
+                    <Label Grid.Column="1" Text="{x:Static res:AppResources.StandingsColTeam}" FontSize="12" FontAttributes="Bold" />
+                    <Label Grid.Column="2" Text="{x:Static res:AppResources.StandingsColGames}" FontSize="12" FontAttributes="Bold" />
+                    <Label Grid.Column="3" Text="{x:Static res:AppResources.StandingsColW}" FontSize="12" FontAttributes="Bold" />
+                    <Label Grid.Column="4" Text="{x:Static res:AppResources.StandingsColWot}" FontSize="12" FontAttributes="Bold" />
+                    <Label Grid.Column="5" Text="{x:Static res:AppResources.StandingsColWso}" FontSize="12" FontAttributes="Bold" />
+                    <Label Grid.Column="6" Text="{x:Static res:AppResources.StandingsColL}" FontSize="12" FontAttributes="Bold" />
+                    <Label Grid.Column="7" Text="{x:Static res:AppResources.StandingsColLot}" FontSize="12" FontAttributes="Bold" />
+                    <Label Grid.Column="8" Text="{x:Static res:AppResources.StandingsColLso}" FontSize="12" FontAttributes="Bold" />
+                    <Label Grid.Column="9" Text="{x:Static res:AppResources.StandingsColPoints}" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="End" />
+                </Grid>
+                <CollectionView ItemsSource="{Binding Standings}"
+                               VerticalOptions="Start">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Grid ColumnDefinitions="30,120,40,40,40,40,40,40,40,50"
+                                  Padding="0,4">
+                                <Label Grid.Column="0" Text="{Binding Place}" FontSize="12" />
+                                <Label Grid.Column="1" Text="{Binding TeamName}" FontSize="12" LineBreakMode="TailTruncation" />
+                                <Label Grid.Column="2" Text="{Binding Games}" FontSize="12" />
+                                <Label Grid.Column="3" Text="{Binding WinsReg}" FontSize="12" />
+                                <Label Grid.Column="4" Text="{Binding WinsOt}" FontSize="12" />
+                                <Label Grid.Column="5" Text="{Binding WinsSo}" FontSize="12" />
+                                <Label Grid.Column="6" Text="{Binding LossesReg}" FontSize="12" />
+                                <Label Grid.Column="7" Text="{Binding LossesOt}" FontSize="12" />
+                                <Label Grid.Column="8" Text="{Binding LossesSo}" FontSize="12" />
+                                <Label Grid.Column="9" Text="{Binding Points}" FontSize="12" HorizontalTextAlignment="End" />
+                            </Grid>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+            </VerticalStackLayout>
 
             <Label Text="{x:Static res:AppResources.LiveMatches}"
                    FontAttributes="Bold"
