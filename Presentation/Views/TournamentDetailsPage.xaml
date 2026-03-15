@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="HockeyTournamentTracker.Presentation.Views.TournamentDetailsPage"
+             Title="{Binding Tournament.Name}">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="16">
+            <Label Text="{Binding Tournament.Name}"
+                   FontAttributes="Bold"
+                   FontSize="22" />
+
+            <Label Text="{Binding Tournament.Description}"
+                   FontSize="14"
+                   TextColor="Gray" />
+
+            <Label Text="Турнирная таблица"
+                   FontAttributes="Bold"
+                   FontSize="18" />
+
+            <CollectionView ItemsSource="{Binding Standings}">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Grid ColumnDefinitions="30,*,40,40,40,40,40,40,40,50"
+                              Padding="0,4">
+                            <Label Grid.Column="0" Text="{Binding Place}" FontSize="12" />
+                            <Label Grid.Column="1" Text="{Binding TeamName}" FontSize="12" />
+                            <Label Grid.Column="2" Text="{Binding Games}" FontSize="12" />
+                            <Label Grid.Column="3" Text="{Binding WinsReg}" FontSize="12" />
+                            <Label Grid.Column="4" Text="{Binding WinsOt}" FontSize="12" />
+                            <Label Grid.Column="5" Text="{Binding WinsSo}" FontSize="12" />
+                            <Label Grid.Column="6" Text="{Binding LossesReg}" FontSize="12" />
+                            <Label Grid.Column="7" Text="{Binding LossesOt}" FontSize="12" />
+                            <Label Grid.Column="8" Text="{Binding LossesSo}" FontSize="12" />
+                            <Label Grid.Column="9" Text="{Binding Points}" FontSize="12" HorizontalTextAlignment="End" />
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <Label Text="Матчи"
+                   FontAttributes="Bold"
+                   FontSize="18"
+                   Margin="0,16,0,0" />
+
+            <Button Text="Добавить матч"
+                    Clicked="OnAddMatchClicked" />
+
+            <CollectionView ItemsSource="{Binding Matches}">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Grid RowDefinitions="Auto,Auto">
+                            <Label Grid.Row="0"
+                                   FontSize="12"
+                                   Text="{Binding DateTime, StringFormat='{}{0:dd.MM HH:mm}'}" />
+                            <Label Grid.Row="1"
+                                   FontSize="14">
+                                <Label.Text>
+                                    <MultiBinding StringFormat="{}{0} – {1}  {2}">
+                                        <Binding Path="HomeTeamName" />
+                                        <Binding Path="AwayTeamName" />
+                                        <Binding Path="DisplayScore" />
+                                    </MultiBinding>
+                                </Label.Text>
+                            </Label>
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>
+

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="HockeyTournamentTracker.Presentation.Views.MatchEditPage"
+             Title="Новый матч">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="12">
+            <Label Text="Домашняя команда" />
+            <Picker ItemsSource="{Binding Teams}"
+                    ItemDisplayBinding="{Binding Name}"
+                    SelectedItem="{Binding HomeTeam}" />
+
+            <Label Text="Гостевая команда" />
+            <Picker ItemsSource="{Binding Teams}"
+                    ItemDisplayBinding="{Binding Name}"
+                    SelectedItem="{Binding AwayTeam}" />
+
+            <Label Text="Дата" />
+            <DatePicker Date="{Binding Date}" />
+
+            <Label Text="Время" />
+            <TimePicker Time="{Binding Time}" />
+
+            <Label Text="Счёт" />
+            <HorizontalStackLayout>
+                <Entry WidthRequest="60" Keyboard="Numeric" Text="{Binding HomeGoals}" />
+                <Label Text=":" VerticalOptions="Center" />
+                <Entry WidthRequest="60" Keyboard="Numeric" Text="{Binding AwayGoals}" />
+            </HorizontalStackLayout>
+
+            <Label Text="Как завершился матч" />
+            <Picker SelectedIndexChanged="OnOutcomeChanged">
+                <Picker.Items>
+                    <x:String>В основное время</x:String>
+                    <x:String>В овертайме</x:String>
+                    <x:String>По буллитам</x:String>
+                </Picker.Items>
+            </Picker>
+
+            <StackLayout x:Name="ShootoutPanel" IsVisible="False">
+                <Label Text="Буллиты (реализованные)" />
+                <HorizontalStackLayout>
+                    <Entry WidthRequest="60" Keyboard="Numeric" Text="{Binding ShootoutHome}" />
+                    <Label Text=":" VerticalOptions="Center" />
+                    <Entry WidthRequest="60" Keyboard="Numeric" Text="{Binding ShootoutAway}" />
+                </HorizontalStackLayout>
+            </StackLayout>
+
+            <Button Text="Сохранить"
+                    Margin="0,16,0,0"
+                    Clicked="OnSaveClicked" />
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>
+
