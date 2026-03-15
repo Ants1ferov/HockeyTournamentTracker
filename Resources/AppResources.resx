@@ -256,4 +256,76 @@
   <data name="EditRules" xml:space="preserve">
     <value>Изменить</value>
   </data>
+  <data name="StandingsColGoalsFor" xml:space="preserve">
+    <value>Заб</value>
+  </data>
+  <data name="StandingsColGoalsAgainst" xml:space="preserve">
+    <value>Проп</value>
+  </data>
+  <data name="StandingsColGoalDiff" xml:space="preserve">
+    <value>+/−</value>
+  </data>
+  <data name="StandingsColLast5" xml:space="preserve">
+    <value>Посл. 5</value>
+  </data>
+  <data name="StandingsColPct" xml:space="preserve">
+    <value>%</value>
+  </data>
+  <data name="SortOrderTitle" xml:space="preserve">
+    <value>Порядок распределения мест</value>
+  </data>
+  <data name="SortOrderMoveUp" xml:space="preserve">
+    <value>↑</value>
+  </data>
+  <data name="SortOrderMoveDown" xml:space="preserve">
+    <value>↓</value>
+  </data>
+  <data name="SortCriterionPoints" xml:space="preserve">
+    <value>Очки</value>
+  </data>
+  <data name="SortCriterionWinsRegulation" xml:space="preserve">
+    <value>Победы в основное время</value>
+  </data>
+  <data name="SortCriterionWinsOvertime" xml:space="preserve">
+    <value>Победы в овертайме</value>
+  </data>
+  <data name="SortCriterionWinsShootout" xml:space="preserve">
+    <value>Победы по буллитам</value>
+  </data>
+  <data name="SortCriterionGoalDifference" xml:space="preserve">
+    <value>Разница шайб</value>
+  </data>
+  <data name="SortCriterionGoalsFor" xml:space="preserve">
+    <value>Забито голов</value>
+  </data>
+  <data name="SortCriterionGoalsAgainst" xml:space="preserve">
+    <value>Пропущено голов</value>
+  </data>
+  <data name="SortCriterionGames" xml:space="preserve">
+    <value>Игр</value>
+  </data>
+  <data name="Groups" xml:space="preserve">
+    <value>Группы</value>
+  </data>
+  <data name="GroupName" xml:space="preserve">
+    <value>Группа</value>
+  </data>
+  <data name="AddGroup" xml:space="preserve">
+    <value>Добавить группу</value>
+  </data>
+  <data name="AllowCrossGroupMatches" xml:space="preserve">
+    <value>Матчи между группами</value>
+  </data>
+  <data name="StandingsColGroup" xml:space="preserve">
+    <value>Гр</value>
+  </data>
+  <data name="PeriodScoresTitle" xml:space="preserve">
+    <value>По периодам</value>
+  </data>
+  <data name="Period" xml:space="preserve">
+    <value>Период</value>
+  </data>
+  <data name="Overtime" xml:space="preserve">
+    <value>Овертайм</value>
+  </data>
 </root>

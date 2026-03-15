@@ -11,5 +11,8 @@ public sealed class Team
     public string? ColorHex { get; set; }
     public string? IconPath { get; set; }
     public string? Notes { get; set; }
+
+    /// <summary>Группа/конференция (если турнир использует группы).</summary>
+    public Guid? GroupId { get; set; }
 }
 

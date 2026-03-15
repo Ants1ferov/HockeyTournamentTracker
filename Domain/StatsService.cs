@@ -53,13 +53,53 @@ public sealed class StatsService
             }
         }
 
-        return standings.Values
-            .OrderByDescending(s => s.Points)
-            .ThenByDescending(s => s.WinsRegulation)
-            .ThenByDescending(s => s.GoalDifference)
-            .ThenByDescending(s => s.GoalsFor)
-            .ToList();
+        var order = rules.SortOrder is { Count: > 0 } sortOrder
+            ? sortOrder
+            : TournamentRules.GetDefaultSortOrder();
+
+        IOrderedEnumerable<Standing>? ordered = null;
+        foreach (var criterion in order)
+        {
+            if (ordered is null)
+                ordered = standings.Values.OrderByDescending(s => GetSortKey(s, criterion));
+            else
+                ordered = ordered.ThenByDescending(s => GetSortKey(s, criterion));
+        }
+
+        return (ordered ?? standings.Values.OrderByDescending(s => s.Points)).ToList();
     }
+
+    /// <summary>
+    /// Сортирует список standings по правилам турнира (для расчёта мест внутри группы).
+    /// </summary>
+    public static IReadOnlyList<Standing> SortByRules(IEnumerable<Standing> standings, TournamentRules rules)
+    {
+        var order = rules.SortOrder is { Count: > 0 } sortOrder
+            ? sortOrder
+            : TournamentRules.GetDefaultSortOrder();
+        IOrderedEnumerable<Standing>? ordered = null;
+        foreach (var criterion in order)
+        {
+            if (ordered is null)
+                ordered = standings.OrderByDescending(s => GetSortKey(s, criterion));
+            else
+                ordered = ordered.ThenByDescending(s => GetSortKey(s, criterion));
+        }
+        return (ordered ?? standings.OrderByDescending(s => s.Points)).ToList();
+    }
+
+    private static int GetSortKey(Standing s, StandingSortCriterion criterion) => criterion switch
+    {
+        StandingSortCriterion.Points => s.Points,
+        StandingSortCriterion.WinsRegulation => s.WinsRegulation,
+        StandingSortCriterion.WinsOvertime => s.WinsOvertime,
+        StandingSortCriterion.WinsShootout => s.WinsShootout,
+        StandingSortCriterion.GoalDifference => s.GoalDifference,
+        StandingSortCriterion.GoalsFor => s.GoalsFor,
+        StandingSortCriterion.GoalsAgainst => s.GoalsAgainst,
+        StandingSortCriterion.Games => s.Games,
+        _ => s.Points
+    };
 
     private static void ApplyRegulationOutcome(
         Match match,

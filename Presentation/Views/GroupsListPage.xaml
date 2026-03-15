@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:res="clr-namespace:HockeyTournamentTracker.Resources"
+             x:Class="HockeyTournamentTracker.Presentation.Views.GroupsListPage"
+             x:Name="ThisPage"
+             Title="{x:Static res:AppResources.Groups}">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="12">
+            <Label Text="{x:Static res:AppResources.AllowCrossGroupMatches}" />
+            <Switch IsToggled="{Binding AllowCrossGroupMatches}"
+                    Toggled="OnAllowCrossGroupToggled" />
+
+            <Label Text="{x:Static res:AppResources.Groups}"
+                   FontAttributes="Bold"
+                   FontSize="16"
+                   Margin="0,12,0,0" />
+            <Button Text="{x:Static res:AppResources.AddGroup}"
+                    Clicked="OnAddGroupClicked" />
+
+            <CollectionView x:Name="GroupsCollection" ItemsSource="{Binding GroupsList}">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Grid ColumnDefinitions="*,Auto" Padding="0,6" ColumnSpacing="8">
+                            <Label Grid.Column="0" Text="{Binding Name}" VerticalOptions="Center" />
+                            <Button Grid.Column="1" Text="{x:Static res:AppResources.Delete}"
+                                    Clicked="OnDeleteGroupClicked" />
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

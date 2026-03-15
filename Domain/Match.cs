@@ -23,5 +23,8 @@ public sealed class Match
     public MatchStatus Status { get; set; } = MatchStatus.Scheduled;
 
     public string? Notes { get; set; }
+
+    /// <summary>Счёт по периодам (1–3 основные, 4 ОТ, 5 буллиты).</summary>
+    public List<PeriodScore> PeriodScores { get; set; } = new();
 }
 

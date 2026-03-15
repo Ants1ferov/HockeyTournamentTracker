@@ -1,3 +1,4 @@
+using System.Text.Json;
 using HockeyTournamentTracker.Domain;
 using SQLite;
 
@@ -54,8 +55,12 @@ public sealed class MatchRepository : IMatchRepository
         return _connection.DeleteAsync<MatchEntity>(id);
     }
 
-    private static Match MapToDomain(MatchEntity entity) =>
-        new()
+    private static Match MapToDomain(MatchEntity entity)
+    {
+        var periodScores = entity.PeriodScoresJson is { Length: > 0 } json
+            ? JsonSerializer.Deserialize<List<PeriodScore>>(json) ?? new List<PeriodScore>()
+            : new List<PeriodScore>();
+        return new Match
         {
             Id = entity.Id,
             TournamentId = entity.TournamentId,
@@ -70,8 +75,10 @@ public sealed class MatchRepository : IMatchRepository
             ShootoutScoreHome = entity.ShootoutScoreHome,
             ShootoutScoreAway = entity.ShootoutScoreAway,
             Status = (MatchStatus)entity.Status,
-            Notes = entity.Notes
+            Notes = entity.Notes,
+            PeriodScores = periodScores
         };
+    }
 
     private static MatchEntity MapToEntity(Match match) =>
         new()
@@ -89,7 +96,10 @@ public sealed class MatchRepository : IMatchRepository
             ShootoutScoreHome = match.ShootoutScoreHome,
             ShootoutScoreAway = match.ShootoutScoreAway,
             Status = (int)match.Status,
-            Notes = match.Notes
+            Notes = match.Notes,
+            PeriodScoresJson = match.PeriodScores is { Count: > 0 } list
+                ? JsonSerializer.Serialize(list)
+                : null
         };
 }
 

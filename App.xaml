@@ -13,6 +13,8 @@
             <converters:TournamentStatusToStringConverter x:Key="TournamentStatusToString" />
             <converters:PathToImageSourceConverter x:Key="PathToImageSource" />
             <converters:MatchStatusToStartButtonVisibleConverter x:Key="MatchStatusToStartVisible" />
+            <converters:LastResultToColorConverter x:Key="LastResultToColor" />
+            <converters:StandingSortCriterionToStringConverter x:Key="StandingSortCriterionToString" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

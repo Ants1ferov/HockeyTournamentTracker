@@ -1,5 +1,7 @@
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Windows.Input;
 using HockeyTournamentTracker.Data;
 using HockeyTournamentTracker.Domain;
 
@@ -51,9 +53,35 @@ public sealed class TournamentEditViewModel : INotifyPropertyChanged
     public string PointsOtLoss { get => _pointsOtLoss; set => SetField(ref _pointsOtLoss, value); }
     public string PointsSoLoss { get => _pointsSoLoss; set => SetField(ref _pointsSoLoss, value); }
 
+    public ObservableCollection<StandingSortCriterion> SortOrderList { get; } =
+        new(TournamentRules.GetDefaultSortOrder());
+
+    public ICommand MoveSortUpCommand => new Command(OnMoveSortUp);
+    public ICommand MoveSortDownCommand => new Command(OnMoveSortDown);
+
     public TournamentEditViewModel(ITournamentRepository tournamentRepository)
     {
         _tournamentRepository = tournamentRepository;
+    }
+
+    private void OnMoveSortUp(object? parameter)
+    {
+        if (parameter is StandingSortCriterion c)
+        {
+            var i = SortOrderList.IndexOf(c);
+            if (i > 0)
+                SortOrderList.Move(i, i - 1);
+        }
+    }
+
+    private void OnMoveSortDown(object? parameter)
+    {
+        if (parameter is StandingSortCriterion c)
+        {
+            var i = SortOrderList.IndexOf(c);
+            if (i >= 0 && i < SortOrderList.Count - 1)
+                SortOrderList.Move(i, i + 1);
+        }
     }
 
     public async Task<bool> SaveAsync()
@@ -70,7 +98,8 @@ public sealed class TournamentEditViewModel : INotifyPropertyChanged
             PointsForShootoutWin = ParsePoints(PointsSoWin, 2),
             PointsForRegulationLoss = ParsePoints(PointsRegLoss, 0),
             PointsForOvertimeLoss = ParsePoints(PointsOtLoss, 1),
-            PointsForShootoutLoss = ParsePoints(PointsSoLoss, 1)
+            PointsForShootoutLoss = ParsePoints(PointsSoLoss, 1),
+            SortOrder = new List<StandingSortCriterion>(SortOrderList)
         };
 
         var tournament = new Tournament

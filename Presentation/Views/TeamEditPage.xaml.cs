@@ -25,12 +25,12 @@ public partial class TeamEditPage : ContentPage, IQueryAttributable
         {
             _viewModel.TeamId = teamId;
             Title = AppResources.EditTeam;
-            await _viewModel.LoadAsync();
         }
         else
         {
             Title = AppResources.NewTeam;
         }
+        await _viewModel.LoadAsync();
     }
 
     private async void OnPickIconClicked(object? sender, EventArgs e)

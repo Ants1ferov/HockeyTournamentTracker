@@ -14,6 +14,11 @@
             <Label Text="{x:Static res:AppResources.ShortName}" />
             <Entry Text="{Binding ShortName}" />
 
+            <Label Text="{x:Static res:AppResources.GroupName}" />
+            <Picker ItemsSource="{Binding Groups}"
+                    ItemDisplayBinding="{Binding Name}"
+                    SelectedItem="{Binding SelectedGroup}" />
+
             <Label Text="{x:Static res:AppResources.SelectIcon}" />
             <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
                 <Image WidthRequest="64" HeightRequest="64"

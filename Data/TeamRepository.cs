@@ -68,7 +68,8 @@ public sealed class TeamRepository : ITeamRepository
             ShortName = entity.ShortName,
             ColorHex = entity.ColorHex,
             IconPath = entity.IconPath,
-            Notes = entity.Notes
+            Notes = entity.Notes,
+            GroupId = entity.GroupId
         };
 
     private static TeamEntity MapToEntity(Team team) =>
@@ -80,7 +81,8 @@ public sealed class TeamRepository : ITeamRepository
             ShortName = team.ShortName,
             ColorHex = team.ColorHex,
             IconPath = team.IconPath,
-            Notes = team.Notes
+            Notes = team.Notes,
+            GroupId = team.GroupId
         };
 }
 

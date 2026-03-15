@@ -82,28 +82,117 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
         var standings = _statsService.CalculateStandings(Tournament, teams, matches);
         var teamById = teams.ToDictionary(t => t.Id);
 
-        var place = 1;
-        foreach (var s in standings)
-        {
-            if (!teamById.TryGetValue(s.TeamId, out var team))
-                continue;
+        var finishedMatches = matches
+            .Where(m => m.Status == MatchStatus.Finished && m.OutcomeType.HasValue && m.HomeGoals.HasValue && m.AwayGoals.HasValue)
+            .OrderByDescending(m => m.DateTime ?? DateTime.MinValue)
+            .ToList();
 
-            Standings.Add(new StandingRow
+        var maxPointsPerGame = Tournament.Rules != null
+            ? Math.Max(Tournament.Rules.PointsForRegulationWin,
+                Math.Max(Tournament.Rules.PointsForOvertimeWin, Tournament.Rules.PointsForShootoutWin))
+            : 3;
+
+        var standingsList = standings;
+        var rules = Tournament.Rules ?? new TournamentRules();
+        var groups = rules.Groups?.OrderBy(g => g.Order).ThenBy(g => g.Name).ToList() ?? new List<GroupInfo>();
+
+        if (groups.Count > 0)
+        {
+            var standingByTeamId = standingsList.ToDictionary(s => s.TeamId);
+            foreach (var group in groups)
             {
-                Place = place++,
-                TeamName = string.IsNullOrWhiteSpace(team.Name) ? "—" : team.Name,
-                Games = s.Games,
-                WinsReg = s.WinsRegulation,
-                WinsOt = s.WinsOvertime,
-                WinsSo = s.WinsShootout,
-                LossesReg = s.LossesRegulation,
-                LossesOt = s.LossesOvertime,
-                LossesSo = s.LossesShootout,
-                GoalsFor = s.GoalsFor,
-                GoalsAgainst = s.GoalsAgainst,
-                GoalDiff = s.GoalDifference,
-                Points = s.Points
-            });
+                var teamIdsInGroup = teams.Where(t => t.GroupId == group.Id).Select(t => t.Id).ToHashSet();
+                var inGroup = standingsList.Where(s => teamIdsInGroup.Contains(s.TeamId)).ToList();
+                var sortedInGroup = StatsService.SortByRules(inGroup, rules);
+                var place = 1;
+                foreach (var s in sortedInGroup)
+                {
+                    if (!teamById.TryGetValue(s.TeamId, out var team))
+                        continue;
+                    var last5 = GetLast5ResultsForTeam(s.TeamId, finishedMatches);
+                    Standings.Add(new StandingRow
+                    {
+                        Place = place++,
+                        GroupName = group.Name,
+                        TeamName = string.IsNullOrWhiteSpace(team.Name) ? "—" : team.Name,
+                        Games = s.Games,
+                        WinsReg = s.WinsRegulation,
+                        WinsOt = s.WinsOvertime,
+                        WinsSo = s.WinsShootout,
+                        LossesReg = s.LossesRegulation,
+                        LossesOt = s.LossesOvertime,
+                        LossesSo = s.LossesShootout,
+                        GoalsFor = s.GoalsFor,
+                        GoalsAgainst = s.GoalsAgainst,
+                        GoalDiff = s.GoalDifference,
+                        Last5Results = last5,
+                        PointsPct = FormatPointsPercentage(s.Points, s.Games, maxPointsPerGame),
+                        Points = s.Points
+                    });
+                }
+            }
+            var noGroupTeamIds = teams.Where(t => !t.GroupId.HasValue).Select(t => t.Id).ToHashSet();
+            var noGroup = standingsList.Where(s => noGroupTeamIds.Contains(s.TeamId)).ToList();
+            if (noGroup.Count > 0)
+            {
+                var sortedNoGroup = StatsService.SortByRules(noGroup, rules);
+                var place = 1;
+                foreach (var s in sortedNoGroup)
+                {
+                    if (!teamById.TryGetValue(s.TeamId, out var team))
+                        continue;
+                    var last5 = GetLast5ResultsForTeam(s.TeamId, finishedMatches);
+                    Standings.Add(new StandingRow
+                    {
+                        Place = place++,
+                        GroupName = "—",
+                        TeamName = string.IsNullOrWhiteSpace(team.Name) ? "—" : team.Name,
+                        Games = s.Games,
+                        WinsReg = s.WinsRegulation,
+                        WinsOt = s.WinsOvertime,
+                        WinsSo = s.WinsShootout,
+                        LossesReg = s.LossesRegulation,
+                        LossesOt = s.LossesOvertime,
+                        LossesSo = s.LossesShootout,
+                        GoalsFor = s.GoalsFor,
+                        GoalsAgainst = s.GoalsAgainst,
+                        GoalDiff = s.GoalDifference,
+                        Last5Results = last5,
+                        PointsPct = FormatPointsPercentage(s.Points, s.Games, maxPointsPerGame),
+                        Points = s.Points
+                    });
+                }
+            }
+        }
+        else
+        {
+            var place = 1;
+            foreach (var s in standings)
+            {
+                if (!teamById.TryGetValue(s.TeamId, out var team))
+                    continue;
+                var last5 = GetLast5ResultsForTeam(s.TeamId, finishedMatches);
+                var pointsPct = FormatPointsPercentage(s.Points, s.Games, maxPointsPerGame);
+                Standings.Add(new StandingRow
+                {
+                    Place = place++,
+                    GroupName = string.Empty,
+                    TeamName = string.IsNullOrWhiteSpace(team.Name) ? "—" : team.Name,
+                    Games = s.Games,
+                    WinsReg = s.WinsRegulation,
+                    WinsOt = s.WinsOvertime,
+                    WinsSo = s.WinsShootout,
+                    LossesReg = s.LossesRegulation,
+                    LossesOt = s.LossesOvertime,
+                    LossesSo = s.LossesShootout,
+                    GoalsFor = s.GoalsFor,
+                    GoalsAgainst = s.GoalsAgainst,
+                    GoalDiff = s.GoalDifference,
+                    Last5Results = last5,
+                    PointsPct = pointsPct,
+                    Points = s.Points
+                });
+            }
         }
 
         LiveMatches.Clear();
@@ -166,6 +255,39 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
         }
     }
 
+    /// <summary>
+    /// Returns list of 5 values: 0 = empty, 1 = win, 2 = loss. Order: most recent first (index 0 = latest).
+    /// </summary>
+    private static IReadOnlyList<int> GetLast5ResultsForTeam(Guid teamId, List<Match> finishedOrderedByDateDesc)
+    {
+        var list = new List<int>(5);
+        foreach (var m in finishedOrderedByDateDesc.Take(50))
+        {
+            if (m.HomeTeamId != teamId && m.AwayTeamId != teamId)
+                continue;
+            var isHome = m.HomeTeamId == teamId;
+            var won = (isHome && m.HomeGoals! > m.AwayGoals!) || (!isHome && m.AwayGoals! > m.HomeGoals!);
+            list.Add(won ? 1 : 2);
+            if (list.Count >= 5)
+                break;
+        }
+        while (list.Count < 5)
+            list.Add(0);
+        return list;
+    }
+
+    /// <summary>
+    /// Format percentage: round to hundredths, no trailing zeros (e.g. 34.56 or 34.5).
+    /// </summary>
+    private static string FormatPointsPercentage(int points, int games, int maxPointsPerGame)
+    {
+        if (games == 0 || maxPointsPerGame <= 0)
+            return "0";
+        var pct = (double)points / (games * maxPointsPerGame) * 100.0;
+        var rounded = Math.Round(pct, 2, MidpointRounding.AwayFromZero);
+        return rounded.ToString("0.##", System.Globalization.CultureInfo.CurrentCulture);
+    }
+
     private static string BuildScoreText(Match match)
     {
         if (match.HomeGoals is null || match.AwayGoals is null || match.OutcomeType is null)
@@ -174,14 +296,26 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
         }
 
         var baseScore = $"{match.HomeGoals}:{match.AwayGoals}";
-        return match.OutcomeType switch
+        var periodPart = "";
+        if (match.PeriodScores is { Count: > 0 } periods)
         {
-            OutcomeType.Overtime => $"{baseScore} ОТ",
+            var parts = periods.Select(p =>
+            {
+                var s = $"{p.HomeGoals}:{p.AwayGoals}";
+                return p.PeriodType == PeriodType.Overtime ? $"{s} ОТ" : p.PeriodType == PeriodType.Shootout ? $"{s} Б" : s;
+            });
+            periodPart = " (" + string.Join(", ", parts) + ")";
+        }
+
+        var outcomeSuffix = match.OutcomeType switch
+        {
+            OutcomeType.Overtime => " ОТ",
             OutcomeType.Shootout => match.ShootoutScoreHome is { } sh && match.ShootoutScoreAway is { } sa
-                ? $"{baseScore} Б ({sh}:{sa})"
-                : $"{baseScore} Б",
-            _ => baseScore
+                ? $" Б ({sh}:{sa})"
+                : " Б",
+            _ => ""
         };
+        return $"{baseScore}{outcomeSuffix}{periodPart}";
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -201,6 +335,7 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
 public sealed class StandingRow
 {
     public int Place { get; set; }
+    public string GroupName { get; set; } = string.Empty;
     public string TeamName { get; set; } = string.Empty;
     public int Games { get; set; }
     public int WinsReg { get; set; }
@@ -212,6 +347,9 @@ public sealed class StandingRow
     public int GoalsFor { get; set; }
     public int GoalsAgainst { get; set; }
     public int GoalDiff { get; set; }
+    /// <summary>5 items: 0 = empty, 1 = win, 2 = loss. Index 0 = most recent.</summary>
+    public IReadOnlyList<int> Last5Results { get; set; } = Array.Empty<int>();
+    public string PointsPct { get; set; } = "0";
     public int Points { get; set; }
 }
 

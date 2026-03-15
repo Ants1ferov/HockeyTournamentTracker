@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using HockeyTournamentTracker.Data;
@@ -8,6 +9,7 @@ namespace HockeyTournamentTracker.Presentation.ViewModels;
 public sealed class TeamEditViewModel : INotifyPropertyChanged
 {
     private readonly ITeamRepository _teamRepository;
+    private readonly ITournamentRepository _tournamentRepository;
 
     private Guid _tournamentId;
     private Guid _teamId;
@@ -16,6 +18,7 @@ public sealed class TeamEditViewModel : INotifyPropertyChanged
     private string _name = string.Empty;
     private string? _shortName;
     private string? _iconPath;
+    private GroupInfo? _selectedGroup;
 
     public Guid TournamentId
     {
@@ -47,19 +50,40 @@ public sealed class TeamEditViewModel : INotifyPropertyChanged
         set => SetField(ref _iconPath, value);
     }
 
+    public ObservableCollection<GroupInfo> Groups { get; } = new();
+
+    public GroupInfo? SelectedGroup
+    {
+        get => _selectedGroup;
+        set => SetField(ref _selectedGroup, value);
+    }
+
     public bool IsEditing => TeamId != Guid.Empty;
 
     public bool IsSaving => _isSaving;
 
     public bool CanSave => !_isSaving;
 
-    public TeamEditViewModel(ITeamRepository teamRepository)
+    public TeamEditViewModel(ITeamRepository teamRepository, ITournamentRepository tournamentRepository)
     {
         _teamRepository = teamRepository;
+        _tournamentRepository = tournamentRepository;
+    }
+
+    public async Task LoadGroupsAsync()
+    {
+        Groups.Clear();
+        if (TournamentId == Guid.Empty) return;
+        var tournament = await _tournamentRepository.GetByIdAsync(TournamentId);
+        if (tournament?.Rules.Groups == null) return;
+        Groups.Add(new GroupInfo { Id = Guid.Empty, Name = "—", Order = -1 });
+        foreach (var g in tournament.Rules.Groups.OrderBy(x => x.Order).ThenBy(x => x.Name))
+            Groups.Add(g);
     }
 
     public async Task LoadAsync()
     {
+        await LoadGroupsAsync();
         if (TeamId == Guid.Empty) return;
 
         var team = await _teamRepository.GetByIdAsync(TeamId);
@@ -68,6 +92,9 @@ public sealed class TeamEditViewModel : INotifyPropertyChanged
         Name = team.Name;
         ShortName = team.ShortName;
         IconPath = team.IconPath;
+        SelectedGroup = team.GroupId is { } gid
+            ? Groups.FirstOrDefault(g => g.Id == gid)
+            : Groups.FirstOrDefault(g => g.Id == Guid.Empty);
     }
 
     public async Task<bool> SaveAsync()
@@ -80,13 +107,15 @@ public sealed class TeamEditViewModel : INotifyPropertyChanged
         try
         {
             var id = TeamId != Guid.Empty ? TeamId : (_pendingTeamId != Guid.Empty ? _pendingTeamId : Guid.NewGuid());
+            var groupId = SelectedGroup is { } g && g.Id != Guid.Empty ? g.Id : (Guid?)null;
             var team = new Team
             {
                 Id = id,
                 TournamentId = TournamentId,
                 Name = Name.Trim(),
                 ShortName = string.IsNullOrWhiteSpace(ShortName) ? null : ShortName.Trim(),
-                IconPath = IconPath
+                IconPath = IconPath,
+                GroupId = groupId
             };
 
             await _teamRepository.SaveAsync(team);

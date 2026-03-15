@@ -23,3 +23,26 @@ public enum OutcomeType
     Shootout
 }
 
+/// <summary>Тип периода матча для отображения (основной / ОТ / буллиты).</summary>
+public enum PeriodType
+{
+    Regular,
+    Overtime,
+    Shootout
+}
+
+/// <summary>
+/// Критерии сортировки турнирной таблицы (порядок распределения мест).
+/// </summary>
+public enum StandingSortCriterion
+{
+    Points,
+    WinsRegulation,
+    WinsOvertime,
+    WinsShootout,
+    GoalDifference,
+    GoalsFor,
+    GoalsAgainst,
+    Games
+}
+

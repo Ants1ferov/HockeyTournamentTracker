@@ -18,14 +18,16 @@ public sealed class LocalDatabase
         await _connection.CreateTableAsync<MatchEntity>();
 
         // Миграция: добавить колонку IconPath в Teams, если её ещё нет
-        try
-        {
-            await _connection.ExecuteAsync("ALTER TABLE Teams ADD COLUMN IconPath TEXT");
-        }
-        catch
-        {
-            // Колонка уже есть или таблица в старой схеме — игнорируем
-        }
+        try { await _connection.ExecuteAsync("ALTER TABLE Teams ADD COLUMN IconPath TEXT"); }
+        catch { /* колонка уже есть */ }
+
+        // Миграция: добавить колонку GroupId в Teams
+        try { await _connection.ExecuteAsync("ALTER TABLE Teams ADD COLUMN GroupId TEXT"); }
+        catch { /* колонка уже есть */ }
+
+        // Миграция: добавить колонку PeriodScoresJson в Matches
+        try { await _connection.ExecuteAsync("ALTER TABLE Matches ADD COLUMN PeriodScoresJson TEXT"); }
+        catch { /* колонка уже есть */ }
     }
 
     public SQLiteAsyncConnection Connection => _connection;

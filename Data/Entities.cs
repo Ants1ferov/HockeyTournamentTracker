@@ -38,6 +38,8 @@ public class TeamEntity
     public string? ColorHex { get; set; }
     public string? IconPath { get; set; }
     public string? Notes { get; set; }
+
+    public Guid? GroupId { get; set; }
 }
 
 [Table("Matches")]
@@ -67,5 +69,7 @@ public class MatchEntity
     public int Status { get; set; }
 
     public string? Notes { get; set; }
+
+    public string? PeriodScoresJson { get; set; }
 }
 

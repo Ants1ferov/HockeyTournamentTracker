@@ -60,6 +60,9 @@ public static class MauiProgram
 		builder.Services.AddTransient<TournamentRulesEditViewModel>();
 		builder.Services.AddTransient<TournamentRulesEditPage>();
 
+		builder.Services.AddTransient<GroupsListViewModel>();
+		builder.Services.AddTransient<GroupsListPage>();
+
 		return builder.Build();
 	}
 }
