@@ -67,6 +67,9 @@ public static class MauiProgram
 		builder.Services.AddTransient<StageEditViewModel>();
 		builder.Services.AddTransient<StageEditPage>();
 
+		builder.Services.AddTransient<StageDetailsViewModel>();
+		builder.Services.AddTransient<StageDetailsPage>();
+
 		return builder.Build();
 	}
 }

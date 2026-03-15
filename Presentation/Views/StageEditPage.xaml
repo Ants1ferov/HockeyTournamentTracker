@@ -7,10 +7,8 @@
 
     <ScrollView>
         <VerticalStackLayout Padding="16" Spacing="12">
-            <Label Text="{x:Static res:AppResources.GroupName}" />
+            <Label Text="Название стадии" />
             <Entry Text="{Binding Name}" Placeholder="" />
-            <Label Text="Порядок" />
-            <Entry Text="{Binding Order}" Keyboard="Numeric" />
             <Label Text="Тип стадии" />
             <Picker Title="Тип стадии"
                     SelectedIndex="{Binding StageTypeIndex}">

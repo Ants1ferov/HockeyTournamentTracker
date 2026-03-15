@@ -18,6 +18,8 @@
             <converters:StringToVisibilityConverter x:Key="GroupNameToVisibility" />
             <converters:StageTypeToStringConverter x:Key="StageTypeToString" />
             <converters:NotNullToBoolConverter x:Key="NotNullToBool" />
+            <converters:IndexEqualsToBoolConverter x:Key="IndexEqualsToBool" />
+            <converters:MauiImageAliasToImageSourceConverter x:Key="MauiImageAliasToImageSource" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

@@ -106,6 +106,7 @@ public static class AppResources
     public static string AddStage => GetString(nameof(AddStage));
     public static string StageTypeSwiss => GetString(nameof(StageTypeSwiss));
     public static string StageTypePlayOff => GetString(nameof(StageTypePlayOff));
+    public static string DeleteStageConfirm => GetString(nameof(DeleteStageConfirm));
 
     public static string GetString(string key) =>
         ResourceManager.GetString(key) ?? key;

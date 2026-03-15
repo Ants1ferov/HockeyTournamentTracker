@@ -3,18 +3,16 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:res="clr-namespace:HockeyTournamentTracker.Resources"
              x:Class="HockeyTournamentTracker.Presentation.Views.TournamentDetailsPage"
-             Title="{Binding Tournament.Name}">
+             Title="{Binding PageTitle}">
 
-    <Grid RowDefinitions="*,Auto">
-        <ScrollView Grid.Row="0">
-            <VerticalStackLayout Padding="16" Spacing="16">
-                <!-- Вкладка Главная -->
-                <VerticalStackLayout IsVisible="{Binding IsHomeTabSelected}" Spacing="16">
-                    <Label Text="{Binding Tournament.Name}"
+    <Grid x:Name="MainGrid" RowDefinitions="*,56" VerticalOptions="Fill">
+        <ScrollView x:Name="MainScroll" Grid.Row="0">
+            <VerticalStackLayout x:Name="MainContent" Padding="16" Spacing="16" VerticalOptions="Start">
+                <!-- Вкладка Главная: видима при SelectedTabIndex == 0 -->
+                <VerticalStackLayout x:Name="HomeTabContent" IsVisible="{Binding SelectedTabIndex, Converter={StaticResource IndexEqualsToBool}, ConverterParameter=0}" Spacing="16">
+                    <Label Text="{Binding PageTitle}"
                            FontAttributes="Bold"
                            FontSize="22" />
-                    <Button Text="{x:Static res:AppResources.Teams}"
-                            Clicked="OnTeamsClicked" />
                     <Button Text="{x:Static res:AppResources.Groups}"
                             Clicked="OnGroupsClicked" />
                     <Label Text="{x:Static res:AppResources.Status}" FontAttributes="Bold" FontSize="14" />
@@ -98,82 +96,9 @@
                     </CollectionView>
                     <Button Text="{x:Static res:AppResources.EditRules}"
                             Clicked="OnEditRulesClicked" />
-                    <Label Text="{Binding Tournament.Description}"
+                    <Label Text="{Binding TournamentDescription}"
                            FontSize="14"
                            TextColor="Gray" />
-                    <Label Text="{x:Static res:AppResources.StandingsTable}"
-                           FontAttributes="Bold"
-                           FontSize="18" />
-                    <ScrollView Orientation="Horizontal"
-                                HorizontalScrollBarVisibility="Default">
-                        <VerticalStackLayout Spacing="4" MinimumWidthRequest="720">
-                            <Grid ColumnDefinitions="28,120,32,32,28,28,28,28,28,28,32,32,36,72,*" Padding="0,4" ColumnSpacing="2">
-                                <Label Grid.Column="0" Text="{x:Static res:AppResources.StandingsColPlace}" FontSize="12" FontAttributes="Bold" />
-                                <Label Grid.Column="1" Text="{x:Static res:AppResources.StandingsColTeam}" FontSize="12" FontAttributes="Bold" />
-                                <Label Grid.Column="2" Text="{x:Static res:AppResources.StandingsColPoints}" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="End" />
-                                <Label Grid.Column="3" Text="{x:Static res:AppResources.StandingsColGames}" FontSize="12" FontAttributes="Bold" />
-                                <Label Grid.Column="4" Text="{x:Static res:AppResources.StandingsColW}" FontSize="12" FontAttributes="Bold" />
-                                <Label Grid.Column="5" Text="{x:Static res:AppResources.StandingsColWot}" FontSize="12" FontAttributes="Bold" />
-                                <Label Grid.Column="6" Text="{x:Static res:AppResources.StandingsColWso}" FontSize="12" FontAttributes="Bold" />
-                                <Label Grid.Column="7" Text="{x:Static res:AppResources.StandingsColLso}" FontSize="12" FontAttributes="Bold" />
-                                <Label Grid.Column="8" Text="{x:Static res:AppResources.StandingsColLot}" FontSize="12" FontAttributes="Bold" />
-                                <Label Grid.Column="9" Text="{x:Static res:AppResources.StandingsColL}" FontSize="12" FontAttributes="Bold" />
-                                <Label Grid.Column="10" Text="{x:Static res:AppResources.StandingsColGoalsFor}" FontSize="12" FontAttributes="Bold" />
-                                <Label Grid.Column="11" Text="{x:Static res:AppResources.StandingsColGoalsAgainst}" FontSize="12" FontAttributes="Bold" />
-                                <Label Grid.Column="12" Text="{x:Static res:AppResources.StandingsColGoalDiff}" FontSize="12" FontAttributes="Bold" />
-                                <Label Grid.Column="13" Text="{x:Static res:AppResources.StandingsColLast5}" FontSize="11" FontAttributes="Bold" />
-                                <Label Grid.Column="14" Text="{x:Static res:AppResources.StandingsColPct}" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="End" />
-                            </Grid>
-                            <CollectionView ItemsSource="{Binding StandingsByGroup}"
-                                            IsGrouped="True"
-                                            VerticalOptions="Start">
-                                <CollectionView.GroupHeaderTemplate>
-                                    <DataTemplate>
-                                        <Label Text="{Binding GroupName}"
-                                               FontAttributes="Bold"
-                                               FontSize="14"
-                                               Margin="0,12,0,4"
-                                               IsVisible="{Binding GroupName, Converter={StaticResource GroupNameToVisibility}}" />
-                                    </DataTemplate>
-                                </CollectionView.GroupHeaderTemplate>
-                                <CollectionView.ItemTemplate>
-                                    <DataTemplate>
-                                        <Grid ColumnDefinitions="28,120,32,32,28,28,28,28,28,28,32,32,36,72,*"
-                                              Padding="0,4" ColumnSpacing="2">
-                                            <Label Grid.Column="0" Text="{Binding Place}" FontSize="12" />
-                                            <HorizontalStackLayout Grid.Column="1" Spacing="6" VerticalOptions="Center">
-                                                <Image WidthRequest="24" HeightRequest="24"
-                                                       Source="{Binding TeamIconPath, Converter={StaticResource PathToImageSource}}"
-                                                       Aspect="AspectFill" />
-                                                <Label Text="{Binding TeamName}" FontSize="12" LineBreakMode="TailTruncation" VerticalTextAlignment="Center" />
-                                            </HorizontalStackLayout>
-                                            <Label Grid.Column="2" Text="{Binding Points}" FontSize="12" HorizontalTextAlignment="End" />
-                                            <Label Grid.Column="3" Text="{Binding Games}" FontSize="12" />
-                                            <Label Grid.Column="4" Text="{Binding WinsReg}" FontSize="12" />
-                                            <Label Grid.Column="5" Text="{Binding WinsOt}" FontSize="12" />
-                                            <Label Grid.Column="6" Text="{Binding WinsSo}" FontSize="12" />
-                                            <Label Grid.Column="7" Text="{Binding LossesSo}" FontSize="12" />
-                                            <Label Grid.Column="8" Text="{Binding LossesOt}" FontSize="12" />
-                                            <Label Grid.Column="9" Text="{Binding LossesReg}" FontSize="12" />
-                                            <Label Grid.Column="10" Text="{Binding GoalsFor}" FontSize="12" />
-                                            <Label Grid.Column="11" Text="{Binding GoalsAgainst}" FontSize="12" />
-                                            <Label Grid.Column="12" Text="{Binding GoalDiff}" FontSize="12" />
-                                            <HorizontalStackLayout Grid.Column="13" Spacing="2" VerticalOptions="Center"
-                                                                  BindableLayout.ItemsSource="{Binding Last5Results}">
-                                                <BindableLayout.ItemTemplate>
-                                                    <DataTemplate>
-                                                        <BoxView WidthRequest="10" HeightRequest="10" CornerRadius="5"
-                                                                 BackgroundColor="{Binding Converter={StaticResource LastResultToColor}}" />
-                                                    </DataTemplate>
-                                                </BindableLayout.ItemTemplate>
-                                            </HorizontalStackLayout>
-                                            <Label Grid.Column="14" Text="{Binding PointsPct}" FontSize="12" HorizontalTextAlignment="End" />
-                                        </Grid>
-                                    </DataTemplate>
-                                </CollectionView.ItemTemplate>
-                            </CollectionView>
-                        </VerticalStackLayout>
-                    </ScrollView>
                     <Label Text="{x:Static res:AppResources.LastPlayedMatches}"
                            FontAttributes="Bold"
                            FontSize="18"
@@ -238,7 +163,7 @@
                 </VerticalStackLayout>
 
                 <!-- Вкладка Стадии -->
-                <VerticalStackLayout IsVisible="{Binding IsStagesTabSelected}" Spacing="16">
+                <VerticalStackLayout IsVisible="{Binding SelectedTabIndex, Converter={StaticResource IndexEqualsToBool}, ConverterParameter=1}" Spacing="16">
                     <Button Text="{x:Static res:AppResources.AddStage}"
                             Clicked="OnAddStageClicked" />
                     <Label Text="{x:Static res:AppResources.TabStages}"
@@ -250,6 +175,9 @@
                         <CollectionView.ItemTemplate>
                             <DataTemplate>
                                 <Frame Margin="0,4" Padding="12" HasShadow="True" CornerRadius="8">
+                                    <Frame.GestureRecognizers>
+                                        <TapGestureRecognizer Tapped="OnStageTapped" />
+                                    </Frame.GestureRecognizers>
                                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
                                         <VerticalStackLayout Grid.Column="0" Spacing="2">
                                             <Label Text="{Binding Name}" FontAttributes="Bold" FontSize="16" />
@@ -257,11 +185,93 @@
                                                    FontSize="12"
                                                    TextColor="Gray" />
                                         </VerticalStackLayout>
+                                        <ImageButton Grid.Column="1"
+                                                     Source="icondeletetournament"
+                                                     WidthRequest="32" HeightRequest="32"
+                                                     BackgroundColor="Transparent"
+                                                     VerticalOptions="Center"
+                                                     Clicked="OnDeleteStageClicked" />
                                     </Grid>
                                 </Frame>
                             </DataTemplate>
                         </CollectionView.ItemTemplate>
                     </CollectionView>
+                    <Label Text="{x:Static res:AppResources.StandingsTable}"
+                           FontAttributes="Bold"
+                           FontSize="18"
+                           IsVisible="{Binding SelectedStage, Converter={StaticResource NotNullToBool}}"
+                           Margin="0,12,0,0" />
+                    <ScrollView Orientation="Horizontal"
+                                HorizontalScrollBarVisibility="Default"
+                                IsVisible="{Binding SelectedStage, Converter={StaticResource NotNullToBool}}">
+                        <VerticalStackLayout Spacing="4" MinimumWidthRequest="720">
+                            <Grid ColumnDefinitions="28,120,32,32,28,28,28,28,28,28,32,32,36,72,*" Padding="0,4" ColumnSpacing="2">
+                                <Label Grid.Column="0" Text="{x:Static res:AppResources.StandingsColPlace}" FontSize="12" FontAttributes="Bold" />
+                                <Label Grid.Column="1" Text="{x:Static res:AppResources.StandingsColTeam}" FontSize="12" FontAttributes="Bold" />
+                                <Label Grid.Column="2" Text="{x:Static res:AppResources.StandingsColPoints}" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="End" />
+                                <Label Grid.Column="3" Text="{x:Static res:AppResources.StandingsColGames}" FontSize="12" FontAttributes="Bold" />
+                                <Label Grid.Column="4" Text="{x:Static res:AppResources.StandingsColW}" FontSize="12" FontAttributes="Bold" />
+                                <Label Grid.Column="5" Text="{x:Static res:AppResources.StandingsColWot}" FontSize="12" FontAttributes="Bold" />
+                                <Label Grid.Column="6" Text="{x:Static res:AppResources.StandingsColWso}" FontSize="12" FontAttributes="Bold" />
+                                <Label Grid.Column="7" Text="{x:Static res:AppResources.StandingsColLso}" FontSize="12" FontAttributes="Bold" />
+                                <Label Grid.Column="8" Text="{x:Static res:AppResources.StandingsColLot}" FontSize="12" FontAttributes="Bold" />
+                                <Label Grid.Column="9" Text="{x:Static res:AppResources.StandingsColL}" FontSize="12" FontAttributes="Bold" />
+                                <Label Grid.Column="10" Text="{x:Static res:AppResources.StandingsColGoalsFor}" FontSize="12" FontAttributes="Bold" />
+                                <Label Grid.Column="11" Text="{x:Static res:AppResources.StandingsColGoalsAgainst}" FontSize="12" FontAttributes="Bold" />
+                                <Label Grid.Column="12" Text="{x:Static res:AppResources.StandingsColGoalDiff}" FontSize="12" FontAttributes="Bold" />
+                                <Label Grid.Column="13" Text="{x:Static res:AppResources.StandingsColLast5}" FontSize="11" FontAttributes="Bold" />
+                                <Label Grid.Column="14" Text="{x:Static res:AppResources.StandingsColPct}" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="End" />
+                            </Grid>
+                            <CollectionView ItemsSource="{Binding StandingsByGroupForStage}"
+                                            IsGrouped="True"
+                                            VerticalOptions="Start">
+                                <CollectionView.GroupHeaderTemplate>
+                                    <DataTemplate>
+                                        <Label Text="{Binding GroupName}"
+                                               FontAttributes="Bold"
+                                               FontSize="14"
+                                               Margin="0,12,0,4"
+                                               IsVisible="{Binding GroupName, Converter={StaticResource GroupNameToVisibility}}" />
+                                    </DataTemplate>
+                                </CollectionView.GroupHeaderTemplate>
+                                <CollectionView.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid ColumnDefinitions="28,120,32,32,28,28,28,28,28,28,32,32,36,72,*"
+                                              Padding="0,4" ColumnSpacing="2">
+                                            <Label Grid.Column="0" Text="{Binding Place}" FontSize="12" />
+                                            <HorizontalStackLayout Grid.Column="1" Spacing="6" VerticalOptions="Center">
+                                                <Image WidthRequest="24" HeightRequest="24"
+                                                       Source="{Binding TeamIconPath, Converter={StaticResource PathToImageSource}}"
+                                                       Aspect="AspectFill" />
+                                                <Label Text="{Binding TeamName}" FontSize="12" LineBreakMode="TailTruncation" VerticalTextAlignment="Center" />
+                                            </HorizontalStackLayout>
+                                            <Label Grid.Column="2" Text="{Binding Points}" FontSize="12" HorizontalTextAlignment="End" />
+                                            <Label Grid.Column="3" Text="{Binding Games}" FontSize="12" />
+                                            <Label Grid.Column="4" Text="{Binding WinsReg}" FontSize="12" />
+                                            <Label Grid.Column="5" Text="{Binding WinsOt}" FontSize="12" />
+                                            <Label Grid.Column="6" Text="{Binding WinsSo}" FontSize="12" />
+                                            <Label Grid.Column="7" Text="{Binding LossesSo}" FontSize="12" />
+                                            <Label Grid.Column="8" Text="{Binding LossesOt}" FontSize="12" />
+                                            <Label Grid.Column="9" Text="{Binding LossesReg}" FontSize="12" />
+                                            <Label Grid.Column="10" Text="{Binding GoalsFor}" FontSize="12" />
+                                            <Label Grid.Column="11" Text="{Binding GoalsAgainst}" FontSize="12" />
+                                            <Label Grid.Column="12" Text="{Binding GoalDiff}" FontSize="12" />
+                                            <HorizontalStackLayout Grid.Column="13" Spacing="2" VerticalOptions="Center"
+                                                                  BindableLayout.ItemsSource="{Binding Last5Results}">
+                                                <BindableLayout.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <BoxView WidthRequest="10" HeightRequest="10" CornerRadius="5"
+                                                                 BackgroundColor="{Binding Converter={StaticResource LastResultToColor}}" />
+                                                    </DataTemplate>
+                                                </BindableLayout.ItemTemplate>
+                                            </HorizontalStackLayout>
+                                            <Label Grid.Column="14" Text="{Binding PointsPct}" FontSize="12" HorizontalTextAlignment="End" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </CollectionView.ItemTemplate>
+                            </CollectionView>
+                        </VerticalStackLayout>
+                    </ScrollView>
                     <Label Text="{x:Static res:AppResources.Matches}"
                            FontAttributes="Bold"
                            FontSize="16"
@@ -303,7 +313,7 @@
                 </VerticalStackLayout>
 
                 <!-- Вкладка Участники -->
-                <VerticalStackLayout IsVisible="{Binding IsParticipantsTabSelected}" Spacing="16">
+                <VerticalStackLayout IsVisible="{Binding SelectedTabIndex, Converter={StaticResource IndexEqualsToBool}, ConverterParameter=2}" Spacing="16">
                     <Button Text="{x:Static res:AppResources.AddTeam}"
                             Clicked="OnAddParticipantClicked" />
                     <CollectionView ItemsSource="{Binding ParticipantTeams}"
@@ -341,19 +351,61 @@
             </VerticalStackLayout>
         </ScrollView>
 
-        <!-- Нижняя панель вкладок -->
-        <Border Grid.Row="1" StrokeThickness="0" BackgroundColor="{StaticResource Gray200Brush}">
-            <HorizontalStackLayout Padding="8,12" Spacing="0">
-                <Button x:Name="TabHomeBtn" Text="{x:Static res:AppResources.TabHome}"
-                        BackgroundColor="Transparent"
-                        Clicked="OnTabHomeClicked" />
-                <Button x:Name="TabStagesBtn" Text="{x:Static res:AppResources.TabStages}"
-                        BackgroundColor="Transparent"
-                        Clicked="OnTabStagesClicked" />
-                <Button x:Name="TabParticipantsBtn" Text="{x:Static res:AppResources.TabParticipants}"
-                        BackgroundColor="Transparent"
-                        Clicked="OnTabParticipantsClicked" />
-            </HorizontalStackLayout>
+        <!-- Нижняя панель вкладок: полностью своя разметка без стилей Button,
+             чтобы текст не обрезался и был виден в любой теме -->
+        <Border Grid.Row="1" StrokeThickness="0" BackgroundColor="{StaticResource Gray200Brush}" Padding="0,4">
+            <Grid ColumnDefinitions="*,*,*" VerticalOptions="Center" HeightRequest="64">
+                <!-- Главная -->
+                <VerticalStackLayout Grid.Column="0"
+                                      HorizontalOptions="Center"
+                                      VerticalOptions="Center"
+                                      Spacing="2">
+                    <Image WidthRequest="28" HeightRequest="28"
+                           Source="{Binding HomeTabIcon, Converter={StaticResource MauiImageAliasToImageSource}}"
+                           VerticalOptions="Center" />
+                    <Label Text="{x:Static res:AppResources.TabHome}"
+                           FontSize="12"
+                           HorizontalTextAlignment="Center"
+                           TextColor="{AppThemeBinding Light={StaticResource Gray950}, Dark={StaticResource White}}" />
+                    <VerticalStackLayout.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnTabHomeClicked" />
+                    </VerticalStackLayout.GestureRecognizers>
+                </VerticalStackLayout>
+
+                <!-- Стадии -->
+                <VerticalStackLayout Grid.Column="1"
+                                      HorizontalOptions="Center"
+                                      VerticalOptions="Center"
+                                      Spacing="2">
+                    <Image WidthRequest="28" HeightRequest="28"
+                           Source="{Binding StagesTabIcon, Converter={StaticResource MauiImageAliasToImageSource}}"
+                           VerticalOptions="Center" />
+                    <Label Text="{x:Static res:AppResources.TabStages}"
+                           FontSize="12"
+                           HorizontalTextAlignment="Center"
+                           TextColor="{AppThemeBinding Light={StaticResource Gray950}, Dark={StaticResource White}}" />
+                    <VerticalStackLayout.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnTabStagesClicked" />
+                    </VerticalStackLayout.GestureRecognizers>
+                </VerticalStackLayout>
+
+                <!-- Участники -->
+                <VerticalStackLayout Grid.Column="2"
+                                      HorizontalOptions="Center"
+                                      VerticalOptions="Center"
+                                      Spacing="2">
+                    <Image WidthRequest="28" HeightRequest="28"
+                           Source="{Binding ParticipantsTabIcon, Converter={StaticResource MauiImageAliasToImageSource}}"
+                           VerticalOptions="Center" />
+                    <Label Text="{x:Static res:AppResources.TabParticipants}"
+                           FontSize="12"
+                           HorizontalTextAlignment="Center"
+                           TextColor="{AppThemeBinding Light={StaticResource Gray950}, Dark={StaticResource White}}" />
+                    <VerticalStackLayout.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnTabParticipantsClicked" />
+                    </VerticalStackLayout.GestureRecognizers>
+                </VerticalStackLayout>
+            </Grid>
         </Border>
     </Grid>
 </ContentPage>

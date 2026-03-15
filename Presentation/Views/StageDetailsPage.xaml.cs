@@ -1,0 +1,64 @@
+using HockeyTournamentTracker.Domain;
+using HockeyTournamentTracker.Presentation.ViewModels;
+
+namespace HockeyTournamentTracker.Presentation.Views;
+
+public partial class StageDetailsPage : ContentPage, IQueryAttributable
+{
+    private readonly StageDetailsViewModel _viewModel;
+
+    public StageDetailsPage(StageDetailsViewModel viewModel)
+    {
+        _viewModel = viewModel;
+        BindingContext = _viewModel;
+        InitializeComponent();
+    }
+
+    public async void ApplyQueryAttributes(IDictionary<string, object> query)
+    {
+        if (query.TryGetValue("TournamentId", out var tVal) &&
+            query.TryGetValue("StageId", out var sVal) &&
+            tVal is string tStr && sVal is string sStr &&
+            Guid.TryParse(tStr, out var tournamentId) &&
+            Guid.TryParse(sStr, out var stageId))
+        {
+            await _viewModel.LoadAsync(tournamentId, stageId);
+        }
+    }
+
+    private async void OnEditStageClicked(object? sender, EventArgs e)
+    {
+        if (_viewModel.Stage is null)
+            return;
+
+        await Shell.Current.GoToAsync(
+            $"{nameof(StageEditPage)}?TournamentId={_viewModel.Stage.TournamentId}&StageId={_viewModel.Stage.Id}");
+    }
+
+    private async void OnAddMatchClicked(object? sender, EventArgs e)
+    {
+        if (_viewModel.Stage is null)
+            return;
+
+        await Shell.Current.GoToAsync(
+            $"{nameof(MatchEditPage)}?TournamentId={_viewModel.Stage.TournamentId}&StageId={_viewModel.Stage.Id}");
+    }
+
+    private async void OnStartMatchClicked(object? sender, EventArgs e)
+    {
+        if ((sender as BindableObject)?.BindingContext is not MatchRow row)
+            return;
+
+        await _viewModel.SetMatchStatusAsync(row.MatchId, MatchStatus.InProgress);
+    }
+
+    private async void OnFinishMatchClicked(object? sender, EventArgs e)
+    {
+        if ((sender as BindableObject)?.BindingContext is not MatchRow row || _viewModel.Tournament is null)
+            return;
+
+        await Shell.Current.GoToAsync(
+            $"{nameof(MatchEditPage)}?TournamentId={_viewModel.Tournament.Id}&MatchId={row.MatchId}");
+    }
+}
+

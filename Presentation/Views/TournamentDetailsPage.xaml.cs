@@ -11,9 +11,9 @@ public partial class TournamentDetailsPage : ContentPage, IQueryAttributable
 
     public TournamentDetailsPage(TournamentDetailsViewModel viewModel)
     {
-        InitializeComponent();
         _viewModel = viewModel;
         BindingContext = _viewModel;
+        InitializeComponent();
     }
 
     public async void ApplyQueryAttributes(IDictionary<string, object> query)
@@ -68,9 +68,27 @@ public partial class TournamentDetailsPage : ContentPage, IQueryAttributable
         await Shell.Current.GoToAsync($"{nameof(StageEditPage)}?TournamentId={_viewModel.Tournament.Id}");
     }
 
+    private async void OnStageTapped(object? sender, TappedEventArgs e)
+    {
+        if ((sender as BindableObject)?.BindingContext is not Stage stage || _viewModel.Tournament is null)
+            return;
+
+        await Shell.Current.GoToAsync(
+            $"{nameof(StageDetailsPage)}?TournamentId={_viewModel.Tournament.Id}&StageId={stage.Id}");
+    }
+
     private void OnStageSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
         _viewModel.SelectedStage = e.CurrentSelection?.FirstOrDefault() as Stage;
+    }
+
+    private async void OnDeleteStageClicked(object? sender, EventArgs e)
+    {
+        if ((sender as BindableObject)?.BindingContext is not Stage stage || _viewModel.Tournament is null)
+            return;
+        if (!await DisplayAlert(AppResources.Delete, AppResources.DeleteStageConfirm, AppResources.Ok, AppResources.Cancel))
+            return;
+        await _viewModel.DeleteStageAsync(stage.Id);
     }
 
     private async void OnAddMatchInStageClicked(object? sender, EventArgs e)

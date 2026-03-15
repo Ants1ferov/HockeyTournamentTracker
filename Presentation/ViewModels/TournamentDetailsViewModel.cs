@@ -32,11 +32,19 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
             if (SetField(ref _tournament, value))
             {
                 OnPropertyChanged(nameof(StatusIndex));
+                OnPropertyChanged(nameof(PageTitle));
+                OnPropertyChanged(nameof(TournamentDescription));
                 UpdateRulesDisplay();
                 UpdateSortOrderDisplay();
             }
         }
     }
+
+    /// <summary>Заголовок страницы (безопасно при null Tournament).</summary>
+    public string PageTitle => Tournament?.Name ?? string.Empty;
+
+    /// <summary>Описание турнира для привязки (безопасно при null Tournament).</summary>
+    public string TournamentDescription => Tournament?.Description ?? string.Empty;
 
     public string PointsRegWinText { get => _pointsRegWinText; private set => SetField(ref _pointsRegWinText, value); }
     public string PointsOtWinText { get => _pointsOtWinText; private set => SetField(ref _pointsOtWinText, value); }
@@ -65,6 +73,7 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
     public ObservableCollection<MatchRow> UpcomingMatches { get; } = new();
     public ObservableCollection<Stage> Stages { get; } = new();
     public ObservableCollection<MatchRow> StageMatches { get; } = new();
+    public ObservableCollection<StandingGroup> StandingsByGroupForStage { get; } = new();
     public ObservableCollection<Team> ParticipantTeams { get; } = new();
 
     public int SelectedTabIndex
@@ -77,6 +86,9 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
                 OnPropertyChanged(nameof(IsHomeTabSelected));
                 OnPropertyChanged(nameof(IsStagesTabSelected));
                 OnPropertyChanged(nameof(IsParticipantsTabSelected));
+                OnPropertyChanged(nameof(HomeTabIcon));
+                OnPropertyChanged(nameof(StagesTabIcon));
+                OnPropertyChanged(nameof(ParticipantsTabIcon));
             }
         }
     }
@@ -84,6 +96,10 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
     public bool IsHomeTabSelected => SelectedTabIndex == 0;
     public bool IsStagesTabSelected => SelectedTabIndex == 1;
     public bool IsParticipantsTabSelected => SelectedTabIndex == 2;
+
+    public string HomeTabIcon => IsHomeTabSelected ? "tourhomeclicked" : "tourhomenonclicked";
+    public string StagesTabIcon => IsStagesTabSelected ? "tourstageclicked" : "tourstagenonclicked";
+    public string ParticipantsTabIcon => IsParticipantsTabSelected ? "tourplayerclicked" : "tourplayernonclicked";
 
     public Stage? SelectedStage
     {
@@ -110,6 +126,13 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
         _stageRepository = stageRepository;
         _matchRepository = matchRepository;
         _statsService = statsService;
+        // Уведомляем начальное состояние вкладок, чтобы контент отобразился при первом показе страницы
+        OnPropertyChanged(nameof(IsHomeTabSelected));
+        OnPropertyChanged(nameof(IsStagesTabSelected));
+        OnPropertyChanged(nameof(IsParticipantsTabSelected));
+        OnPropertyChanged(nameof(HomeTabIcon));
+        OnPropertyChanged(nameof(StagesTabIcon));
+        OnPropertyChanged(nameof(ParticipantsTabIcon));
     }
 
     public async Task LoadAsync(Guid tournamentId)
@@ -306,6 +329,7 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
         if (Tournament is null || SelectedStage is null)
         {
             StageMatches.Clear();
+            StandingsByGroupForStage.Clear();
             return;
         }
         var stageId = SelectedStage.Id;
@@ -323,12 +347,120 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
             teamById.TryGetValue(m.AwayTeamId, out var awayTeam);
             rows.Add(CreateMatchRow(m, homeTeam?.Name, awayTeam?.Name, m.Status == MatchStatus.InProgress));
         }
+        var stageStandingsGroups = BuildStandingsByGroupFromMatches(Tournament, teams, stageMatches);
         MainThread.BeginInvokeOnMainThread(() =>
         {
             StageMatches.Clear();
             foreach (var r in rows)
                 StageMatches.Add(r);
+            StandingsByGroupForStage.Clear();
+            foreach (var g in stageStandingsGroups)
+                StandingsByGroupForStage.Add(g);
         });
+    }
+
+    private List<StandingGroup> BuildStandingsByGroupFromMatches(Tournament tournament, IReadOnlyList<Team> teams, List<Match> matches)
+    {
+        var result = new List<StandingGroup>();
+        var standings = _statsService.CalculateStandings(tournament, teams, matches);
+        var teamById = teams.ToDictionary(t => t.Id);
+        var finishedMatches = matches
+            .Where(m => m.Status == MatchStatus.Finished && m.OutcomeType.HasValue && m.HomeGoals.HasValue && m.AwayGoals.HasValue)
+            .OrderByDescending(m => m.DateTime ?? DateTime.MinValue)
+            .ToList();
+        var maxPointsPerGame = tournament.Rules != null
+            ? Math.Max(tournament.Rules.PointsForRegulationWin,
+                Math.Max(tournament.Rules.PointsForOvertimeWin, tournament.Rules.PointsForShootoutWin))
+            : 3;
+        var rules = tournament.Rules ?? new TournamentRules();
+        var groups = rules.Groups?.OrderBy(g => g.Order).ThenBy(g => g.Name).ToList() ?? new List<GroupInfo>();
+
+        StandingRow CreateRow(Standing s, Team team, int place, string groupName, IReadOnlyList<int> last5)
+        {
+            return new StandingRow
+            {
+                Place = place,
+                GroupName = groupName,
+                TeamName = string.IsNullOrWhiteSpace(team.Name) ? "—" : team.Name,
+                TeamIconPath = team.IconPath,
+                Games = s.Games,
+                WinsReg = s.WinsRegulation,
+                WinsOt = s.WinsOvertime,
+                WinsSo = s.WinsShootout,
+                LossesReg = s.LossesRegulation,
+                LossesOt = s.LossesOvertime,
+                LossesSo = s.LossesShootout,
+                GoalsFor = s.GoalsFor,
+                GoalsAgainst = s.GoalsAgainst,
+                GoalDiff = s.GoalDifference,
+                Last5Results = last5,
+                PointsPct = FormatPointsPercentage(s.Points, s.Games, maxPointsPerGame),
+                Points = s.Points
+            };
+        }
+
+        if (groups.Count > 0)
+        {
+            foreach (var group in groups)
+            {
+                var teamIdsInGroup = teams.Where(t => t.GroupId == group.Id).Select(t => t.Id).ToHashSet();
+                var inGroup = standings.Where(s => teamIdsInGroup.Contains(s.TeamId)).ToList();
+                var sortedInGroup = StatsService.SortByRules(inGroup, rules);
+                var groupRows = new ObservableCollection<StandingRow>();
+                var place = 1;
+                foreach (var s in sortedInGroup)
+                {
+                    if (!teamById.TryGetValue(s.TeamId, out var team))
+                        continue;
+                    var last5 = GetLast5ResultsForTeam(s.TeamId, finishedMatches);
+                    groupRows.Add(CreateRow(s, team, place++, group.Name, last5));
+                }
+                if (groupRows.Count > 0)
+                {
+                    var g = new StandingGroup { GroupName = group.Name };
+                    foreach (var row in groupRows) g.Add(row);
+                    result.Add(g);
+                }
+            }
+            var noGroupTeamIds = teams.Where(t => !t.GroupId.HasValue).Select(t => t.Id).ToHashSet();
+            var noGroup = standings.Where(s => noGroupTeamIds.Contains(s.TeamId)).ToList();
+            if (noGroup.Count > 0)
+            {
+                var sortedNoGroup = StatsService.SortByRules(noGroup, rules);
+                var noGroupRows = new ObservableCollection<StandingRow>();
+                var place = 1;
+                foreach (var s in sortedNoGroup)
+                {
+                    if (!teamById.TryGetValue(s.TeamId, out var team))
+                        continue;
+                    var last5 = GetLast5ResultsForTeam(s.TeamId, finishedMatches);
+                    noGroupRows.Add(CreateRow(s, team, place++, "—", last5));
+                }
+                var noGr = new StandingGroup { GroupName = "—" };
+                foreach (var row in noGroupRows) noGr.Add(row);
+                result.Add(noGr);
+            }
+        }
+        else
+        {
+            var place = 1;
+            var allRows = new ObservableCollection<StandingRow>();
+            foreach (var s in standings)
+            {
+                if (!teamById.TryGetValue(s.TeamId, out var team))
+                    continue;
+                var last5 = GetLast5ResultsForTeam(s.TeamId, finishedMatches);
+                allRows.Add(CreateRow(s, team, place++, string.Empty, last5));
+            }
+            if (allRows.Count > 0)
+            {
+                var allGr = new StandingGroup { GroupName = string.Empty };
+                foreach (var row in allRows) allGr.Add(row);
+                result.Add(allGr);
+            }
+        }
+
+        return result;
     }
 
     private static MatchRow CreateMatchRow(Match m, string? homeName, string? awayName, bool isLive) =>
@@ -357,6 +489,15 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
     {
         if (Tournament is null) return;
         await _teamRepository.DeleteAsync(teamId);
+        await LoadAsync(Tournament.Id);
+    }
+
+    public async Task DeleteStageAsync(Guid stageId)
+    {
+        if (Tournament is null) return;
+        await _stageRepository.DeleteAsync(stageId);
+        if (SelectedStage?.Id == stageId)
+            SelectedStage = null;
         await LoadAsync(Tournament.Id);
     }
 

@@ -355,4 +355,7 @@
   <data name="StageTypePlayOff" xml:space="preserve">
     <value>Плей-офф</value>
   </data>
+  <data name="DeleteStageConfirm" xml:space="preserve">
+    <value>Удалить стадию?</value>
+  </data>
 </root>
