@@ -31,6 +31,13 @@ public enum PeriodType
     Shootout
 }
 
+/// <summary>Тип стадии турнира (формат проведения).</summary>
+public enum StageType
+{
+    Swiss,
+    PlayOff
+}
+
 /// <summary>
 /// Критерии сортировки турнирной таблицы (порядок распределения мест).
 /// </summary>

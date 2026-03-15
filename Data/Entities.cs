@@ -42,6 +42,22 @@ public class TeamEntity
     public Guid? GroupId { get; set; }
 }
 
+[Table("Stages")]
+public class StageEntity
+{
+    [PrimaryKey]
+    public Guid Id { get; set; }
+
+    [Indexed]
+    public Guid TournamentId { get; set; }
+
+    [NotNull]
+    public string Name { get; set; } = string.Empty;
+
+    public int Order { get; set; }
+    public int StageType { get; set; }
+}
+
 [Table("Matches")]
 public class MatchEntity
 {
@@ -50,6 +66,8 @@ public class MatchEntity
 
     [Indexed]
     public Guid TournamentId { get; set; }
+
+    public Guid? StageId { get; set; }
 
     public DateTime? DateTime { get; set; }
 

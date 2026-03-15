@@ -10,10 +10,13 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
 {
     private readonly ITournamentRepository _tournamentRepository;
     private readonly ITeamRepository _teamRepository;
+    private readonly IStageRepository _stageRepository;
     private readonly IMatchRepository _matchRepository;
     private readonly StatsService _statsService;
 
     private Tournament? _tournament;
+    private int _selectedTabIndex;
+    private Stage? _selectedStage;
     private string _pointsRegWinText = "—";
     private string _pointsOtWinText = "—";
     private string _pointsSoWinText = "—";
@@ -58,6 +61,39 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
     public ObservableCollection<StandingGroup> StandingsByGroup { get; } = new();
     public ObservableCollection<MatchRow> LiveMatches { get; } = new();
     public ObservableCollection<MatchRow> Matches { get; } = new();
+    public ObservableCollection<MatchRow> LastPlayedMatches { get; } = new();
+    public ObservableCollection<MatchRow> UpcomingMatches { get; } = new();
+    public ObservableCollection<Stage> Stages { get; } = new();
+    public ObservableCollection<MatchRow> StageMatches { get; } = new();
+    public ObservableCollection<Team> ParticipantTeams { get; } = new();
+
+    public int SelectedTabIndex
+    {
+        get => _selectedTabIndex;
+        set
+        {
+            if (SetField(ref _selectedTabIndex, value))
+            {
+                OnPropertyChanged(nameof(IsHomeTabSelected));
+                OnPropertyChanged(nameof(IsStagesTabSelected));
+                OnPropertyChanged(nameof(IsParticipantsTabSelected));
+            }
+        }
+    }
+
+    public bool IsHomeTabSelected => SelectedTabIndex == 0;
+    public bool IsStagesTabSelected => SelectedTabIndex == 1;
+    public bool IsParticipantsTabSelected => SelectedTabIndex == 2;
+
+    public Stage? SelectedStage
+    {
+        get => _selectedStage;
+        set
+        {
+            if (SetField(ref _selectedStage, value))
+                RefreshStageMatches();
+        }
+    }
 
     /// <summary>Порядок распределения мест для отображения на экране деталей турнира.</summary>
     public IReadOnlyList<StandingSortCriterion> SortOrderDisplay { get; private set; } = Array.Empty<StandingSortCriterion>();
@@ -65,11 +101,13 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
     public TournamentDetailsViewModel(
         ITournamentRepository tournamentRepository,
         ITeamRepository teamRepository,
+        IStageRepository stageRepository,
         IMatchRepository matchRepository,
         StatsService statsService)
     {
         _tournamentRepository = tournamentRepository;
         _teamRepository = teamRepository;
+        _stageRepository = stageRepository;
         _matchRepository = matchRepository;
         _statsService = statsService;
     }
@@ -226,6 +264,71 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
             teamById.TryGetValue(m.AwayTeamId, out var awayTeam);
             Matches.Add(CreateMatchRow(m, homeTeam?.Name, awayTeam?.Name, isLive: false));
         }
+
+        LastPlayedMatches.Clear();
+        UpcomingMatches.Clear();
+        var lastPlayed = matches
+            .Where(m => m.Status == MatchStatus.Finished)
+            .OrderByDescending(m => m.DateTime ?? DateTime.MinValue)
+            .Take(5)
+            .ToList();
+        foreach (var m in lastPlayed)
+        {
+            teamById.TryGetValue(m.HomeTeamId, out var homeTeam);
+            teamById.TryGetValue(m.AwayTeamId, out var awayTeam);
+            LastPlayedMatches.Add(CreateMatchRow(m, homeTeam?.Name, awayTeam?.Name, isLive: false));
+        }
+        var upcoming = matches
+            .Where(m => m.Status == MatchStatus.Scheduled || m.Status == MatchStatus.InProgress)
+            .OrderBy(m => m.DateTime ?? DateTime.MaxValue)
+            .Take(5)
+            .ToList();
+        foreach (var m in upcoming)
+        {
+            teamById.TryGetValue(m.HomeTeamId, out var homeTeam);
+            teamById.TryGetValue(m.AwayTeamId, out var awayTeam);
+            UpcomingMatches.Add(CreateMatchRow(m, homeTeam?.Name, awayTeam?.Name, m.Status == MatchStatus.InProgress));
+        }
+
+        Stages.Clear();
+        var stages = await _stageRepository.GetByTournamentAsync(tournamentId);
+        foreach (var s in stages)
+            Stages.Add(s);
+        SelectedStage = null;
+
+        ParticipantTeams.Clear();
+        foreach (var t in teams)
+            ParticipantTeams.Add(t);
+    }
+
+    private async void RefreshStageMatches()
+    {
+        if (Tournament is null || SelectedStage is null)
+        {
+            StageMatches.Clear();
+            return;
+        }
+        var stageId = SelectedStage.Id;
+        var matches = await _matchRepository.GetByTournamentAsync(Tournament.Id);
+        var stageMatches = matches
+            .Where(m => m.StageId == stageId)
+            .OrderBy(m => m.DateTime ?? DateTime.MinValue)
+            .ToList();
+        var teams = await _teamRepository.GetByTournamentAsync(Tournament.Id);
+        var teamById = teams.ToDictionary(t => t.Id);
+        var rows = new List<MatchRow>();
+        foreach (var m in stageMatches)
+        {
+            teamById.TryGetValue(m.HomeTeamId, out var homeTeam);
+            teamById.TryGetValue(m.AwayTeamId, out var awayTeam);
+            rows.Add(CreateMatchRow(m, homeTeam?.Name, awayTeam?.Name, m.Status == MatchStatus.InProgress));
+        }
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            StageMatches.Clear();
+            foreach (var r in rows)
+                StageMatches.Add(r);
+        });
     }
 
     private static MatchRow CreateMatchRow(Match m, string? homeName, string? awayName, bool isLive) =>
@@ -247,6 +350,13 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
         if (match is null) return;
         match.Status = status;
         await _matchRepository.SaveAsync(match);
+        await LoadAsync(Tournament.Id);
+    }
+
+    public async Task DeleteParticipantAsync(Guid teamId)
+    {
+        if (Tournament is null) return;
+        await _teamRepository.DeleteAsync(teamId);
         await LoadAsync(Tournament.Id);
     }
 

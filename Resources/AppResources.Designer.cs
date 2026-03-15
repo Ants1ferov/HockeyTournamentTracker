@@ -98,6 +98,14 @@ public static class AppResources
     public static string PointsLossOt => GetString(nameof(PointsLossOt));
     public static string PointsLossSo => GetString(nameof(PointsLossSo));
     public static string EditRules => GetString(nameof(EditRules));
+    public static string TabHome => GetString(nameof(TabHome));
+    public static string TabStages => GetString(nameof(TabStages));
+    public static string TabParticipants => GetString(nameof(TabParticipants));
+    public static string LastPlayedMatches => GetString(nameof(LastPlayedMatches));
+    public static string UpcomingMatches => GetString(nameof(UpcomingMatches));
+    public static string AddStage => GetString(nameof(AddStage));
+    public static string StageTypeSwiss => GetString(nameof(StageTypeSwiss));
+    public static string StageTypePlayOff => GetString(nameof(StageTypePlayOff));
 
     public static string GetString(string key) =>
         ResourceManager.GetString(key) ?? key;

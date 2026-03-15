@@ -35,6 +35,7 @@ public static class MauiProgram
 
 		builder.Services.AddSingleton<ITournamentRepository, TournamentRepository>();
 		builder.Services.AddSingleton<ITeamRepository, TeamRepository>();
+		builder.Services.AddSingleton<IStageRepository, StageRepository>();
 		builder.Services.AddSingleton<IMatchRepository, MatchRepository>();
 
 		builder.Services.AddSingleton<StatsService>();
@@ -62,6 +63,9 @@ public static class MauiProgram
 
 		builder.Services.AddTransient<GroupsListViewModel>();
 		builder.Services.AddTransient<GroupsListPage>();
+
+		builder.Services.AddTransient<StageEditViewModel>();
+		builder.Services.AddTransient<StageEditPage>();
 
 		return builder.Build();
 	}

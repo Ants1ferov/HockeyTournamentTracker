@@ -16,6 +16,8 @@
             <converters:LastResultToColorConverter x:Key="LastResultToColor" />
             <converters:StandingSortCriterionToStringConverter x:Key="StandingSortCriterionToString" />
             <converters:StringToVisibilityConverter x:Key="GroupNameToVisibility" />
+            <converters:StageTypeToStringConverter x:Key="StageTypeToString" />
+            <converters:NotNullToBoolConverter x:Key="NotNullToBool" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

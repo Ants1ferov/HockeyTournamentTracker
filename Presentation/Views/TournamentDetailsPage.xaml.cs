@@ -1,5 +1,7 @@
+using System.Linq;
 using HockeyTournamentTracker.Domain;
 using HockeyTournamentTracker.Presentation.ViewModels;
+using HockeyTournamentTracker.Resources;
 
 namespace HockeyTournamentTracker.Presentation.Views;
 
@@ -54,6 +56,52 @@ public partial class TournamentDetailsPage : ContentPage, IQueryAttributable
         if ((sender as BindableObject)?.BindingContext is not MatchRow row || _viewModel.Tournament is null)
             return;
         await Shell.Current.GoToAsync($"{nameof(MatchEditPage)}?TournamentId={_viewModel.Tournament.Id}&MatchId={row.MatchId}");
+    }
+
+    private void OnTabHomeClicked(object? sender, EventArgs e) => _viewModel.SelectedTabIndex = 0;
+    private void OnTabStagesClicked(object? sender, EventArgs e) => _viewModel.SelectedTabIndex = 1;
+    private void OnTabParticipantsClicked(object? sender, EventArgs e) => _viewModel.SelectedTabIndex = 2;
+
+    private async void OnAddStageClicked(object? sender, EventArgs e)
+    {
+        if (_viewModel.Tournament is null) return;
+        await Shell.Current.GoToAsync($"{nameof(StageEditPage)}?TournamentId={_viewModel.Tournament.Id}");
+    }
+
+    private void OnStageSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        _viewModel.SelectedStage = e.CurrentSelection?.FirstOrDefault() as Stage;
+    }
+
+    private async void OnAddMatchInStageClicked(object? sender, EventArgs e)
+    {
+        if (_viewModel.Tournament is null || _viewModel.SelectedStage is null) return;
+        await Shell.Current.GoToAsync($"{nameof(MatchEditPage)}?TournamentId={_viewModel.Tournament.Id}&StageId={_viewModel.SelectedStage.Id}");
+    }
+
+    private async void OnAddParticipantClicked(object? sender, EventArgs e)
+    {
+        if (_viewModel.Tournament is null) return;
+        await Shell.Current.GoToAsync($"{nameof(TeamEditPage)}?TournamentId={_viewModel.Tournament.Id}");
+    }
+
+    private async void OnParticipantTapped(object? sender, TappedEventArgs e)
+    {
+        if ((sender as BindableObject)?.BindingContext is not Team team || _viewModel.Tournament is null)
+            return;
+        await Shell.Current.GoToAsync($"{nameof(TeamEditPage)}?TournamentId={_viewModel.Tournament.Id}&TeamId={team.Id}");
+    }
+
+    private async void OnDeleteParticipantInvoked(object? sender, EventArgs e)
+    {
+        var team = (sender as SwipeItem)?.Parent?.Parent is BindableObject bo
+            ? bo.BindingContext as Team
+            : null;
+        if (team is null || _viewModel.Tournament is null)
+            return;
+        if (!await DisplayAlert(AppResources.Delete, AppResources.DeleteTeamConfirm, AppResources.Ok, AppResources.Cancel))
+            return;
+        await _viewModel.DeleteParticipantAsync(team.Id);
     }
 
     private async void OnAddMatchClicked(object? sender, EventArgs e)

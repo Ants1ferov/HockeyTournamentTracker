@@ -15,6 +15,7 @@ public sealed class LocalDatabase
     {
         await _connection.CreateTableAsync<TournamentEntity>();
         await _connection.CreateTableAsync<TeamEntity>();
+        await _connection.CreateTableAsync<StageEntity>();
         await _connection.CreateTableAsync<MatchEntity>();
 
         // Миграция: добавить колонку IconPath в Teams, если её ещё нет
@@ -27,6 +28,10 @@ public sealed class LocalDatabase
 
         // Миграция: добавить колонку PeriodScoresJson в Matches
         try { await _connection.ExecuteAsync("ALTER TABLE Matches ADD COLUMN PeriodScoresJson TEXT"); }
+        catch { /* колонка уже есть */ }
+
+        // Миграция: добавить колонку StageId в Matches
+        try { await _connection.ExecuteAsync("ALTER TABLE Matches ADD COLUMN StageId TEXT"); }
         catch { /* колонка уже есть */ }
     }
 

@@ -64,6 +64,7 @@ public sealed class MatchRepository : IMatchRepository
         {
             Id = entity.Id,
             TournamentId = entity.TournamentId,
+            StageId = entity.StageId,
             DateTime = entity.DateTime,
             HomeTeamId = entity.HomeTeamId,
             AwayTeamId = entity.AwayTeamId,
@@ -85,6 +86,7 @@ public sealed class MatchRepository : IMatchRepository
         {
             Id = match.Id == Guid.Empty ? Guid.NewGuid() : match.Id,
             TournamentId = match.TournamentId,
+            StageId = match.StageId,
             DateTime = match.DateTime,
             HomeTeamId = match.HomeTeamId,
             AwayTeamId = match.AwayTeamId,

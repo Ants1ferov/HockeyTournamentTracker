@@ -24,6 +24,11 @@ public partial class MatchEditPage : ContentPage, IQueryAttributable
             await _viewModel.LoadTeamsAsync();
         }
 
+        if (query.TryGetValue("StageId", out var sVal) && sVal is string sStr && Guid.TryParse(sStr, out var stageId))
+            _viewModel.StageId = stageId;
+        else
+            _viewModel.StageId = null;
+
         if (query.TryGetValue("MatchId", out var mVal) && mVal is string mStr && Guid.TryParse(mStr, out var matchId))
         {
             _viewModel.MatchId = matchId;

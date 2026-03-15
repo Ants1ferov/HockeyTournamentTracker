@@ -331,4 +331,28 @@
   <data name="Overtime" xml:space="preserve">
     <value>Овертайм</value>
   </data>
+  <data name="TabHome" xml:space="preserve">
+    <value>Главная</value>
+  </data>
+  <data name="TabStages" xml:space="preserve">
+    <value>Стадии</value>
+  </data>
+  <data name="TabParticipants" xml:space="preserve">
+    <value>Участники</value>
+  </data>
+  <data name="LastPlayedMatches" xml:space="preserve">
+    <value>Последние матчи</value>
+  </data>
+  <data name="UpcomingMatches" xml:space="preserve">
+    <value>Ближайшие матчи</value>
+  </data>
+  <data name="AddStage" xml:space="preserve">
+    <value>Добавить стадию</value>
+  </data>
+  <data name="StageTypeSwiss" xml:space="preserve">
+    <value>Швейцарская система</value>
+  </data>
+  <data name="StageTypePlayOff" xml:space="preserve">
+    <value>Плей-офф</value>
+  </data>
 </root>
