@@ -202,4 +202,55 @@
   <data name="DeleteTeamConfirm" xml:space="preserve">
     <value>Удалить команду?</value>
   </data>
+  <data name="StandingsColPlace" xml:space="preserve">
+    <value>#</value>
+  </data>
+  <data name="StandingsColTeam" xml:space="preserve">
+    <value>Команда</value>
+  </data>
+  <data name="StandingsColGames" xml:space="preserve">
+    <value>И</value>
+  </data>
+  <data name="StandingsColW" xml:space="preserve">
+    <value>В</value>
+  </data>
+  <data name="StandingsColWot" xml:space="preserve">
+    <value>ВО</value>
+  </data>
+  <data name="StandingsColWso" xml:space="preserve">
+    <value>ВБ</value>
+  </data>
+  <data name="StandingsColL" xml:space="preserve">
+    <value>П</value>
+  </data>
+  <data name="StandingsColLot" xml:space="preserve">
+    <value>ПО</value>
+  </data>
+  <data name="StandingsColLso" xml:space="preserve">
+    <value>ПБ</value>
+  </data>
+  <data name="StandingsColPoints" xml:space="preserve">
+    <value>О</value>
+  </data>
+  <data name="RulesScoringTitle" xml:space="preserve">
+    <value>Правила начисления очков</value>
+  </data>
+  <data name="PointsWinReg" xml:space="preserve">
+    <value>Победа в основное время (В)</value>
+  </data>
+  <data name="PointsWinOt" xml:space="preserve">
+    <value>Победа в овертайме (ВО)</value>
+  </data>
+  <data name="PointsWinSo" xml:space="preserve">
+    <value>Победа по буллитам (ВБ)</value>
+  </data>
+  <data name="PointsLossReg" xml:space="preserve">
+    <value>Поражение в основное время (П)</value>
+  </data>
+  <data name="PointsLossOt" xml:space="preserve">
+    <value>Поражение в овертайме (ПО)</value>
+  </data>
+  <data name="PointsLossSo" xml:space="preserve">
+    <value>Поражение по буллитам (ПБ)</value>
+  </data>
 </root>

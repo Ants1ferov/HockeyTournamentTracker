@@ -55,6 +55,23 @@ public static class AppResources
     public static string NewTeam => GetString(nameof(NewTeam));
     public static string EditTeam => GetString(nameof(EditTeam));
     public static string DeleteTeamConfirm => GetString(nameof(DeleteTeamConfirm));
+    public static string StandingsColPlace => GetString(nameof(StandingsColPlace));
+    public static string StandingsColTeam => GetString(nameof(StandingsColTeam));
+    public static string StandingsColGames => GetString(nameof(StandingsColGames));
+    public static string StandingsColW => GetString(nameof(StandingsColW));
+    public static string StandingsColWot => GetString(nameof(StandingsColWot));
+    public static string StandingsColWso => GetString(nameof(StandingsColWso));
+    public static string StandingsColL => GetString(nameof(StandingsColL));
+    public static string StandingsColLot => GetString(nameof(StandingsColLot));
+    public static string StandingsColLso => GetString(nameof(StandingsColLso));
+    public static string StandingsColPoints => GetString(nameof(StandingsColPoints));
+    public static string RulesScoringTitle => GetString(nameof(RulesScoringTitle));
+    public static string PointsWinReg => GetString(nameof(PointsWinReg));
+    public static string PointsWinOt => GetString(nameof(PointsWinOt));
+    public static string PointsWinSo => GetString(nameof(PointsWinSo));
+    public static string PointsLossReg => GetString(nameof(PointsLossReg));
+    public static string PointsLossOt => GetString(nameof(PointsLossOt));
+    public static string PointsLossSo => GetString(nameof(PointsLossSo));
 
     public static string GetString(string key) =>
         ResourceManager.GetString(key) ?? key;

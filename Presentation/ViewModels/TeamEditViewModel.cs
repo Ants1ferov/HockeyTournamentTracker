@@ -12,6 +12,7 @@ public sealed class TeamEditViewModel : INotifyPropertyChanged
     private Guid _tournamentId;
     private Guid _teamId;
     private Guid _pendingTeamId; // для новой команды: Id под иконку
+    private bool _isSaving;
     private string _name = string.Empty;
     private string? _shortName;
     private string? _iconPath;
@@ -48,6 +49,10 @@ public sealed class TeamEditViewModel : INotifyPropertyChanged
 
     public bool IsEditing => TeamId != Guid.Empty;
 
+    public bool IsSaving => _isSaving;
+
+    public bool CanSave => !_isSaving;
+
     public TeamEditViewModel(ITeamRepository teamRepository)
     {
         _teamRepository = teamRepository;
@@ -67,22 +72,33 @@ public sealed class TeamEditViewModel : INotifyPropertyChanged
 
     public async Task<bool> SaveAsync()
     {
-        if (string.IsNullOrWhiteSpace(Name) || TournamentId == Guid.Empty)
+        if (_isSaving || string.IsNullOrWhiteSpace(Name) || TournamentId == Guid.Empty)
             return false;
-
-        var id = TeamId != Guid.Empty ? TeamId : (_pendingTeamId != Guid.Empty ? _pendingTeamId : Guid.NewGuid());
-        var team = new Team
+        _isSaving = true;
+        OnPropertyChanged(nameof(IsSaving));
+        OnPropertyChanged(nameof(CanSave));
+        try
         {
-            Id = id,
-            TournamentId = TournamentId,
-            Name = Name.Trim(),
-            ShortName = string.IsNullOrWhiteSpace(ShortName) ? null : ShortName.Trim(),
-            IconPath = IconPath
-        };
+            var id = TeamId != Guid.Empty ? TeamId : (_pendingTeamId != Guid.Empty ? _pendingTeamId : Guid.NewGuid());
+            var team = new Team
+            {
+                Id = id,
+                TournamentId = TournamentId,
+                Name = Name.Trim(),
+                ShortName = string.IsNullOrWhiteSpace(ShortName) ? null : ShortName.Trim(),
+                IconPath = IconPath
+            };
 
-        await _teamRepository.SaveAsync(team);
-        TeamId = id;
-        return true;
+            await _teamRepository.SaveAsync(team);
+            TeamId = id;
+            return true;
+        }
+        finally
+        {
+            _isSaving = false;
+            OnPropertyChanged(nameof(IsSaving));
+            OnPropertyChanged(nameof(CanSave));
+        }
     }
 
     public async Task PickIconAsync()

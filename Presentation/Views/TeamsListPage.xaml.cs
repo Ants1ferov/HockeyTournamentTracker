@@ -15,13 +15,12 @@ public partial class TeamsListPage : ContentPage, IQueryAttributable
         BindingContext = _viewModel;
     }
 
-    public async void ApplyQueryAttributes(IDictionary<string, object> query)
+    public void ApplyQueryAttributes(IDictionary<string, object> query)
     {
         if (query.TryGetValue("TournamentId", out var value) && value is string idString &&
             Guid.TryParse(idString, out var id))
         {
             _viewModel.TournamentId = id;
-            await _viewModel.LoadAsync();
         }
     }
 

@@ -19,6 +19,23 @@
             <Label Text="{x:Static res:AppResources.EndDate}" />
             <DatePicker Date="{Binding EndDate}" />
 
+            <Label Text="{x:Static res:AppResources.RulesScoringTitle}"
+                   FontAttributes="Bold"
+                   FontSize="16"
+                   Margin="0,16,0,0" />
+            <Label Text="{x:Static res:AppResources.PointsWinReg}" />
+            <Entry Text="{Binding PointsRegWin}" Keyboard="Numeric" />
+            <Label Text="{x:Static res:AppResources.PointsWinOt}" />
+            <Entry Text="{Binding PointsOtWin}" Keyboard="Numeric" />
+            <Label Text="{x:Static res:AppResources.PointsWinSo}" />
+            <Entry Text="{Binding PointsSoWin}" Keyboard="Numeric" />
+            <Label Text="{x:Static res:AppResources.PointsLossReg}" />
+            <Entry Text="{Binding PointsRegLoss}" Keyboard="Numeric" />
+            <Label Text="{x:Static res:AppResources.PointsLossOt}" />
+            <Entry Text="{Binding PointsOtLoss}" Keyboard="Numeric" />
+            <Label Text="{x:Static res:AppResources.PointsLossSo}" />
+            <Entry Text="{Binding PointsSoLoss}" Keyboard="Numeric" />
+
             <Button Text="{x:Static res:AppResources.Save}"
                     Margin="0,16,0,0"
                     Clicked="OnSaveClicked" />

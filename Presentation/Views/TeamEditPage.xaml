@@ -27,6 +27,7 @@
 
             <Button Text="{x:Static res:AppResources.Save}"
                     Margin="0,16,0,0"
+                    IsEnabled="{Binding CanSave}"
                     Clicked="OnSaveClicked" />
         </VerticalStackLayout>
     </ScrollView>

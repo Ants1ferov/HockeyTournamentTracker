@@ -75,7 +75,7 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
             Standings.Add(new StandingRow
             {
                 Place = place++,
-                TeamName = team.Name,
+                TeamName = string.IsNullOrWhiteSpace(team.Name) ? "—" : team.Name,
                 Games = s.Games,
                 WinsReg = s.WinsRegulation,
                 WinsOt = s.WinsOvertime,

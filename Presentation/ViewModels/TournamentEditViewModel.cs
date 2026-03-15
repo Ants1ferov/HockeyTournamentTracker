@@ -13,6 +13,12 @@ public sealed class TournamentEditViewModel : INotifyPropertyChanged
     private string? _description;
     private DateTime? _startDate = DateTime.Today;
     private DateTime? _endDate;
+    private string _pointsRegWin = "3";
+    private string _pointsOtWin = "2";
+    private string _pointsSoWin = "2";
+    private string _pointsRegLoss = "0";
+    private string _pointsOtLoss = "1";
+    private string _pointsSoLoss = "1";
 
     public string Name
     {
@@ -38,6 +44,13 @@ public sealed class TournamentEditViewModel : INotifyPropertyChanged
         set => SetField(ref _endDate, value);
     }
 
+    public string PointsRegWin { get => _pointsRegWin; set => SetField(ref _pointsRegWin, value); }
+    public string PointsOtWin { get => _pointsOtWin; set => SetField(ref _pointsOtWin, value); }
+    public string PointsSoWin { get => _pointsSoWin; set => SetField(ref _pointsSoWin, value); }
+    public string PointsRegLoss { get => _pointsRegLoss; set => SetField(ref _pointsRegLoss, value); }
+    public string PointsOtLoss { get => _pointsOtLoss; set => SetField(ref _pointsOtLoss, value); }
+    public string PointsSoLoss { get => _pointsSoLoss; set => SetField(ref _pointsSoLoss, value); }
+
     public TournamentEditViewModel(ITournamentRepository tournamentRepository)
     {
         _tournamentRepository = tournamentRepository;
@@ -50,6 +63,16 @@ public sealed class TournamentEditViewModel : INotifyPropertyChanged
             return false;
         }
 
+        var rules = new TournamentRules
+        {
+            PointsForRegulationWin = ParsePoints(PointsRegWin, 3),
+            PointsForOvertimeWin = ParsePoints(PointsOtWin, 2),
+            PointsForShootoutWin = ParsePoints(PointsSoWin, 2),
+            PointsForRegulationLoss = ParsePoints(PointsRegLoss, 0),
+            PointsForOvertimeLoss = ParsePoints(PointsOtLoss, 1),
+            PointsForShootoutLoss = ParsePoints(PointsSoLoss, 1)
+        };
+
         var tournament = new Tournament
         {
             Name = Name.Trim(),
@@ -57,7 +80,7 @@ public sealed class TournamentEditViewModel : INotifyPropertyChanged
             StartDate = StartDate,
             EndDate = EndDate,
             Status = TournamentStatus.Planned,
-            Rules = new TournamentRules()
+            Rules = rules
         };
 
         await _tournamentRepository.SaveAsync(tournament);
@@ -75,6 +98,12 @@ public sealed class TournamentEditViewModel : INotifyPropertyChanged
         field = value;
         OnPropertyChanged(propertyName);
         return true;
+    }
+
+    private static int ParsePoints(string? value, int defaultValue)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return defaultValue;
+        return int.TryParse(value.Trim(), out var n) && n >= 0 ? n : defaultValue;
     }
 }
 
