@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:res="clr-namespace:HockeyTournamentTracker.Resources"
              x:Class="HockeyTournamentTracker.Presentation.Views.TournamentDetailsPage"
              Title="{Binding Tournament.Name}">
 
@@ -10,11 +11,25 @@
                    FontAttributes="Bold"
                    FontSize="22" />
 
+            <Button Text="{x:Static res:AppResources.Teams}"
+                    Clicked="OnTeamsClicked" />
+
+            <Label Text="{x:Static res:AppResources.Status}" FontAttributes="Bold" FontSize="14" />
+            <Picker Title="{x:Static res:AppResources.Status}"
+                    SelectedIndex="{Binding StatusIndex}">
+                <Picker.Items>
+                    <x:String>Запланирован</x:String>
+                    <x:String>В процессе</x:String>
+                    <x:String>Завершён</x:String>
+                    <x:String>В архиве</x:String>
+                </Picker.Items>
+            </Picker>
+
             <Label Text="{Binding Tournament.Description}"
                    FontSize="14"
                    TextColor="Gray" />
 
-            <Label Text="Турнирная таблица"
+            <Label Text="{x:Static res:AppResources.StandingsTable}"
                    FontAttributes="Bold"
                    FontSize="18" />
 
@@ -38,23 +53,24 @@
                 </CollectionView.ItemTemplate>
             </CollectionView>
 
-            <Label Text="Матчи"
+            <Label Text="{x:Static res:AppResources.LiveMatches}"
                    FontAttributes="Bold"
                    FontSize="18"
                    Margin="0,16,0,0" />
 
-            <Button Text="Добавить матч"
-                    Clicked="OnAddMatchClicked" />
-
-            <CollectionView ItemsSource="{Binding Matches}">
+            <CollectionView ItemsSource="{Binding LiveMatches}">
                 <CollectionView.ItemTemplate>
                     <DataTemplate>
-                        <Grid RowDefinitions="Auto,Auto">
-                            <Label Grid.Row="0"
-                                   FontSize="12"
-                                   Text="{Binding DateTime, StringFormat='{}{0:dd.MM HH:mm}'}" />
-                            <Label Grid.Row="1"
-                                   FontSize="14">
+                        <Grid RowDefinitions="Auto,Auto,Auto" Padding="0,6">
+                            <HorizontalStackLayout Grid.Row="0" Spacing="8">
+                                <Label Text="{x:Static res:AppResources.Live}"
+                                       TextColor="Red"
+                                       FontAttributes="Bold"
+                                       FontSize="12" />
+                                <Label FontSize="12"
+                                       Text="{Binding DateTime, StringFormat='{}{0:dd.MM HH:mm}'}" />
+                            </HorizontalStackLayout>
+                            <Label Grid.Row="1" FontSize="14">
                                 <Label.Text>
                                     <MultiBinding StringFormat="{}{0} – {1}  {2}">
                                         <Binding Path="HomeTeamName" />
@@ -63,6 +79,43 @@
                                     </MultiBinding>
                                 </Label.Text>
                             </Label>
+                            <Button Grid.Row="2"
+                                    Text="{x:Static res:AppResources.FinishMatch}"
+                                    Clicked="OnFinishMatchClicked" />
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <Label Text="{x:Static res:AppResources.Matches}"
+                   FontAttributes="Bold"
+                   FontSize="18"
+                   Margin="0,16,0,0" />
+
+            <Button Text="{x:Static res:AppResources.AddMatch}"
+                    Clicked="OnAddMatchClicked" />
+
+            <CollectionView ItemsSource="{Binding Matches}">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Grid RowDefinitions="Auto,Auto,Auto" Padding="0,6">
+                            <HorizontalStackLayout Grid.Row="0" Spacing="8">
+                                <Label FontSize="12"
+                                       Text="{Binding DateTime, StringFormat='{}{0:dd.MM HH:mm}'}" />
+                            </HorizontalStackLayout>
+                            <Label Grid.Row="1" FontSize="14">
+                                <Label.Text>
+                                    <MultiBinding StringFormat="{}{0} – {1}  {2}">
+                                        <Binding Path="HomeTeamName" />
+                                        <Binding Path="AwayTeamName" />
+                                        <Binding Path="DisplayScore" />
+                                    </MultiBinding>
+                                </Label.Text>
+                            </Label>
+                            <Button Grid.Row="2"
+                                    Text="{x:Static res:AppResources.StartMatch}"
+                                    IsVisible="{Binding Status, Converter={StaticResource MatchStatusToStartVisible}}"
+                                    Clicked="OnStartMatchClicked" />
                         </Grid>
                     </DataTemplate>
                 </CollectionView.ItemTemplate>

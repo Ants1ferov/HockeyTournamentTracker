@@ -18,10 +18,27 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
     public Tournament? Tournament
     {
         get => _tournament;
-        private set => SetField(ref _tournament, value);
+        private set
+        {
+            if (SetField(ref _tournament, value))
+                OnPropertyChanged(nameof(StatusIndex));
+        }
+    }
+
+    public int StatusIndex
+    {
+        get => (int)(Tournament?.Status ?? TournamentStatus.Planned);
+        set
+        {
+            if (Tournament is null || value < 0 || value > 3) return;
+            Tournament.Status = (TournamentStatus)value;
+            OnPropertyChanged(nameof(StatusIndex));
+            _ = _tournamentRepository.SaveAsync(Tournament);
+        }
     }
 
     public ObservableCollection<StandingRow> Standings { get; } = new();
+    public ObservableCollection<MatchRow> LiveMatches { get; } = new();
     public ObservableCollection<MatchRow> Matches { get; } = new();
 
     public TournamentDetailsViewModel(
@@ -73,20 +90,45 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
             });
         }
 
+        LiveMatches.Clear();
         Matches.Clear();
-        foreach (var m in matches.OrderBy(m => m.DateTime ?? DateTime.MinValue))
+
+        var ordered = matches.OrderBy(m => m.DateTime ?? DateTime.MinValue).ToList();
+        foreach (var m in ordered.Where(m => m.Status == MatchStatus.InProgress))
         {
             teamById.TryGetValue(m.HomeTeamId, out var homeTeam);
             teamById.TryGetValue(m.AwayTeamId, out var awayTeam);
-
-            Matches.Add(new MatchRow
-            {
-                DateTime = m.DateTime,
-                HomeTeamName = homeTeam?.Name ?? string.Empty,
-                AwayTeamName = awayTeam?.Name ?? string.Empty,
-                DisplayScore = BuildScoreText(m)
-            });
+            LiveMatches.Add(CreateMatchRow(m, homeTeam?.Name, awayTeam?.Name, isLive: true));
         }
+
+        foreach (var m in ordered.Where(m => m.Status != MatchStatus.InProgress))
+        {
+            teamById.TryGetValue(m.HomeTeamId, out var homeTeam);
+            teamById.TryGetValue(m.AwayTeamId, out var awayTeam);
+            Matches.Add(CreateMatchRow(m, homeTeam?.Name, awayTeam?.Name, isLive: false));
+        }
+    }
+
+    private static MatchRow CreateMatchRow(Match m, string? homeName, string? awayName, bool isLive) =>
+        new()
+        {
+            MatchId = m.Id,
+            DateTime = m.DateTime,
+            HomeTeamName = homeName ?? string.Empty,
+            AwayTeamName = awayName ?? string.Empty,
+            DisplayScore = BuildScoreText(m),
+            IsLive = isLive,
+            Status = m.Status
+        };
+
+    public async Task SetMatchStatusAsync(Guid matchId, MatchStatus status)
+    {
+        var matches = await _matchRepository.GetByTournamentAsync(Tournament!.Id);
+        var match = matches.FirstOrDefault(m => m.Id == matchId);
+        if (match is null) return;
+        match.Status = status;
+        await _matchRepository.SaveAsync(match);
+        await LoadAsync(Tournament.Id);
     }
 
     private static string BuildScoreText(Match match)
@@ -140,9 +182,12 @@ public sealed class StandingRow
 
 public sealed class MatchRow
 {
+    public Guid MatchId { get; set; }
     public DateTime? DateTime { get; set; }
     public string HomeTeamName { get; set; } = string.Empty;
     public string AwayTeamName { get; set; } = string.Empty;
     public string DisplayScore { get; set; } = string.Empty;
+    public bool IsLive { get; set; }
+    public MatchStatus Status { get; set; }
 }
 

@@ -10,9 +10,10 @@ public enum TournamentStatus
 
 public enum MatchStatus
 {
-    Scheduled,
-    Finished,
-    Cancelled
+    Scheduled = 0,
+    Finished = 1,
+    Cancelled = 2,
+    InProgress = 3
 }
 
 public enum OutcomeType

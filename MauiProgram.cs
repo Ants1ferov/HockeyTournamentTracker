@@ -50,7 +50,13 @@ public static class MauiProgram
 
 		builder.Services.AddTransient<MatchEditViewModel>();
 		builder.Services.AddTransient<MatchEditPage>();
-		
+
+		builder.Services.AddTransient<TeamsListViewModel>();
+		builder.Services.AddTransient<TeamsListPage>();
+
+		builder.Services.AddTransient<TeamEditViewModel>();
+		builder.Services.AddTransient<TeamEditPage>();
+
 		return builder.Build();
 	}
 }

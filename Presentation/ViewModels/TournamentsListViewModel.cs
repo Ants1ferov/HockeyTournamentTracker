@@ -48,6 +48,12 @@ public sealed class TournamentsListViewModel : INotifyPropertyChanged
         }
     }
 
+    public async Task DeleteTournamentAsync(Tournament tournament)
+    {
+        await _tournamentRepository.DeleteAsync(tournament.Id);
+        Tournaments.Remove(tournament);
+    }
+
     public event PropertyChangedEventHandler? PropertyChanged;
 
     private void OnPropertyChanged(string propertyName) =>

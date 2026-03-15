@@ -1,3 +1,4 @@
+using HockeyTournamentTracker.Domain;
 using HockeyTournamentTracker.Presentation.ViewModels;
 
 namespace HockeyTournamentTracker.Presentation.Views;
@@ -20,6 +21,26 @@ public partial class TournamentDetailsPage : ContentPage, IQueryAttributable
         {
             await _viewModel.LoadAsync(id);
         }
+    }
+
+    private async void OnTeamsClicked(object? sender, EventArgs e)
+    {
+        if (_viewModel.Tournament is null) return;
+        await Shell.Current.GoToAsync($"{nameof(TeamsListPage)}?TournamentId={_viewModel.Tournament.Id}");
+    }
+
+    private async void OnStartMatchClicked(object? sender, EventArgs e)
+    {
+        if ((sender as BindableObject)?.BindingContext is not MatchRow row || _viewModel.Tournament is null)
+            return;
+        await _viewModel.SetMatchStatusAsync(row.MatchId, MatchStatus.InProgress);
+    }
+
+    private async void OnFinishMatchClicked(object? sender, EventArgs e)
+    {
+        if ((sender as BindableObject)?.BindingContext is not MatchRow row || _viewModel.Tournament is null)
+            return;
+        await Shell.Current.GoToAsync($"{nameof(MatchEditPage)}?TournamentId={_viewModel.Tournament.Id}&MatchId={row.MatchId}");
     }
 
     private async void OnAddMatchClicked(object? sender, EventArgs e)

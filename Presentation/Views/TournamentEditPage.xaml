@@ -1,24 +1,25 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:res="clr-namespace:HockeyTournamentTracker.Resources"
              x:Class="HockeyTournamentTracker.Presentation.Views.TournamentEditPage"
-             Title="Новый турнир">
+             Title="{x:Static res:AppResources.NewTournament}">
 
     <ScrollView>
         <VerticalStackLayout Padding="16" Spacing="12">
-            <Label Text="Название турнира" />
-            <Entry Text="{Binding Name}" Placeholder="Например, КХЛ 2024/25" />
+            <Label Text="{x:Static res:AppResources.TournamentName}" />
+            <Entry Text="{Binding Name}" Placeholder="{x:Static res:AppResources.TournamentNamePlaceholder}" />
 
-            <Label Text="Описание" />
+            <Label Text="{x:Static res:AppResources.Description}" />
             <Editor Text="{Binding Description}" AutoSize="TextChanges" />
 
-            <Label Text="Дата начала" />
+            <Label Text="{x:Static res:AppResources.StartDate}" />
             <DatePicker Date="{Binding StartDate}" />
 
-            <Label Text="Дата окончания" />
+            <Label Text="{x:Static res:AppResources.EndDate}" />
             <DatePicker Date="{Binding EndDate}" />
 
-            <Button Text="Сохранить"
+            <Button Text="{x:Static res:AppResources.Save}"
                     Margin="0,16,0,0"
                     Clicked="OnSaveClicked" />
         </VerticalStackLayout>

@@ -1,5 +1,6 @@
 using HockeyTournamentTracker.Presentation.ViewModels;
 using HockeyTournamentTracker.Presentation.Views;
+using HockeyTournamentTracker.Resources;
 
 namespace HockeyTournamentTracker;
 
@@ -25,13 +26,20 @@ public partial class MainPage : ContentPage
         await Shell.Current.GoToAsync(nameof(TournamentEditPage));
     }
 
-    private async void OnTournamentSelected(object? sender, SelectionChangedEventArgs e)
+    private async void OnTournamentTapped(object? sender, TappedEventArgs e)
     {
-        if (e.CurrentSelection.FirstOrDefault() is not Domain.Tournament tournament)
-            return;
-
-        ((CollectionView)sender!).SelectedItem = null;
-
+        var tournament = (sender as BindableObject)?.BindingContext as Domain.Tournament
+            ?? (sender as TapGestureRecognizer)?.Parent?.BindingContext as Domain.Tournament;
+        if (tournament is null) return;
         await Shell.Current.GoToAsync($"{nameof(TournamentDetailsPage)}?TournamentId={tournament.Id}");
+    }
+
+    private async void OnDeleteTournamentClicked(object? sender, EventArgs e)
+    {
+        var tournament = (sender as BindableObject)?.BindingContext as Domain.Tournament;
+        if (tournament is null) return;
+        var confirm = await DisplayAlert(AppResources.Delete, AppResources.DeleteTournamentConfirm, AppResources.Delete, AppResources.Cancel);
+        if (!confirm) return;
+        await _viewModel.DeleteTournamentAsync(tournament);
     }
 }

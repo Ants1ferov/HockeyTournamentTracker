@@ -15,10 +15,14 @@ public interface ITournamentRepository
 public sealed class TournamentRepository : ITournamentRepository
 {
     private readonly SQLiteAsyncConnection _connection;
+    private readonly ITeamRepository _teamRepository;
+    private readonly IMatchRepository _matchRepository;
 
-    public TournamentRepository(LocalDatabase database)
+    public TournamentRepository(LocalDatabase database, ITeamRepository teamRepository, IMatchRepository matchRepository)
     {
         _connection = database.Connection;
+        _teamRepository = teamRepository;
+        _matchRepository = matchRepository;
     }
 
     public async Task<IReadOnlyList<Tournament>> GetAllAsync()
@@ -46,9 +50,17 @@ public sealed class TournamentRepository : ITournamentRepository
         }
     }
 
-    public Task DeleteAsync(Guid id)
+    public async Task DeleteAsync(Guid id)
     {
-        return _connection.DeleteAsync<TournamentEntity>(id);
+        var matches = await _matchRepository.GetByTournamentAsync(id);
+        foreach (var m in matches)
+            await _matchRepository.DeleteAsync(m.Id);
+
+        var teams = await _teamRepository.GetByTournamentAsync(id);
+        foreach (var t in teams)
+            await _teamRepository.DeleteAsync(t.Id);
+
+        await _connection.DeleteAsync<TournamentEntity>(id);
     }
 
     private static Tournament MapToDomain(TournamentEntity entity)

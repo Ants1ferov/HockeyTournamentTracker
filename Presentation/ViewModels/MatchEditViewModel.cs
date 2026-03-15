@@ -12,6 +12,7 @@ public sealed class MatchEditViewModel : INotifyPropertyChanged
     private readonly IMatchRepository _matchRepository;
 
     private Guid _tournamentId;
+    private Guid _matchId;
     private Team? _homeTeam;
     private Team? _awayTeam;
     private DateTime _date = DateTime.Today;
@@ -28,6 +29,12 @@ public sealed class MatchEditViewModel : INotifyPropertyChanged
     {
         get => _tournamentId;
         set => SetField(ref _tournamentId, value);
+    }
+
+    public Guid MatchId
+    {
+        get => _matchId;
+        set => SetField(ref _matchId, value);
     }
 
     public Team? HomeTeam
@@ -69,7 +76,14 @@ public sealed class MatchEditViewModel : INotifyPropertyChanged
     public OutcomeType OutcomeType
     {
         get => _outcomeType;
-        set => SetField(ref _outcomeType, value);
+        set
+        {
+            if (SetField(ref _outcomeType, value))
+            {
+                OnPropertyChanged(nameof(OutcomeIndex));
+                OnPropertyChanged(nameof(IsShootoutVisible));
+            }
+        }
     }
 
     public int ShootoutHome
@@ -83,6 +97,19 @@ public sealed class MatchEditViewModel : INotifyPropertyChanged
         get => _shootoutAway;
         set => SetField(ref _shootoutAway, value);
     }
+
+    public int OutcomeIndex
+    {
+        get => (int)OutcomeType;
+        set
+        {
+            var newVal = (OutcomeType)Math.Clamp(value, 0, 2);
+            if (SetField(ref _outcomeType, newVal))
+                OnPropertyChanged(nameof(IsShootoutVisible));
+        }
+    }
+
+    public bool IsShootoutVisible => OutcomeType == OutcomeType.Shootout;
 
     public MatchEditViewModel(ITeamRepository teamRepository, IMatchRepository matchRepository)
     {
@@ -102,15 +129,38 @@ public sealed class MatchEditViewModel : INotifyPropertyChanged
         }
     }
 
+    public async Task LoadMatchAsync()
+    {
+        if (MatchId == Guid.Empty) return;
+        var match = await _matchRepository.GetByIdAsync(MatchId);
+        if (match is null) return;
+
+        await LoadTeamsAsync();
+        HomeTeam = Teams.FirstOrDefault(t => t.Id == match.HomeTeamId);
+        AwayTeam = Teams.FirstOrDefault(t => t.Id == match.AwayTeamId);
+        if (match.DateTime.HasValue)
+        {
+            Date = match.DateTime.Value.Date;
+            Time = match.DateTime.Value.TimeOfDay;
+        }
+        HomeGoals = match.HomeGoals ?? 0;
+        AwayGoals = match.AwayGoals ?? 0;
+        OutcomeType = match.OutcomeType ?? OutcomeType.Regulation;
+        ShootoutHome = match.ShootoutScoreHome ?? 0;
+        ShootoutAway = match.ShootoutScoreAway ?? 0;
+    }
+
     public async Task<bool> SaveAsync()
     {
         if (TournamentId == Guid.Empty || HomeTeam is null || AwayTeam is null || HomeTeam.Id == AwayTeam.Id)
             return false;
 
         var dateTime = Date.Date + Time;
+        var id = MatchId != Guid.Empty ? MatchId : Guid.NewGuid();
 
         var match = new Match
         {
+            Id = id,
             TournamentId = TournamentId,
             DateTime = dateTime,
             HomeTeamId = HomeTeam.Id,
@@ -120,7 +170,7 @@ public sealed class MatchEditViewModel : INotifyPropertyChanged
             OutcomeType = OutcomeType,
             ShootoutScoreHome = OutcomeType == OutcomeType.Shootout ? ShootoutHome : null,
             ShootoutScoreAway = OutcomeType == OutcomeType.Shootout ? ShootoutAway : null,
-            Status = MatchStatus.Finished
+            Status = MatchId != Guid.Empty ? MatchStatus.Finished : MatchStatus.Scheduled
         };
 
         await _matchRepository.SaveAsync(match);

@@ -1,36 +1,38 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:res="clr-namespace:HockeyTournamentTracker.Resources"
              x:Class="HockeyTournamentTracker.Presentation.Views.MatchEditPage"
-             Title="Новый матч">
+             Title="{x:Static res:AppResources.NewMatch}">
 
     <ScrollView>
         <VerticalStackLayout Padding="16" Spacing="12">
-            <Label Text="Домашняя команда" />
+            <Label Text="{x:Static res:AppResources.HomeTeam}" />
             <Picker ItemsSource="{Binding Teams}"
                     ItemDisplayBinding="{Binding Name}"
                     SelectedItem="{Binding HomeTeam}" />
 
-            <Label Text="Гостевая команда" />
+            <Label Text="{x:Static res:AppResources.AwayTeam}" />
             <Picker ItemsSource="{Binding Teams}"
                     ItemDisplayBinding="{Binding Name}"
                     SelectedItem="{Binding AwayTeam}" />
 
-            <Label Text="Дата" />
+            <Label Text="{x:Static res:AppResources.Date}" />
             <DatePicker Date="{Binding Date}" />
 
-            <Label Text="Время" />
+            <Label Text="{x:Static res:AppResources.Time}" />
             <TimePicker Time="{Binding Time}" />
 
-            <Label Text="Счёт" />
+            <Label Text="{x:Static res:AppResources.Score}" />
             <HorizontalStackLayout>
                 <Entry WidthRequest="60" Keyboard="Numeric" Text="{Binding HomeGoals}" />
                 <Label Text=":" VerticalOptions="Center" />
                 <Entry WidthRequest="60" Keyboard="Numeric" Text="{Binding AwayGoals}" />
             </HorizontalStackLayout>
 
-            <Label Text="Как завершился матч" />
-            <Picker SelectedIndexChanged="OnOutcomeChanged">
+            <Label Text="{x:Static res:AppResources.HowMatchEnded}" />
+            <Picker SelectedIndex="{Binding OutcomeIndex}"
+                    SelectedIndexChanged="OnOutcomeChanged">
                 <Picker.Items>
                     <x:String>В основное время</x:String>
                     <x:String>В овертайме</x:String>
@@ -38,8 +40,8 @@
                 </Picker.Items>
             </Picker>
 
-            <StackLayout x:Name="ShootoutPanel" IsVisible="False">
-                <Label Text="Буллиты (реализованные)" />
+            <StackLayout x:Name="ShootoutPanel" IsVisible="{Binding IsShootoutVisible}">
+                <Label Text="{x:Static res:AppResources.ShootoutScore}" />
                 <HorizontalStackLayout>
                     <Entry WidthRequest="60" Keyboard="Numeric" Text="{Binding ShootoutHome}" />
                     <Label Text=":" VerticalOptions="Center" />
@@ -47,7 +49,7 @@
                 </HorizontalStackLayout>
             </StackLayout>
 
-            <Button Text="Сохранить"
+            <Button Text="{x:Static res:AppResources.Save}"
                     Margin="0,16,0,0"
                     Clicked="OnSaveClicked" />
         </VerticalStackLayout>

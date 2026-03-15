@@ -1,5 +1,6 @@
 using HockeyTournamentTracker.Domain;
 using HockeyTournamentTracker.Presentation.ViewModels;
+using HockeyTournamentTracker.Resources;
 
 namespace HockeyTournamentTracker.Presentation.Views;
 
@@ -22,6 +23,13 @@ public partial class MatchEditPage : ContentPage, IQueryAttributable
             _viewModel.TournamentId = id;
             await _viewModel.LoadTeamsAsync();
         }
+
+        if (query.TryGetValue("MatchId", out var mVal) && mVal is string mStr && Guid.TryParse(mStr, out var matchId))
+        {
+            _viewModel.MatchId = matchId;
+            Title = AppResources.FinishMatch;
+            await _viewModel.LoadMatchAsync();
+        }
     }
 
     private void OnOutcomeChanged(object? sender, EventArgs e)
@@ -43,7 +51,7 @@ public partial class MatchEditPage : ContentPage, IQueryAttributable
         var success = await _viewModel.SaveAsync();
         if (!success)
         {
-            await DisplayAlert("Ошибка", "Проверьте команды и счёт.", "OK");
+            await DisplayAlert(AppResources.Error, AppResources.ErrorCheckTeamsAndScore, AppResources.Ok);
             return;
         }
 

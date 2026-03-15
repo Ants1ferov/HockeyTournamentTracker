@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:res="clr-namespace:HockeyTournamentTracker.Resources"
+             xmlns:converters="clr-namespace:HockeyTournamentTracker.Presentation.Converters"
+             x:Class="HockeyTournamentTracker.Presentation.Views.TeamEditPage"
+             Title="{x:Static res:AppResources.NewTeam}">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="12">
+            <Label Text="{x:Static res:AppResources.TeamName}" />
+            <Entry Text="{Binding Name}" />
+
+            <Label Text="{x:Static res:AppResources.ShortName}" />
+            <Entry Text="{Binding ShortName}" />
+
+            <Label Text="{x:Static res:AppResources.SelectIcon}" />
+            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                <Image WidthRequest="64" HeightRequest="64"
+                       Source="{Binding IconPath, Converter={StaticResource PathToImageSource}}"
+                       Aspect="AspectFill" />
+                <Button Grid.Column="1"
+                        Text="{x:Static res:AppResources.SelectIcon}"
+                        VerticalOptions="Center"
+                        Clicked="OnPickIconClicked" />
+            </Grid>
+
+            <Button Text="{x:Static res:AppResources.Save}"
+                    Margin="0,16,0,0"
+                    Clicked="OnSaveClicked" />
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

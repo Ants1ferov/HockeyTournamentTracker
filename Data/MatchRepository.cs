@@ -6,6 +6,7 @@ namespace HockeyTournamentTracker.Data;
 public interface IMatchRepository
 {
     Task<IReadOnlyList<Match>> GetByTournamentAsync(Guid tournamentId);
+    Task<Match?> GetByIdAsync(Guid id);
     Task SaveAsync(Match match);
     Task DeleteAsync(Guid id);
 }
@@ -26,6 +27,12 @@ public sealed class MatchRepository : IMatchRepository
             .ToListAsync();
 
         return entities.Select(MapToDomain).ToList();
+    }
+
+    public async Task<Match?> GetByIdAsync(Guid id)
+    {
+        var entity = await _connection.FindAsync<MatchEntity>(id);
+        return entity is null ? null : MapToDomain(entity);
     }
 
     public async Task SaveAsync(Match match)

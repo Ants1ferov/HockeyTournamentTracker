@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" msdata:Ordinal="5" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AppTitle" xml:space="preserve">
+    <value>Хоккейные турниры</value>
+  </data>
+  <data name="TabTournaments" xml:space="preserve">
+    <value>Турниры</value>
+  </data>
+  <data name="MyTournaments" xml:space="preserve">
+    <value>Мои хоккейные турниры</value>
+  </data>
+  <data name="Add" xml:space="preserve">
+    <value>Добавить</value>
+  </data>
+  <data name="Save" xml:space="preserve">
+    <value>Сохранить</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Отмена</value>
+  </data>
+  <data name="Ok" xml:space="preserve">
+    <value>ОК</value>
+  </data>
+  <data name="Delete" xml:space="preserve">
+    <value>Удалить</value>
+  </data>
+  <data name="Teams" xml:space="preserve">
+    <value>Команды</value>
+  </data>
+  <data name="AddTeam" xml:space="preserve">
+    <value>Добавить команду</value>
+  </data>
+  <data name="NewTournament" xml:space="preserve">
+    <value>Новый турнир</value>
+  </data>
+  <data name="TournamentName" xml:space="preserve">
+    <value>Название турнира</value>
+  </data>
+  <data name="TournamentNamePlaceholder" xml:space="preserve">
+    <value>Например, КХЛ 2024/25</value>
+  </data>
+  <data name="Description" xml:space="preserve">
+    <value>Описание</value>
+  </data>
+  <data name="StartDate" xml:space="preserve">
+    <value>Дата начала</value>
+  </data>
+  <data name="EndDate" xml:space="preserve">
+    <value>Дата окончания</value>
+  </data>
+  <data name="StandingsTable" xml:space="preserve">
+    <value>Турнирная таблица</value>
+  </data>
+  <data name="Matches" xml:space="preserve">
+    <value>Матчи</value>
+  </data>
+  <data name="AddMatch" xml:space="preserve">
+    <value>Добавить матч</value>
+  </data>
+  <data name="NewMatch" xml:space="preserve">
+    <value>Новый матч</value>
+  </data>
+  <data name="HomeTeam" xml:space="preserve">
+    <value>Домашняя команда</value>
+  </data>
+  <data name="AwayTeam" xml:space="preserve">
+    <value>Гостевая команда</value>
+  </data>
+  <data name="Date" xml:space="preserve">
+    <value>Дата</value>
+  </data>
+  <data name="Time" xml:space="preserve">
+    <value>Время</value>
+  </data>
+  <data name="Score" xml:space="preserve">
+    <value>Счёт</value>
+  </data>
+  <data name="HowMatchEnded" xml:space="preserve">
+    <value>Как завершился матч</value>
+  </data>
+  <data name="OutcomeRegulation" xml:space="preserve">
+    <value>В основное время</value>
+  </data>
+  <data name="OutcomeOvertime" xml:space="preserve">
+    <value>В овертайме</value>
+  </data>
+  <data name="OutcomeShootout" xml:space="preserve">
+    <value>По буллитам</value>
+  </data>
+  <data name="ShootoutScore" xml:space="preserve">
+    <value>Буллиты (реализованные)</value>
+  </data>
+  <data name="Error" xml:space="preserve">
+    <value>Ошибка</value>
+  </data>
+  <data name="ErrorCheckTeamsAndScore" xml:space="preserve">
+    <value>Проверьте команды и счёт.</value>
+  </data>
+  <data name="DeleteTournamentConfirm" xml:space="preserve">
+    <value>Удалить турнир?</value>
+  </data>
+  <data name="Status" xml:space="preserve">
+    <value>Статус</value>
+  </data>
+  <data name="StatusPlanned" xml:space="preserve">
+    <value>Запланирован</value>
+  </data>
+  <data name="StatusInProgress" xml:space="preserve">
+    <value>В процессе</value>
+  </data>
+  <data name="StatusFinished" xml:space="preserve">
+    <value>Завершён</value>
+  </data>
+  <data name="StatusArchived" xml:space="preserve">
+    <value>В архиве</value>
+  </data>
+  <data name="Live" xml:space="preserve">
+    <value>Live</value>
+  </data>
+  <data name="LiveMatches" xml:space="preserve">
+    <value>Сейчас идут</value>
+  </data>
+  <data name="StartMatch" xml:space="preserve">
+    <value>Начать матч</value>
+  </data>
+  <data name="FinishMatch" xml:space="preserve">
+    <value>Завершить матч</value>
+  </data>
+  <data name="SelectIcon" xml:space="preserve">
+    <value>Выбрать иконку</value>
+  </data>
+  <data name="TeamName" xml:space="preserve">
+    <value>Название команды</value>
+  </data>
+  <data name="ShortName" xml:space="preserve">
+    <value>Краткое название</value>
+  </data>
+  <data name="NewTeam" xml:space="preserve">
+    <value>Новая команда</value>
+  </data>
+  <data name="EditTeam" xml:space="preserve">
+    <value>Редактирование команды</value>
+  </data>
+  <data name="DeleteTeamConfirm" xml:space="preserve">
+    <value>Удалить команду?</value>
+  </data>
+</root>

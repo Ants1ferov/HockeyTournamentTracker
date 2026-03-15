@@ -36,6 +36,7 @@ public class TeamEntity
 
     public string? ShortName { get; set; }
     public string? ColorHex { get; set; }
+    public string? IconPath { get; set; }
     public string? Notes { get; set; }
 }
 
