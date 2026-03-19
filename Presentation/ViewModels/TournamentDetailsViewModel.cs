@@ -602,9 +602,10 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
         {
             if (m.HomeTeamId != teamId && m.AwayTeamId != teamId)
                 continue;
-            var isHome = m.HomeTeamId == teamId;
-            var won = (isHome && m.HomeGoals! > m.AwayGoals!) || (!isHome && m.AwayGoals! > m.HomeGoals!);
-            list.Add(won ? 1 : 2);
+            if (!MatchOutcomeResolver.TryGetWinnerTeamId(m, out var winnerTeamId))
+                continue;
+
+            list.Add(winnerTeamId == teamId ? 1 : 2);
             if (list.Count >= 5)
                 break;
         }
@@ -632,7 +633,10 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
             return "— : —";
         }
 
-        var baseScore = $"{match.HomeGoals}:{match.AwayGoals}";
+        var effectiveScore = MatchOutcomeResolver.GetEffectiveFinalScore(match);
+        var finalHomeGoals = effectiveScore?.HomeGoals ?? match.HomeGoals.Value;
+        var finalAwayGoals = effectiveScore?.AwayGoals ?? match.AwayGoals.Value;
+        var baseScore = $"{finalHomeGoals}:{finalAwayGoals}";
         var periodPart = "";
         if (match.PeriodScores is { Count: > 0 } periods)
         {
