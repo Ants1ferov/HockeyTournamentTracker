@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:res="clr-namespace:HockeyTournamentTracker.Resources"
+             x:Class="HockeyTournamentTracker.Presentation.Views.StageRosterPage"
+             x:Name="ThisPage"
+             Title="Состав стадии">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="12">
+            <Label Text="{x:Static res:AppResources.Groups}"
+                   FontAttributes="Bold"
+                   FontSize="18" />
+            <Button Text="{x:Static res:AppResources.AddGroup}"
+                    Clicked="OnAddGroupClicked" />
+
+            <CollectionView ItemsSource="{Binding StageGroups}"
+                            Margin="0,4,0,0">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Grid ColumnDefinitions="*,Auto,Auto"
+                              ColumnSpacing="8"
+                              Padding="0,2">
+                            <Label Grid.Column="0"
+                                   Text="{Binding Name}"
+                                   VerticalOptions="Center" />
+                            <Button Grid.Column="1"
+                                    Text="Переименовать"
+                                    Clicked="OnRenameGroupClicked" />
+                            <Button Grid.Column="2"
+                                    Text="{x:Static res:AppResources.Delete}"
+                                    BackgroundColor="Transparent"
+                                    Clicked="OnDeleteGroupClicked" />
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <Label Text="Команды в стадию"
+                   FontAttributes="Bold"
+                   FontSize="16"
+                   Margin="0,8,0,0" />
+            <HorizontalStackLayout Spacing="12">
+                <Button Text="Добавить все"
+                        Clicked="OnAddAllTeamsClicked" />
+                <Button Text="Добавить выбранные"
+                        Clicked="OnAddSelectedTeamsClicked" />
+            </HorizontalStackLayout>
+
+            <CollectionView ItemsSource="{Binding AvailableTeams}"
+                            SelectionMode="None"
+                            HeightRequest="220">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Frame Margin="0,6"
+                               Padding="12"
+                               HasShadow="True"
+                               CornerRadius="8"
+                               BorderColor="Transparent">
+                            <Frame.Triggers>
+                                <DataTrigger TargetType="Frame"
+                                             Binding="{Binding IsSelectedForAdd}"
+                                             Value="True">
+                                    <Setter Property="BackgroundColor"
+                                            Value="#E5E7EB" />
+                                    <Setter Property="BorderColor"
+                                            Value="#6B7280" />
+                                </DataTrigger>
+                            </Frame.Triggers>
+
+                            <Frame.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnAvailableTeamTapped" />
+                            </Frame.GestureRecognizers>
+                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                                <Image Grid.Column="0"
+                                       WidthRequest="32" HeightRequest="32"
+                                       Source="{Binding IconPath, Converter={StaticResource PathToImageSource}}"
+                                       Aspect="AspectFill" />
+                                <Label Grid.Column="1"
+                                       Text="{Binding Name}"
+                                       FontSize="12"
+                                       LineBreakMode="TailTruncation"
+                                       VerticalTextAlignment="Center" />
+                            </Grid>
+                        </Frame>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <Label Text="Группы стадии"
+                   FontAttributes="Bold"
+                   FontSize="16"
+                   Margin="0,8,0,0" />
+
+            <ScrollView Orientation="Horizontal"
+                        HorizontalScrollBarVisibility="Default">
+                <HorizontalStackLayout Spacing="12"
+                                        BindableLayout.ItemsSource="{Binding StageGroupColumns}">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate>
+                            <VerticalStackLayout WidthRequest="200" Spacing="6">
+                                <Label Text="{Binding Title}"
+                                       FontAttributes="Bold"
+                                       FontSize="14">
+                                    <Label.GestureRecognizers>
+                                        <TapGestureRecognizer
+                                            Command="{Binding BindingContext.MoveSelectedTeamsToGroupCommand, Source={x:Reference ThisPage}}"
+                                            CommandParameter="{Binding GroupId}" />
+                                    </Label.GestureRecognizers>
+                                </Label>
+
+                                <Button Text="Переместить"
+                                        FontSize="12"
+                                        Padding="0"
+                                        Command="{Binding BindingContext.MoveSelectedTeamsToGroupCommand, Source={x:Reference ThisPage}}"
+                                        CommandParameter="{Binding GroupId}" />
+
+                                <CollectionView ItemsSource="{Binding Teams}">
+                                    <CollectionView.ItemTemplate>
+                                        <DataTemplate>
+                                            <Frame Padding="8"
+                                                   HasShadow="True"
+                                                   CornerRadius="8"
+                                                   BorderColor="Transparent">
+                                                <Frame.Triggers>
+                                                    <DataTrigger TargetType="Frame"
+                                                                 Binding="{Binding IsSelectedForMove}"
+                                                                 Value="True">
+                                                        <Setter Property="BackgroundColor"
+                                                                Value="#E5E7EB" />
+                                                        <Setter Property="BorderColor"
+                                                                Value="#6B7280" />
+                                                    </DataTrigger>
+                                                </Frame.Triggers>
+                                                <Frame.GestureRecognizers>
+                                                    <TapGestureRecognizer Tapped="OnStageTeamTapped" />
+                                                </Frame.GestureRecognizers>
+
+                                                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                                                    <Image WidthRequest="24"
+                                                           HeightRequest="24"
+                                                           Source="{Binding IconPath, Converter={StaticResource PathToImageSource}}"
+                                                           Aspect="AspectFill" />
+                                                    <Label Grid.Column="1"
+                                                           Text="{Binding Name}"
+                                                           FontSize="12"
+                                                           LineBreakMode="TailTruncation"
+                                                           VerticalTextAlignment="Center" />
+                                                </Grid>
+                                            </Frame>
+                                        </DataTemplate>
+                                    </CollectionView.ItemTemplate>
+                                </CollectionView>
+                            </VerticalStackLayout>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </HorizontalStackLayout>
+            </ScrollView>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
