@@ -19,7 +19,7 @@ public sealed class StatsService
 
         foreach (var match in matches.Where(m => m.Status == MatchStatus.Finished))
         {
-            if (match.HomeGoals is null || match.AwayGoals is null || match.OutcomeType is null)
+            if (match.OutcomeType is null)
             {
                 continue;
             }
@@ -30,22 +30,29 @@ public sealed class StatsService
                 continue;
             }
 
+            var effectiveScore = MatchOutcomeResolver.GetEffectiveFinalScore(match);
+            if (effectiveScore is null)
+                continue;
+
+            var homeGoals = effectiveScore.Value.HomeGoals;
+            var awayGoals = effectiveScore.Value.AwayGoals;
+
             homeStanding.Games++;
             awayStanding.Games++;
 
-            homeStanding.GoalsFor += match.HomeGoals.Value;
-            homeStanding.GoalsAgainst += match.AwayGoals.Value;
+            homeStanding.GoalsFor += homeGoals;
+            homeStanding.GoalsAgainst += awayGoals;
 
-            awayStanding.GoalsFor += match.AwayGoals.Value;
-            awayStanding.GoalsAgainst += match.HomeGoals.Value;
+            awayStanding.GoalsFor += awayGoals;
+            awayStanding.GoalsAgainst += homeGoals;
 
             switch (match.OutcomeType)
             {
                 case OutcomeType.Regulation:
-                    ApplyRegulationOutcome(match, homeStanding, awayStanding, rules);
+                    ApplyRegulationOutcome(match, homeGoals, awayGoals, homeStanding, awayStanding, rules);
                     break;
                 case OutcomeType.Overtime:
-                    ApplyOvertimeOutcome(match, homeStanding, awayStanding, rules);
+                    ApplyOvertimeOutcome(match, homeGoals, awayGoals, homeStanding, awayStanding, rules);
                     break;
                 case OutcomeType.Shootout:
                     ApplyShootoutOutcome(match, homeStanding, awayStanding, rules);
@@ -103,11 +110,17 @@ public sealed class StatsService
 
     private static void ApplyRegulationOutcome(
         Match match,
+        int homeGoals,
+        int awayGoals,
         Standing home,
         Standing away,
         TournamentRules rules)
     {
-        if (match.HomeGoals > match.AwayGoals)
+        var outcomeResolved = TryResolveHomeWin(match, homeGoals, awayGoals, out var homeWon);
+        if (!outcomeResolved)
+            return;
+
+        if (homeWon)
         {
             home.WinsRegulation++;
             away.LossesRegulation++;
@@ -127,11 +140,17 @@ public sealed class StatsService
 
     private static void ApplyOvertimeOutcome(
         Match match,
+        int homeGoals,
+        int awayGoals,
         Standing home,
         Standing away,
         TournamentRules rules)
     {
-        if (match.HomeGoals > match.AwayGoals)
+        var outcomeResolved = TryResolveHomeWin(match, homeGoals, awayGoals, out var homeWon);
+        if (!outcomeResolved)
+            return;
+
+        if (homeWon)
         {
             home.WinsOvertime++;
             away.LossesOvertime++;
@@ -155,7 +174,10 @@ public sealed class StatsService
         Standing away,
         TournamentRules rules)
     {
-        if (match.HomeGoals > match.AwayGoals)
+        if (!TryResolveHomeWin(match, match.HomeGoals ?? 0, match.AwayGoals ?? 0, out var homeWon))
+            return;
+
+        if (homeWon)
         {
             home.WinsShootout++;
             away.LossesShootout++;
@@ -171,6 +193,24 @@ public sealed class StatsService
             away.Points += rules.PointsForShootoutWin;
             home.Points += rules.PointsForShootoutLoss;
         }
+    }
+
+    private static bool TryResolveHomeWin(Match match, int homeGoals, int awayGoals, out bool homeWon)
+    {
+        if (homeGoals != awayGoals)
+        {
+            homeWon = homeGoals > awayGoals;
+            return true;
+        }
+
+        if (!MatchOutcomeResolver.TryGetWinnerTeamId(match, out var winnerTeamId))
+        {
+            homeWon = false;
+            return false;
+        }
+
+        homeWon = winnerTeamId == match.HomeTeamId;
+        return true;
     }
 }
 

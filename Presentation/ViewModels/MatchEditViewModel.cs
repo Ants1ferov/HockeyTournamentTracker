@@ -343,6 +343,9 @@ public sealed class MatchEditViewModel : INotifyPropertyChanged
 
         if (OutcomeType == OutcomeType.Shootout)
         {
+            if (ShootoutHome == ShootoutAway)
+                return false;
+
             var shootoutPeriodNumber = HasOvertime ? 5 : 4;
             periodScores.Add(new PeriodScore
             {
@@ -356,6 +359,24 @@ public sealed class MatchEditViewModel : INotifyPropertyChanged
         var totalHome = P1Home + P2Home + P3Home + (HasOvertime ? OTHome : 0);
         var totalAway = P1Away + P2Away + P3Away + (HasOvertime ? OTAway : 0);
 
+        if (OutcomeType == OutcomeType.Shootout)
+        {
+            if (totalHome != totalAway)
+                return false;
+
+            if (ShootoutHome > ShootoutAway)
+                totalHome += 1;
+            else
+                totalAway += 1;
+        }
+        else if (totalHome == totalAway)
+        {
+            return false;
+        }
+
+        var winnerTeamId = totalHome > totalAway ? HomeTeam.Id : AwayTeam.Id;
+        var loserTeamId = winnerTeamId == HomeTeam.Id ? AwayTeam.Id : HomeTeam.Id;
+
         var match = new Match
         {
             Id = id,
@@ -367,6 +388,8 @@ public sealed class MatchEditViewModel : INotifyPropertyChanged
             HomeGoals = periodScores.Count > 0 ? totalHome : HomeGoals,
             AwayGoals = periodScores.Count > 0 ? totalAway : AwayGoals,
             OutcomeType = OutcomeType,
+            WinnerTeamId = winnerTeamId,
+            LoserTeamId = loserTeamId,
             ShootoutScoreHome = OutcomeType == OutcomeType.Shootout ? ShootoutHome : null,
             ShootoutScoreAway = OutcomeType == OutcomeType.Shootout ? ShootoutAway : null,
             Status = MatchId != Guid.Empty ? MatchStatus.Finished : MatchStatus.Scheduled,
