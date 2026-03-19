@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using HockeyTournamentTracker.Data;
 using HockeyTournamentTracker.Domain;
 
@@ -12,7 +13,10 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
     private readonly ITeamRepository _teamRepository;
     private readonly IStageRepository _stageRepository;
     private readonly IMatchRepository _matchRepository;
+    private readonly IStageTeamRepository _stageTeamRepository;
+    private readonly IStageGroupRepository _stageGroupRepository;
     private readonly StatsService _statsService;
+    private readonly SemaphoreSlim _loadSemaphore = new(1, 1);
 
     private Tournament? _tournament;
     private int _selectedTabIndex;
@@ -119,12 +123,16 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
         ITeamRepository teamRepository,
         IStageRepository stageRepository,
         IMatchRepository matchRepository,
+        IStageTeamRepository stageTeamRepository,
+        IStageGroupRepository stageGroupRepository,
         StatsService statsService)
     {
         _tournamentRepository = tournamentRepository;
         _teamRepository = teamRepository;
         _stageRepository = stageRepository;
         _matchRepository = matchRepository;
+        _stageTeamRepository = stageTeamRepository;
+        _stageGroupRepository = stageGroupRepository;
         _statsService = statsService;
         // Уведомляем начальное состояние вкладок, чтобы контент отобразился при первом показе страницы
         OnPropertyChanged(nameof(IsHomeTabSelected));
@@ -137,112 +145,41 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
 
     public async Task LoadAsync(Guid tournamentId)
     {
-        Tournament = await _tournamentRepository.GetByIdAsync(tournamentId);
-        if (Tournament is null)
-            return;
-
-        var teams = await _teamRepository.GetByTournamentAsync(tournamentId);
-        var matches = await _matchRepository.GetByTournamentAsync(tournamentId);
-
-        Standings.Clear();
-        StandingsByGroup.Clear();
-        var standings = _statsService.CalculateStandings(Tournament, teams, matches);
-        var teamById = teams.ToDictionary(t => t.Id);
-
-        var finishedMatches = matches
-            .Where(m => m.Status == MatchStatus.Finished && m.OutcomeType.HasValue && m.HomeGoals.HasValue && m.AwayGoals.HasValue)
-            .OrderByDescending(m => m.DateTime ?? DateTime.MinValue)
-            .ToList();
-
-        var maxPointsPerGame = Tournament.Rules != null
-            ? Math.Max(Tournament.Rules.PointsForRegulationWin,
-                Math.Max(Tournament.Rules.PointsForOvertimeWin, Tournament.Rules.PointsForShootoutWin))
-            : 3;
-
-        var standingsList = standings;
-        var rules = Tournament.Rules ?? new TournamentRules();
-        var groups = rules.Groups?.OrderBy(g => g.Order).ThenBy(g => g.Name).ToList() ?? new List<GroupInfo>();
-
-        StandingRow CreateStandingRow(Standing s, Team team, int place, string groupName, IReadOnlyList<int> last5)
+        await _loadSemaphore.WaitAsync();
+        try
         {
-            return new StandingRow
-            {
-                Place = place,
-                GroupName = groupName,
-                TeamName = string.IsNullOrWhiteSpace(team.Name) ? "—" : team.Name,
-                TeamIconPath = team.IconPath,
-                Games = s.Games,
-                WinsReg = s.WinsRegulation,
-                WinsOt = s.WinsOvertime,
-                WinsSo = s.WinsShootout,
-                LossesReg = s.LossesRegulation,
-                LossesOt = s.LossesOvertime,
-                LossesSo = s.LossesShootout,
-                GoalsFor = s.GoalsFor,
-                GoalsAgainst = s.GoalsAgainst,
-                GoalDiff = s.GoalDifference,
-                Last5Results = last5,
-                PointsPct = FormatPointsPercentage(s.Points, s.Games, maxPointsPerGame),
-                Points = s.Points
-            };
-        }
+            Tournament = await _tournamentRepository.GetByIdAsync(tournamentId);
+            if (Tournament is null)
+                return;
 
-        if (groups.Count > 0)
-        {
-            foreach (var group in groups)
+            var teams = await _teamRepository.GetByTournamentAsync(tournamentId);
+            var matches = await _matchRepository.GetByTournamentAsync(tournamentId);
+
+            Standings.Clear();
+            StandingsByGroup.Clear();
+            var standings = _statsService.CalculateStandings(Tournament, teams, matches);
+            var teamById = teams.ToDictionary(t => t.Id);
+
+            var finishedMatches = matches
+                .Where(m => m.Status == MatchStatus.Finished && m.OutcomeType.HasValue && m.HomeGoals.HasValue && m.AwayGoals.HasValue)
+                .OrderByDescending(m => m.DateTime ?? DateTime.MinValue)
+                .ToList();
+
+            var maxPointsPerGame = Tournament.Rules != null
+                ? Math.Max(Tournament.Rules.PointsForRegulationWin,
+                    Math.Max(Tournament.Rules.PointsForOvertimeWin, Tournament.Rules.PointsForShootoutWin))
+                : 3;
+
+            var standingsList = standings;
+            var rules = Tournament.Rules ?? new TournamentRules();
+            var groups = rules.Groups?.OrderBy(g => g.Order).ThenBy(g => g.Name).ToList() ?? new List<GroupInfo>();
+
+            StandingRow CreateStandingRow(Standing s, Team team, int place, string groupName, IReadOnlyList<int> last5)
             {
-                var teamIdsInGroup = teams.Where(t => t.GroupId == group.Id).Select(t => t.Id).ToHashSet();
-                var inGroup = standingsList.Where(s => teamIdsInGroup.Contains(s.TeamId)).ToList();
-                var sortedInGroup = StatsService.SortByRules(inGroup, rules);
-                var groupRows = new ObservableCollection<StandingRow>();
-                var place = 1;
-                foreach (var s in sortedInGroup)
+                return new StandingRow
                 {
-                    if (!teamById.TryGetValue(s.TeamId, out var team))
-                        continue;
-                    var last5 = GetLast5ResultsForTeam(s.TeamId, finishedMatches);
-                    groupRows.Add(CreateStandingRow(s, team, place++, group.Name, last5));
-                }
-                if (groupRows.Count > 0)
-                {
-                    var g = new StandingGroup { GroupName = group.Name };
-                    foreach (var row in groupRows) g.Add(row);
-                    StandingsByGroup.Add(g);
-                }
-            }
-            var noGroupTeamIds = teams.Where(t => !t.GroupId.HasValue).Select(t => t.Id).ToHashSet();
-            var noGroup = standingsList.Where(s => noGroupTeamIds.Contains(s.TeamId)).ToList();
-            if (noGroup.Count > 0)
-            {
-                var sortedNoGroup = StatsService.SortByRules(noGroup, rules);
-                var noGroupRows = new ObservableCollection<StandingRow>();
-                var place = 1;
-                foreach (var s in sortedNoGroup)
-                {
-                    if (!teamById.TryGetValue(s.TeamId, out var team))
-                        continue;
-                    var last5 = GetLast5ResultsForTeam(s.TeamId, finishedMatches);
-                    noGroupRows.Add(CreateStandingRow(s, team, place++, "—", last5));
-                }
-                var noGr = new StandingGroup { GroupName = "—" };
-                foreach (var row in noGroupRows) noGr.Add(row);
-                StandingsByGroup.Add(noGr);
-            }
-        }
-        else
-        {
-            var place = 1;
-            var allRows = new ObservableCollection<StandingRow>();
-            foreach (var s in standings)
-            {
-                if (!teamById.TryGetValue(s.TeamId, out var team))
-                    continue;
-                var last5 = GetLast5ResultsForTeam(s.TeamId, finishedMatches);
-                var pointsPct = FormatPointsPercentage(s.Points, s.Games, maxPointsPerGame);
-                allRows.Add(new StandingRow
-                {
-                    Place = place++,
-                    GroupName = string.Empty,
+                    Place = place,
+                    GroupName = groupName,
                     TeamName = string.IsNullOrWhiteSpace(team.Name) ? "—" : team.Name,
                     TeamIconPath = team.IconPath,
                     Games = s.Games,
@@ -256,72 +193,151 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
                     GoalsAgainst = s.GoalsAgainst,
                     GoalDiff = s.GoalDifference,
                     Last5Results = last5,
-                    PointsPct = pointsPct,
+                    PointsPct = FormatPointsPercentage(s.Points, s.Games, maxPointsPerGame),
                     Points = s.Points
-                });
+                };
             }
-            if (allRows.Count > 0)
+
+            if (groups.Count > 0)
             {
-                var allGr = new StandingGroup { GroupName = string.Empty };
-                foreach (var row in allRows) allGr.Add(row);
-                StandingsByGroup.Add(allGr);
+                foreach (var group in groups)
+                {
+                    var teamIdsInGroup = teams.Where(t => t.GroupId == group.Id).Select(t => t.Id).ToHashSet();
+                    var inGroup = standingsList.Where(s => teamIdsInGroup.Contains(s.TeamId)).ToList();
+                    var sortedInGroup = StatsService.SortByRules(inGroup, rules);
+                    var groupRows = new ObservableCollection<StandingRow>();
+                    var place = 1;
+                    foreach (var s in sortedInGroup)
+                    {
+                        if (!teamById.TryGetValue(s.TeamId, out var team))
+                            continue;
+                        var last5 = GetLast5ResultsForTeam(s.TeamId, finishedMatches);
+                        groupRows.Add(CreateStandingRow(s, team, place++, group.Name, last5));
+                    }
+                    if (groupRows.Count > 0)
+                    {
+                        var g = new StandingGroup { GroupName = group.Name };
+                        foreach (var row in groupRows) g.Add(row);
+                        StandingsByGroup.Add(g);
+                    }
+                }
+                var noGroupTeamIds = teams.Where(t => !t.GroupId.HasValue).Select(t => t.Id).ToHashSet();
+                var noGroup = standingsList.Where(s => noGroupTeamIds.Contains(s.TeamId)).ToList();
+                if (noGroup.Count > 0)
+                {
+                    var sortedNoGroup = StatsService.SortByRules(noGroup, rules);
+                    var noGroupRows = new ObservableCollection<StandingRow>();
+                    var place = 1;
+                    foreach (var s in sortedNoGroup)
+                    {
+                        if (!teamById.TryGetValue(s.TeamId, out var team))
+                            continue;
+                        var last5 = GetLast5ResultsForTeam(s.TeamId, finishedMatches);
+                        noGroupRows.Add(CreateStandingRow(s, team, place++, "—", last5));
+                    }
+                    var noGr = new StandingGroup { GroupName = "—" };
+                    foreach (var row in noGroupRows) noGr.Add(row);
+                    StandingsByGroup.Add(noGr);
+                }
             }
+            else
+            {
+                var place = 1;
+                var allRows = new ObservableCollection<StandingRow>();
+                foreach (var s in standings)
+                {
+                    if (!teamById.TryGetValue(s.TeamId, out var team))
+                        continue;
+                    var last5 = GetLast5ResultsForTeam(s.TeamId, finishedMatches);
+                    var pointsPct = FormatPointsPercentage(s.Points, s.Games, maxPointsPerGame);
+                    allRows.Add(new StandingRow
+                    {
+                        Place = place++,
+                        GroupName = string.Empty,
+                        TeamName = string.IsNullOrWhiteSpace(team.Name) ? "—" : team.Name,
+                        TeamIconPath = team.IconPath,
+                        Games = s.Games,
+                        WinsReg = s.WinsRegulation,
+                        WinsOt = s.WinsOvertime,
+                        WinsSo = s.WinsShootout,
+                        LossesReg = s.LossesRegulation,
+                        LossesOt = s.LossesOvertime,
+                        LossesSo = s.LossesShootout,
+                        GoalsFor = s.GoalsFor,
+                        GoalsAgainst = s.GoalsAgainst,
+                        GoalDiff = s.GoalDifference,
+                        Last5Results = last5,
+                        PointsPct = pointsPct,
+                        Points = s.Points
+                    });
+                }
+                if (allRows.Count > 0)
+                {
+                    var allGr = new StandingGroup { GroupName = string.Empty };
+                    foreach (var row in allRows) allGr.Add(row);
+                    StandingsByGroup.Add(allGr);
+                }
+            }
+
+            UpdateSortOrderDisplay();
+
+            LiveMatches.Clear();
+            Matches.Clear();
+
+            var ordered = matches.OrderBy(m => m.DateTime ?? DateTime.MinValue).ToList();
+            foreach (var m in ordered.Where(m => m.Status == MatchStatus.InProgress))
+            {
+                teamById.TryGetValue(m.HomeTeamId, out var homeTeam);
+                teamById.TryGetValue(m.AwayTeamId, out var awayTeam);
+                LiveMatches.Add(CreateMatchRow(m, homeTeam?.Name, awayTeam?.Name, isLive: true));
+            }
+
+            foreach (var m in ordered.Where(m => m.Status != MatchStatus.InProgress))
+            {
+                teamById.TryGetValue(m.HomeTeamId, out var homeTeam);
+                teamById.TryGetValue(m.AwayTeamId, out var awayTeam);
+                Matches.Add(CreateMatchRow(m, homeTeam?.Name, awayTeam?.Name, isLive: false));
+            }
+
+            LastPlayedMatches.Clear();
+            UpcomingMatches.Clear();
+            var lastPlayed = matches
+                .Where(m => m.Status == MatchStatus.Finished)
+                .OrderByDescending(m => m.DateTime ?? DateTime.MinValue)
+                .Take(5)
+                .ToList();
+            foreach (var m in lastPlayed)
+            {
+                teamById.TryGetValue(m.HomeTeamId, out var homeTeam);
+                teamById.TryGetValue(m.AwayTeamId, out var awayTeam);
+                LastPlayedMatches.Add(CreateMatchRow(m, homeTeam?.Name, awayTeam?.Name, isLive: false));
+            }
+            var upcoming = matches
+                .Where(m => m.Status == MatchStatus.Scheduled || m.Status == MatchStatus.InProgress)
+                .OrderBy(m => m.DateTime ?? DateTime.MaxValue)
+                .Take(5)
+                .ToList();
+            foreach (var m in upcoming)
+            {
+                teamById.TryGetValue(m.HomeTeamId, out var homeTeam);
+                teamById.TryGetValue(m.AwayTeamId, out var awayTeam);
+                UpcomingMatches.Add(CreateMatchRow(m, homeTeam?.Name, awayTeam?.Name, m.Status == MatchStatus.InProgress));
+            }
+
+            Stages.Clear();
+            var stages = await _stageRepository.GetByTournamentAsync(tournamentId);
+            foreach (var s in stages)
+                Stages.Add(s);
+            SelectedStage = null;
+
+            ParticipantTeams.Clear();
+            foreach (var t in teams)
+                ParticipantTeams.Add(t);
         }
-
-        UpdateSortOrderDisplay();
-
-        LiveMatches.Clear();
-        Matches.Clear();
-
-        var ordered = matches.OrderBy(m => m.DateTime ?? DateTime.MinValue).ToList();
-        foreach (var m in ordered.Where(m => m.Status == MatchStatus.InProgress))
+        finally
         {
-            teamById.TryGetValue(m.HomeTeamId, out var homeTeam);
-            teamById.TryGetValue(m.AwayTeamId, out var awayTeam);
-            LiveMatches.Add(CreateMatchRow(m, homeTeam?.Name, awayTeam?.Name, isLive: true));
+            _loadSemaphore.Release();
         }
-
-        foreach (var m in ordered.Where(m => m.Status != MatchStatus.InProgress))
-        {
-            teamById.TryGetValue(m.HomeTeamId, out var homeTeam);
-            teamById.TryGetValue(m.AwayTeamId, out var awayTeam);
-            Matches.Add(CreateMatchRow(m, homeTeam?.Name, awayTeam?.Name, isLive: false));
-        }
-
-        LastPlayedMatches.Clear();
-        UpcomingMatches.Clear();
-        var lastPlayed = matches
-            .Where(m => m.Status == MatchStatus.Finished)
-            .OrderByDescending(m => m.DateTime ?? DateTime.MinValue)
-            .Take(5)
-            .ToList();
-        foreach (var m in lastPlayed)
-        {
-            teamById.TryGetValue(m.HomeTeamId, out var homeTeam);
-            teamById.TryGetValue(m.AwayTeamId, out var awayTeam);
-            LastPlayedMatches.Add(CreateMatchRow(m, homeTeam?.Name, awayTeam?.Name, isLive: false));
-        }
-        var upcoming = matches
-            .Where(m => m.Status == MatchStatus.Scheduled || m.Status == MatchStatus.InProgress)
-            .OrderBy(m => m.DateTime ?? DateTime.MaxValue)
-            .Take(5)
-            .ToList();
-        foreach (var m in upcoming)
-        {
-            teamById.TryGetValue(m.HomeTeamId, out var homeTeam);
-            teamById.TryGetValue(m.AwayTeamId, out var awayTeam);
-            UpcomingMatches.Add(CreateMatchRow(m, homeTeam?.Name, awayTeam?.Name, m.Status == MatchStatus.InProgress));
-        }
-
-        Stages.Clear();
-        var stages = await _stageRepository.GetByTournamentAsync(tournamentId);
-        foreach (var s in stages)
-            Stages.Add(s);
-        SelectedStage = null;
-
-        ParticipantTeams.Clear();
-        foreach (var t in teams)
-            ParticipantTeams.Add(t);
     }
 
     private async void RefreshStageMatches()
@@ -338,8 +354,39 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
             .Where(m => m.StageId == stageId)
             .OrderBy(m => m.DateTime ?? DateTime.MinValue)
             .ToList();
-        var teams = await _teamRepository.GetByTournamentAsync(Tournament.Id);
-        var teamById = teams.ToDictionary(t => t.Id);
+        var allTeams = await _teamRepository.GetByTournamentAsync(Tournament.Id);
+        var teamById = allTeams.ToDictionary(t => t.Id);
+
+        // Состав стадии: ограничиваем команды для таблицы только теми, которые добавлены в StageTeams.
+        var stageTeamIds = (await _stageTeamRepository.GetTeamIdsByStageAsync(stageId)).ToHashSet();
+        if (stageTeamIds.Count == 0 && stageMatches.Count > 0)
+        {
+            // Backward-compatibility: если StageTeams пустая, но матчи уже есть — извлекаем команды из матчей.
+            var fromMatches = stageMatches
+                .SelectMany(m => new[] { m.HomeTeamId, m.AwayTeamId })
+                .Distinct()
+                .ToList();
+
+            var teamGroupByTeamId = fromMatches.ToDictionary(
+                id => id,
+                id => teamById.TryGetValue(id, out var t) ? t.GroupId : null);
+
+            stageTeamIds = fromMatches.ToHashSet();
+            await _stageTeamRepository.AddTeamsToStageAsync(stageId, teamGroupByTeamId);
+        }
+
+        var teamsInStage = allTeams.Where(t => stageTeamIds.Contains(t.Id)).ToList();
+        var teamGroupIdsInStage = await _stageTeamRepository.GetTeamGroupIdsByStageAsync(stageId);
+
+        // Группы управляются внутри стадии.
+        var stageGroups = (await _stageGroupRepository.GetByStageAsync(stageId)).ToList();
+        if (stageGroups.Count == 0 && Tournament.Rules?.Groups is { Count: > 0 } globalGroups)
+        {
+            foreach (var g in globalGroups.OrderBy(x => x.Order).ThenBy(x => x.Name))
+                await _stageGroupRepository.AddGroupAsync(stageId, g.Name);
+
+            stageGroups = (await _stageGroupRepository.GetByStageAsync(stageId)).ToList();
+        }
         var rows = new List<MatchRow>();
         foreach (var m in stageMatches)
         {
@@ -347,7 +394,12 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
             teamById.TryGetValue(m.AwayTeamId, out var awayTeam);
             rows.Add(CreateMatchRow(m, homeTeam?.Name, awayTeam?.Name, m.Status == MatchStatus.InProgress));
         }
-        var stageStandingsGroups = BuildStandingsByGroupFromMatches(Tournament, teams, stageMatches);
+        var stageStandingsGroups = BuildStandingsByGroupFromMatches(
+            Tournament,
+            teamsInStage,
+            teamGroupIdsInStage,
+            stageGroups,
+            stageMatches);
         MainThread.BeginInvokeOnMainThread(() =>
         {
             StageMatches.Clear();
@@ -359,7 +411,12 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
         });
     }
 
-    private List<StandingGroup> BuildStandingsByGroupFromMatches(Tournament tournament, IReadOnlyList<Team> teams, List<Match> matches)
+    private List<StandingGroup> BuildStandingsByGroupFromMatches(
+        Tournament tournament,
+        IReadOnlyList<Team> teams,
+        IReadOnlyDictionary<Guid, Guid?> teamGroupIdsInStage,
+        IReadOnlyList<GroupInfo> stageGroups,
+        List<Match> matches)
     {
         var result = new List<StandingGroup>();
         var standings = _statsService.CalculateStandings(tournament, teams, matches);
@@ -373,7 +430,7 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
                 Math.Max(tournament.Rules.PointsForOvertimeWin, tournament.Rules.PointsForShootoutWin))
             : 3;
         var rules = tournament.Rules ?? new TournamentRules();
-        var groups = rules.Groups?.OrderBy(g => g.Order).ThenBy(g => g.Name).ToList() ?? new List<GroupInfo>();
+        var groups = stageGroups.ToList();
 
         StandingRow CreateRow(Standing s, Team team, int place, string groupName, IReadOnlyList<int> last5)
         {
@@ -403,7 +460,10 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
         {
             foreach (var group in groups)
             {
-                var teamIdsInGroup = teams.Where(t => t.GroupId == group.Id).Select(t => t.Id).ToHashSet();
+                var teamIdsInGroup = teams
+                    .Where(t => teamGroupIdsInStage.TryGetValue(t.Id, out var gid) && gid == group.Id)
+                    .Select(t => t.Id)
+                    .ToHashSet();
                 var inGroup = standings.Where(s => teamIdsInGroup.Contains(s.TeamId)).ToList();
                 var sortedInGroup = StatsService.SortByRules(inGroup, rules);
                 var groupRows = new ObservableCollection<StandingRow>();
@@ -422,7 +482,10 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
                     result.Add(g);
                 }
             }
-            var noGroupTeamIds = teams.Where(t => !t.GroupId.HasValue).Select(t => t.Id).ToHashSet();
+            var noGroupTeamIds = teams
+                .Where(t => !teamGroupIdsInStage.TryGetValue(t.Id, out var gid) || gid is null)
+                .Select(t => t.Id)
+                .ToHashSet();
             var noGroup = standings.Where(s => noGroupTeamIds.Contains(s.TeamId)).ToList();
             if (noGroup.Count > 0)
             {
@@ -581,10 +644,13 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
             periodPart = " (" + string.Join(", ", parts) + ")";
         }
 
+        var hasOvertimePeriod = match.PeriodScores?.Any(p => p.PeriodType == PeriodType.Overtime) == true;
+        var hasShootoutPeriod = match.PeriodScores?.Any(p => p.PeriodType == PeriodType.Shootout) == true;
+
         var outcomeSuffix = match.OutcomeType switch
         {
-            OutcomeType.Overtime => " ОТ",
-            OutcomeType.Shootout => match.ShootoutScoreHome is { } sh && match.ShootoutScoreAway is { } sa
+            OutcomeType.Overtime => hasOvertimePeriod ? "" : " ОТ",
+            OutcomeType.Shootout => hasShootoutPeriod ? "" : match.ShootoutScoreHome is { } sh && match.ShootoutScoreAway is { } sa
                 ? $" Б ({sh}:{sa})"
                 : " Б",
             _ => ""

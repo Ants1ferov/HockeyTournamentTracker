@@ -21,13 +21,15 @@ public partial class MatchEditPage : ContentPage, IQueryAttributable
             Guid.TryParse(idString, out var id))
         {
             _viewModel.TournamentId = id;
-            await _viewModel.LoadTeamsAsync();
         }
 
         if (query.TryGetValue("StageId", out var sVal) && sVal is string sStr && Guid.TryParse(sStr, out var stageId))
             _viewModel.StageId = stageId;
         else
             _viewModel.StageId = null;
+
+        if (_viewModel.TournamentId != Guid.Empty)
+            await _viewModel.LoadTeamsAsync();
 
         if (query.TryGetValue("MatchId", out var mVal) && mVal is string mStr && Guid.TryParse(mStr, out var matchId))
         {

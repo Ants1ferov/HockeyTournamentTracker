@@ -37,6 +37,8 @@ public static class MauiProgram
 		builder.Services.AddSingleton<ITeamRepository, TeamRepository>();
 		builder.Services.AddSingleton<IStageRepository, StageRepository>();
 		builder.Services.AddSingleton<IMatchRepository, MatchRepository>();
+		builder.Services.AddSingleton<IStageTeamRepository, StageTeamRepository>();
+		builder.Services.AddSingleton<IStageGroupRepository, StageGroupRepository>();
 
 		builder.Services.AddSingleton<StatsService>();
 

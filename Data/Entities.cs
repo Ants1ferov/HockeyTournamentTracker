@@ -58,6 +58,40 @@ public class StageEntity
     public int StageType { get; set; }
 }
 
+[Table("StageTeams")]
+public class StageTeamEntity
+{
+    [PrimaryKey]
+    public Guid Id { get; set; }
+
+    [Indexed]
+    public Guid StageId { get; set; }
+
+    [Indexed]
+    public Guid TeamId { get; set; }
+
+    /// <summary>
+    /// Группа команды внутри конкретной стадии.
+    /// Если null — команда считается "Без группы" в этой стадии.
+    /// </summary>
+    public Guid? GroupId { get; set; }
+}
+
+[Table("StageGroups")]
+public class StageGroupEntity
+{
+    [PrimaryKey]
+    public Guid Id { get; set; }
+
+    [Indexed]
+    public Guid StageId { get; set; }
+
+    [NotNull]
+    public string Name { get; set; } = string.Empty;
+
+    public int Order { get; set; }
+}
+
 [Table("Matches")]
 public class MatchEntity
 {

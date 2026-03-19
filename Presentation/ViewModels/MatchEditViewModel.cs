@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Linq;
 using HockeyTournamentTracker.Data;
 using HockeyTournamentTracker.Domain;
 
@@ -11,6 +12,7 @@ public sealed class MatchEditViewModel : INotifyPropertyChanged
     private readonly ITeamRepository _teamRepository;
     private readonly IMatchRepository _matchRepository;
     private readonly ITournamentRepository _tournamentRepository;
+    private readonly IStageTeamRepository _stageTeamRepository;
 
     private Guid _tournamentId;
     private Guid _matchId;
@@ -62,7 +64,7 @@ public sealed class MatchEditViewModel : INotifyPropertyChanged
         set
         {
             if (SetField(ref _homeTeam, value))
-                RefreshAwayTeamOptions();
+                _ = RefreshAwayTeamOptionsAsync();
         }
     }
 
@@ -144,25 +146,38 @@ public sealed class MatchEditViewModel : INotifyPropertyChanged
     public int OTHome { get => _otHome; set => SetField(ref _otHome, value); }
     public int OTAway { get => _otAway; set => SetField(ref _otAway, value); }
 
-    public MatchEditViewModel(ITeamRepository teamRepository, IMatchRepository matchRepository, ITournamentRepository tournamentRepository)
+    public MatchEditViewModel(
+        ITeamRepository teamRepository,
+        IMatchRepository matchRepository,
+        ITournamentRepository tournamentRepository,
+        IStageTeamRepository stageTeamRepository)
     {
         _teamRepository = teamRepository;
         _matchRepository = matchRepository;
         _tournamentRepository = tournamentRepository;
+        _stageTeamRepository = stageTeamRepository;
     }
 
-    private void RefreshAwayTeamOptions()
+    private async Task RefreshAwayTeamOptionsAsync()
     {
         AwayTeamOptions.Clear();
-        if (_tournament?.Rules.AllowCrossGroupMatches == true || HomeTeam is null)
+        if (_tournament?.Rules.AllowCrossGroupMatches == true || HomeTeam is null || StageId is null || StageId == Guid.Empty)
         {
             foreach (var t in Teams)
                 AwayTeamOptions.Add(t);
             return;
         }
-        var groupId = HomeTeam.GroupId;
-        foreach (var t in Teams.Where(t => t.GroupId == groupId))
-            AwayTeamOptions.Add(t);
+
+        var stageId = StageId.Value;
+        var teamGroupIdsInStage = await _stageTeamRepository.GetTeamGroupIdsByStageAsync(stageId);
+        var homeGroupId = teamGroupIdsInStage.TryGetValue(HomeTeam.Id, out var gid) ? gid : null;
+
+        foreach (var t in Teams)
+        {
+            var tidGroupId = teamGroupIdsInStage.TryGetValue(t.Id, out var teamGid) ? teamGid : null;
+            if (tidGroupId == homeGroupId)
+                AwayTeamOptions.Add(t);
+        }
     }
 
     public async Task LoadTeamsAsync()
@@ -172,10 +187,42 @@ public sealed class MatchEditViewModel : INotifyPropertyChanged
         if (TournamentId == Guid.Empty) return;
 
         _tournament = await _tournamentRepository.GetByIdAsync(TournamentId);
-        var teams = await _teamRepository.GetByTournamentAsync(TournamentId);
-        foreach (var team in teams)
-            Teams.Add(team);
-        RefreshAwayTeamOptions();
+        var allTeams = await _teamRepository.GetByTournamentAsync(TournamentId);
+
+        if (StageId is { } stageId && stageId != Guid.Empty)
+        {
+            var stageTeamIds = await _stageTeamRepository.GetTeamIdsByStageAsync(stageId);
+            if (stageTeamIds.Count == 0)
+            {
+                // Backward-compatibility: если StageTeams пустая, а матчи уже есть — извлекаем команды из матчей.
+                var matches = await _matchRepository.GetByTournamentAsync(TournamentId);
+                var stageMatches = matches.Where(m => m.StageId == stageId).ToList();
+                var derivedTeamIds = stageMatches
+                    .SelectMany(m => new[] { m.HomeTeamId, m.AwayTeamId })
+                    .Distinct()
+                    .ToList();
+
+                if (derivedTeamIds.Count > 0)
+                {
+                    var teamGroupByTeamId = derivedTeamIds.ToDictionary(
+                        id => id,
+                        id => allTeams.FirstOrDefault(t => t.Id == id)?.GroupId);
+                    await _stageTeamRepository.AddTeamsToStageAsync(stageId, teamGroupByTeamId);
+                }
+
+                stageTeamIds = derivedTeamIds;
+            }
+
+            var stageTeamIdSet = stageTeamIds.ToHashSet();
+            foreach (var team in allTeams.Where(t => stageTeamIdSet.Contains(t.Id)))
+                Teams.Add(team);
+        }
+        else
+        {
+            foreach (var team in allTeams)
+                Teams.Add(team);
+        }
+        await RefreshAwayTeamOptionsAsync();
     }
 
     public async Task LoadMatchAsync()
@@ -200,15 +247,30 @@ public sealed class MatchEditViewModel : INotifyPropertyChanged
         ShootoutAway = match.ShootoutScoreAway ?? 0;
         if (match.PeriodScores is { Count: > 0 } periods)
         {
-            P1Home = periods.Count > 0 ? periods[0].HomeGoals : 0;
-            P1Away = periods.Count > 0 ? periods[0].AwayGoals : 0;
-            P2Home = periods.Count > 1 ? periods[1].HomeGoals : 0;
-            P2Away = periods.Count > 1 ? periods[1].AwayGoals : 0;
-            P3Home = periods.Count > 2 ? periods[2].HomeGoals : 0;
-            P3Away = periods.Count > 2 ? periods[2].AwayGoals : 0;
-            HasOvertime = periods.Count > 3;
-            OTHome = periods.Count > 3 ? periods[3].HomeGoals : 0;
-            OTAway = periods.Count > 3 ? periods[3].AwayGoals : 0;
+            var ordered = periods.OrderBy(p => p.PeriodNumber).ToList();
+
+            P1Home = ordered.FirstOrDefault(p => p.PeriodType == PeriodType.Regular && p.PeriodNumber == 1)?.HomeGoals ?? 0;
+            P1Away = ordered.FirstOrDefault(p => p.PeriodType == PeriodType.Regular && p.PeriodNumber == 1)?.AwayGoals ?? 0;
+
+            P2Home = ordered.FirstOrDefault(p => p.PeriodType == PeriodType.Regular && p.PeriodNumber == 2)?.HomeGoals ?? 0;
+            P2Away = ordered.FirstOrDefault(p => p.PeriodType == PeriodType.Regular && p.PeriodNumber == 2)?.AwayGoals ?? 0;
+
+            P3Home = ordered.FirstOrDefault(p => p.PeriodType == PeriodType.Regular && p.PeriodNumber == 3)?.HomeGoals ?? 0;
+            P3Away = ordered.FirstOrDefault(p => p.PeriodType == PeriodType.Regular && p.PeriodNumber == 3)?.AwayGoals ?? 0;
+
+            var ot = ordered.FirstOrDefault(p => p.PeriodType == PeriodType.Overtime);
+            HasOvertime = ot is not null;
+            OTHome = ot?.HomeGoals ?? 0;
+            OTAway = ot?.AwayGoals ?? 0;
+
+            var shootout = ordered.FirstOrDefault(p => p.PeriodType == PeriodType.Shootout);
+            if (shootout is not null)
+            {
+                ShootoutHome = shootout.HomeGoals;
+                ShootoutAway = shootout.AwayGoals;
+                // Если период буллитов есть в данных — показываем UI "по буллитам".
+                OutcomeType = OutcomeType.Shootout;
+            }
         }
         else
         {
@@ -221,8 +283,51 @@ public sealed class MatchEditViewModel : INotifyPropertyChanged
     {
         if (TournamentId == Guid.Empty || HomeTeam is null || AwayTeam is null || HomeTeam.Id == AwayTeam.Id)
             return false;
-        if (_tournament?.Rules.AllowCrossGroupMatches == false && HomeTeam.GroupId.HasValue && AwayTeam.GroupId != HomeTeam.GroupId)
-            return false;
+
+        if (StageId is { } stageId && stageId != Guid.Empty)
+        {
+            var stageTeamIds = await _stageTeamRepository.GetTeamIdsByStageAsync(stageId);
+
+            if (stageTeamIds.Count == 0)
+            {
+                // Backward-compatibility: извлекаем команды из матчей, если StageTeams ещё не заполнена.
+                var matches = await _matchRepository.GetByTournamentAsync(TournamentId);
+                var stageMatches = matches.Where(m => m.StageId == stageId).ToList();
+                var derivedTeamIds = stageMatches
+                    .SelectMany(m => new[] { m.HomeTeamId, m.AwayTeamId })
+                    .Distinct()
+                    .ToList();
+
+                if (derivedTeamIds.Count > 0)
+                {
+                    var allTeams = await _teamRepository.GetByTournamentAsync(TournamentId);
+                    var teamGroupByTeamId = derivedTeamIds.ToDictionary(
+                        id => id,
+                        id => allTeams.FirstOrDefault(t => t.Id == id)?.GroupId);
+
+                    await _stageTeamRepository.AddTeamsToStageAsync(stageId, teamGroupByTeamId);
+                    var derivedSet = derivedTeamIds.ToHashSet();
+                    if (!derivedSet.Contains(HomeTeam.Id) || !derivedSet.Contains(AwayTeam.Id))
+                        return false;
+                }
+            }
+            else
+            {
+                var stageTeamIdSet = stageTeamIds.ToHashSet();
+                if (!stageTeamIdSet.Contains(HomeTeam.Id) || !stageTeamIdSet.Contains(AwayTeam.Id))
+                    return false;
+            }
+        }
+
+        if (_tournament?.Rules.AllowCrossGroupMatches == false && StageId is { } validationStageId && validationStageId != Guid.Empty)
+        {
+            var teamGroupIdsInStage = await _stageTeamRepository.GetTeamGroupIdsByStageAsync(validationStageId);
+            var homeGroupId = teamGroupIdsInStage.TryGetValue(HomeTeam.Id, out var hg) ? hg : null;
+            var awayGroupId = teamGroupIdsInStage.TryGetValue(AwayTeam.Id, out var ag) ? ag : null;
+
+            if (homeGroupId.HasValue && awayGroupId != homeGroupId)
+                return false;
+        }
 
         var dateTime = Date.Date + Time;
         var id = MatchId != Guid.Empty ? MatchId : Guid.NewGuid();
@@ -235,6 +340,18 @@ public sealed class MatchEditViewModel : INotifyPropertyChanged
         };
         if (HasOvertime)
             periodScores.Add(new PeriodScore { PeriodNumber = 4, PeriodType = PeriodType.Overtime, HomeGoals = OTHome, AwayGoals = OTAway });
+
+        if (OutcomeType == OutcomeType.Shootout)
+        {
+            var shootoutPeriodNumber = HasOvertime ? 5 : 4;
+            periodScores.Add(new PeriodScore
+            {
+                PeriodNumber = shootoutPeriodNumber,
+                PeriodType = PeriodType.Shootout,
+                HomeGoals = ShootoutHome,
+                AwayGoals = ShootoutAway
+            });
+        }
 
         var totalHome = P1Home + P2Home + P3Home + (HasOvertime ? OTHome : 0);
         var totalAway = P1Away + P2Away + P3Away + (HasOvertime ? OTAway : 0);
