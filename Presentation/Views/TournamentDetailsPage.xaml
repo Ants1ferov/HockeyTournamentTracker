@@ -13,8 +13,6 @@
                     <Label Text="{Binding PageTitle}"
                            FontAttributes="Bold"
                            FontSize="22" />
-                    <Button Text="{x:Static res:AppResources.Groups}"
-                            Clicked="OnGroupsClicked" />
                     <Label Text="{x:Static res:AppResources.Status}" FontAttributes="Bold" FontSize="14" />
                     <Picker Title="{x:Static res:AppResources.Status}"
                             SelectedIndex="{Binding StatusIndex}">

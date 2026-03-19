@@ -38,12 +38,6 @@ public partial class TournamentDetailsPage : ContentPage, IQueryAttributable
         await Shell.Current.GoToAsync($"{nameof(TeamsListPage)}?TournamentId={_viewModel.Tournament.Id}");
     }
 
-    private async void OnGroupsClicked(object? sender, EventArgs e)
-    {
-        if (_viewModel.Tournament is null) return;
-        await Shell.Current.GoToAsync($"{nameof(GroupsListPage)}?TournamentId={_viewModel.Tournament.Id}");
-    }
-
     private async void OnStartMatchClicked(object? sender, EventArgs e)
     {
         if ((sender as BindableObject)?.BindingContext is not MatchRow row || _viewModel.Tournament is null)
