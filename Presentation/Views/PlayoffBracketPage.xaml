@@ -162,65 +162,64 @@
                    FontAttributes="Bold"
                    FontSize="16"
                    Margin="0,8,0,0" />
+            <Label Text="При включенном re-seeding связи между раундами динамические и могут меняться после каждого раунда."
+                   FontSize="11"
+                   TextColor="Gray"
+                   IsVisible="{Binding UseReseeding}" />
             <ScrollView Orientation="Horizontal"
                         HorizontalScrollBarVisibility="Default">
                 <HorizontalStackLayout Spacing="10"
                                        BindableLayout.ItemsSource="{Binding Rounds}">
                     <BindableLayout.ItemTemplate>
                         <DataTemplate>
-                            <Grid ColumnDefinitions="220,20"
-                                  ColumnSpacing="6">
-                                <VerticalStackLayout Grid.Column="0"
-                                                     Spacing="6">
-                                    <Label Text="{Binding Name}"
-                                           FontAttributes="Bold"
-                                           FontSize="14" />
-                                    <CollectionView ItemsSource="{Binding Series}"
-                                                    SelectionMode="None">
-                                        <CollectionView.ItemTemplate>
-                                            <DataTemplate>
-                                                <Frame Margin="0,3"
-                                                       Padding="8"
-                                                       CornerRadius="8"
-                                                       HasShadow="False"
-                                                       BorderColor="#D1D5DB">
-                                                    <Grid ColumnDefinitions="*,6"
-                                                          ColumnSpacing="4">
-                                                        <VerticalStackLayout Grid.Column="0"
-                                                                             Spacing="2">
-                                                            <Label Text="{Binding HomeTeamName}"
-                                                                   FontSize="12"
-                                                                   LineBreakMode="TailTruncation" />
-                                                            <Label Text="{Binding AwayTeamName}"
-                                                                   FontSize="12"
-                                                                   LineBreakMode="TailTruncation" />
-                                                            <Label Text="{Binding ScoreText}"
-                                                                   FontSize="10"
-                                                                   TextColor="Gray" />
-                                                        </VerticalStackLayout>
-                                                        <BoxView Grid.Column="1"
-                                                                 WidthRequest="2"
-                                                                 BackgroundColor="#D1D5DB"
-                                                                 HorizontalOptions="Center"
-                                                                 VerticalOptions="Fill" />
-                                                    </Grid>
-                                                </Frame>
-                                            </DataTemplate>
-                                        </CollectionView.ItemTemplate>
-                                    </CollectionView>
-                                </VerticalStackLayout>
-                                <Grid Grid.Column="1"
-                                      IsVisible="{Binding HasNextRound}">
-                                    <BoxView WidthRequest="2"
-                                             BackgroundColor="#D1D5DB"
-                                             HorizontalOptions="Center"
-                                             VerticalOptions="FillAndExpand" />
-                                    <Label Text=">"
-                                           FontAttributes="Bold"
-                                           TextColor="#9CA3AF"
-                                           HorizontalOptions="Center"
-                                           VerticalOptions="Center" />
-                                </Grid>
+                            <Grid WidthRequest="224"
+                                  HeightRequest="{Binding CanvasHeight}">
+                                <AbsoluteLayout InputTransparent="True"
+                                                BindableLayout.ItemsSource="{Binding ConnectorSegments}">
+                                    <BindableLayout.ItemTemplate>
+                                        <DataTemplate>
+                                            <BoxView Color="#D1D5DB"
+                                                     AbsoluteLayout.LayoutBounds="{Binding Bounds}"
+                                                     AbsoluteLayout.LayoutFlags="None" />
+                                        </DataTemplate>
+                                    </BindableLayout.ItemTemplate>
+                                </AbsoluteLayout>
+
+                                <AbsoluteLayout BindableLayout.ItemsSource="{Binding Series}">
+                                    <BindableLayout.ItemTemplate>
+                                        <DataTemplate>
+                                            <Frame Padding="8"
+                                                   CornerRadius="8"
+                                                   HasShadow="False"
+                                                   BorderColor="#D1D5DB"
+                                                   BackgroundColor="White"
+                                                   AbsoluteLayout.LayoutBounds="{Binding BracketBounds}"
+                                                   AbsoluteLayout.LayoutFlags="None">
+                                                <VerticalStackLayout Spacing="2">
+                                                    <Label Text="{Binding HomeTeamName}"
+                                                           FontSize="12"
+                                                           LineBreakMode="TailTruncation" />
+                                                    <Label Text="{Binding AwayTeamName}"
+                                                           FontSize="12"
+                                                           LineBreakMode="TailTruncation" />
+                                                    <Label Text="{Binding ScoreText}"
+                                                           FontSize="10"
+                                                           TextColor="Gray" />
+                                                </VerticalStackLayout>
+                                            </Frame>
+                                        </DataTemplate>
+                                    </BindableLayout.ItemTemplate>
+                                </AbsoluteLayout>
+
+                                <Label Text="{Binding Name}"
+                                       FontAttributes="Bold"
+                                       FontSize="12"
+                                       BackgroundColor="#FEE2E2"
+                                       TextColor="#7F1D1D"
+                                       Padding="6,2"
+                                       Margin="0,-2,0,0"
+                                       HorizontalOptions="Start"
+                                       VerticalOptions="Start" />
                             </Grid>
                         </DataTemplate>
                     </BindableLayout.ItemTemplate>

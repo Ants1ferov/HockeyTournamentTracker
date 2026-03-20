@@ -5,6 +5,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using HockeyTournamentTracker.Data;
 using HockeyTournamentTracker.Domain;
+using Microsoft.Maui.Graphics;
 
 namespace HockeyTournamentTracker.Presentation.ViewModels;
 
@@ -649,11 +650,88 @@ public sealed class PlayoffBracketViewModel : INotifyPropertyChanged
                 Rounds.Add(roundUi);
             }
 
+            BuildBracketGeometry();
+
             var selectedId = previouslySelectedRoundId;
             if (!selectedId.HasValue || Rounds.All(r => r.Id != selectedId.Value))
                 selectedId = Rounds.FirstOrDefault()?.Id;
             SelectRoundInternal(selectedId);
         });
+    }
+
+    private void BuildBracketGeometry()
+    {
+        const double cardWidth = 200;
+        const double cardHeight = 78;
+        const double firstRoundGap = 12;
+        const double connectorWidth = 22;
+        const double topPadding = 22;
+        var baseStep = cardHeight + firstRoundGap;
+
+        double maxNormalBottom = 0;
+        for (var r = 0; r < Rounds.Count; r++)
+        {
+            var round = Rounds[r];
+            foreach (var series in round.Series.OrderBy(s => s.IsThirdPlace ? int.MaxValue : s.Slot))
+            {
+                if (series.IsThirdPlace)
+                    continue;
+
+                var top = topPadding + (series.Slot * Math.Pow(2, r) + (Math.Pow(2, r) - 1) / 2.0) * baseStep;
+                series.BracketBounds = new Rect(0, top, cardWidth, cardHeight);
+                maxNormalBottom = Math.Max(maxNormalBottom, top + cardHeight);
+            }
+        }
+
+        var thirdPlaceTop = maxNormalBottom + 28;
+
+        foreach (var round in Rounds)
+        {
+            foreach (var series in round.Series.Where(s => s.IsThirdPlace))
+                series.BracketBounds = new Rect(0, thirdPlaceTop, cardWidth, cardHeight);
+        }
+
+        var totalHeight = Math.Max(maxNormalBottom, thirdPlaceTop + cardHeight) + 16;
+        foreach (var round in Rounds)
+        {
+            round.CanvasHeight = totalHeight;
+            round.ConnectorSegments.Clear();
+        }
+
+        if (UseReseeding)
+            return;
+
+        for (var r = 0; r < Rounds.Count - 1; r++)
+        {
+            var round = Rounds[r];
+            var nextRound = Rounds[r + 1];
+            var current = round.Series.Where(s => !s.IsThirdPlace).OrderBy(s => s.Slot).ToList();
+            var next = nextRound.Series.Where(s => !s.IsThirdPlace).OrderBy(s => s.Slot).ToDictionary(s => s.Slot);
+
+            for (var i = 0; i + 1 < current.Count; i += 2)
+            {
+                var left = current[i];
+                var right = current[i + 1];
+                var nextSlot = left.Slot / 2;
+                if (!next.TryGetValue(nextSlot, out var child))
+                    continue;
+
+                var centerLeft = left.BracketBounds.Y + cardHeight / 2.0;
+                var centerRight = right.BracketBounds.Y + cardHeight / 2.0;
+                var centerChild = child.BracketBounds.Y + cardHeight / 2.0;
+
+                var xStart = cardWidth;
+                var xMid = cardWidth + 8;
+                var xEnd = cardWidth + connectorWidth;
+                var yTop = Math.Min(centerLeft, centerRight);
+                var yBottom = Math.Max(centerLeft, centerRight);
+
+                round.ConnectorSegments.Add(new PlayoffBracketSegmentUi(new Rect(xStart, centerLeft - 1, xMid - xStart, 2)));
+                round.ConnectorSegments.Add(new PlayoffBracketSegmentUi(new Rect(xStart, centerRight - 1, xMid - xStart, 2)));
+                round.ConnectorSegments.Add(new PlayoffBracketSegmentUi(new Rect(xMid - 1, yTop, 2, yBottom - yTop)));
+                round.ConnectorSegments.Add(new PlayoffBracketSegmentUi(new Rect(xMid, centerChild - 1, xEnd - xMid, 2)));
+            }
+        }
     }
 
     private void SelectRoundInternal(Guid? roundId)
@@ -710,6 +788,8 @@ public sealed class PlayoffRoundUi : INotifyPropertyChanged
     public int DefaultBestOf { get; set; }
     public bool HasNextRound { get; set; }
     public ObservableCollection<PlayoffSeriesUi> Series { get; } = new();
+    public ObservableCollection<PlayoffBracketSegmentUi> ConnectorSegments { get; } = new();
+    public double CanvasHeight { get; set; } = 200;
 
     private bool _isSelected;
     public bool IsSelected
@@ -744,4 +824,15 @@ public sealed class PlayoffSeriesUi
     public string Title { get; set; } = string.Empty;
     public string ScoreText { get; set; } = string.Empty;
     public string WinnerText { get; set; } = string.Empty;
+    public Rect BracketBounds { get; set; } = new Rect(0, 0, 200, 78);
+}
+
+public sealed class PlayoffBracketSegmentUi
+{
+    public PlayoffBracketSegmentUi(Rect bounds)
+    {
+        Bounds = bounds;
+    }
+
+    public Rect Bounds { get; }
 }
