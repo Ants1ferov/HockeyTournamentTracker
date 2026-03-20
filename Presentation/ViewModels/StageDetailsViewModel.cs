@@ -87,7 +87,7 @@ public sealed class StageDetailsViewModel : INotifyPropertyChanged
         var allMatches = await _matchRepository.GetByTournamentAsync(tournamentId);
         var stageMatches = allMatches
             .Where(m => m.StageId == stageId)
-            .OrderBy(m => m.DateTime ?? DateTime.MinValue)
+            .OrderByDescending(m => m.DateTime ?? DateTime.MinValue)
             .ToList();
 
         var allTeams = await _teamRepository.GetByTournamentAsync(tournamentId);

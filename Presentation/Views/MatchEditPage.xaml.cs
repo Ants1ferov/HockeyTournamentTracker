@@ -34,8 +34,13 @@ public partial class MatchEditPage : ContentPage, IQueryAttributable
         if (query.TryGetValue("MatchId", out var mVal) && mVal is string mStr && Guid.TryParse(mStr, out var matchId))
         {
             _viewModel.MatchId = matchId;
-            Title = AppResources.FinishMatch;
+            Title = "Редактирование матча";
             await _viewModel.LoadMatchAsync();
+        }
+        else
+        {
+            _viewModel.MatchId = Guid.Empty;
+            Title = AppResources.NewMatch;
         }
     }
 

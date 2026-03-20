@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using HockeyTournamentTracker.Data;
@@ -331,7 +332,10 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
             SelectedStage = null;
 
             ParticipantTeams.Clear();
-            foreach (var t in teams)
+            var sortedParticipants = teams
+                .OrderBy(t => t.Name, StringComparer.Create(CultureInfo.CurrentCulture, ignoreCase: true))
+                .ToList();
+            foreach (var t in sortedParticipants)
                 ParticipantTeams.Add(t);
         }
         finally
@@ -352,7 +356,7 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
         var matches = await _matchRepository.GetByTournamentAsync(Tournament.Id);
         var stageMatches = matches
             .Where(m => m.StageId == stageId)
-            .OrderBy(m => m.DateTime ?? DateTime.MinValue)
+            .OrderByDescending(m => m.DateTime ?? DateTime.MinValue)
             .ToList();
         var allTeams = await _teamRepository.GetByTournamentAsync(Tournament.Id);
         var teamById = allTeams.ToDictionary(t => t.Id);

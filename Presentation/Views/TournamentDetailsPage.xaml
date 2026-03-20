@@ -147,13 +147,8 @@
                                         </Label.Text>
                                     </Label>
                                     <Button Grid.Row="2"
-                                            Text="{x:Static res:AppResources.FinishMatch}"
-                                            IsVisible="{Binding IsLive}"
+                                            Text="Редактировать матч"
                                             Clicked="OnFinishMatchClicked" />
-                                    <Button Grid.Row="2"
-                                            Text="{x:Static res:AppResources.StartMatch}"
-                                            IsVisible="{Binding Status, Converter={StaticResource MatchStatusToStartVisible}}"
-                                            Clicked="OnStartMatchClicked" />
                                 </Grid>
                             </DataTemplate>
                         </CollectionView.ItemTemplate>
@@ -294,16 +289,9 @@
                                             </MultiBinding>
                                         </Label.Text>
                                     </Label>
-                                    <Grid Grid.Row="2" ColumnDefinitions="Auto,Auto">
-                                        <Button Grid.Column="0"
-                                                Text="{x:Static res:AppResources.StartMatch}"
-                                                IsVisible="{Binding Status, Converter={StaticResource MatchStatusToStartVisible}}"
-                                                Clicked="OnStartMatchClicked" />
-                                        <Button Grid.Column="1"
-                                                Text="{x:Static res:AppResources.FinishMatch}"
-                                                IsVisible="{Binding IsLive}"
-                                                Clicked="OnFinishMatchClicked" />
-                                    </Grid>
+                                    <Button Grid.Row="2"
+                                            Text="Редактировать матч"
+                                            Clicked="OnFinishMatchClicked" />
                                 </Grid>
                             </DataTemplate>
                         </CollectionView.ItemTemplate>
