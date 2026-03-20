@@ -39,6 +39,7 @@ public static class MauiProgram
 		builder.Services.AddSingleton<IMatchRepository, MatchRepository>();
 		builder.Services.AddSingleton<IStageTeamRepository, StageTeamRepository>();
 		builder.Services.AddSingleton<IStageGroupRepository, StageGroupRepository>();
+		builder.Services.AddSingleton<IPlayoffRepository, PlayoffRepository>();
 
 		builder.Services.AddSingleton<StatsService>();
 
@@ -73,6 +74,8 @@ public static class MauiProgram
 		builder.Services.AddTransient<StageDetailsPage>();
 		builder.Services.AddTransient<StageRosterPage>();
 		builder.Services.AddTransient<StageMatchesPage>();
+		builder.Services.AddTransient<PlayoffBracketViewModel>();
+		builder.Services.AddTransient<PlayoffBracketPage>();
 
 		return builder.Build();
 	}

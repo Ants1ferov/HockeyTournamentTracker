@@ -10,7 +10,80 @@
             <Button Text="{x:Static res:AppResources.AddMatch}"
                     Clicked="OnAddMatchClicked" />
 
-            <CollectionView ItemsSource="{Binding StageMatches}">
+            <Label Text="Фильтры"
+                   FontAttributes="Bold"
+                   FontSize="16" />
+            <SearchBar x:Name="TeamSearchBar"
+                       Placeholder="Поиск по команде"
+                       TextChanged="OnTeamSearchTextChanged" />
+            <Grid ColumnDefinitions="*,*"
+                  ColumnSpacing="8">
+                <VerticalStackLayout Grid.Column="0"
+                                     Spacing="4">
+                    <Label Text="Период"
+                           FontSize="12"
+                           TextColor="Gray" />
+                    <Picker x:Name="PeriodFilterPicker"
+                            SelectedIndexChanged="OnFilterChanged">
+                        <Picker.Items>
+                            <x:String>Все</x:String>
+                            <x:String>Эта неделя</x:String>
+                            <x:String>Этот месяц</x:String>
+                            <x:String>Этот год</x:String>
+                            <x:String>Последние 30 дней</x:String>
+                            <x:String>Произвольный период</x:String>
+                        </Picker.Items>
+                    </Picker>
+                </VerticalStackLayout>
+                <VerticalStackLayout Grid.Column="1"
+                                     Spacing="4">
+                    <Label Text="Статус"
+                           FontSize="12"
+                           TextColor="Gray" />
+                    <Picker x:Name="StatusFilterPicker"
+                            SelectedIndexChanged="OnFilterChanged">
+                        <Picker.Items>
+                            <x:String>Все</x:String>
+                            <x:String>Запланирован</x:String>
+                            <x:String>В процессе</x:String>
+                            <x:String>Завершен</x:String>
+                            <x:String>Отменен</x:String>
+                        </Picker.Items>
+                    </Picker>
+                </VerticalStackLayout>
+            </Grid>
+
+            <Grid x:Name="CustomRangePanel"
+                  IsVisible="False"
+                  ColumnDefinitions="*,*"
+                  ColumnSpacing="8">
+                <VerticalStackLayout Grid.Column="0"
+                                     Spacing="4">
+                    <Label Text="С даты"
+                           FontSize="12"
+                           TextColor="Gray" />
+                    <DatePicker x:Name="FromDatePicker"
+                                DateSelected="OnFilterChangedDate" />
+                </VerticalStackLayout>
+                <VerticalStackLayout Grid.Column="1"
+                                     Spacing="4">
+                    <Label Text="По дату"
+                           FontSize="12"
+                           TextColor="Gray" />
+                    <DatePicker x:Name="ToDatePicker"
+                                DateSelected="OnFilterChangedDate" />
+                </VerticalStackLayout>
+            </Grid>
+
+            <HorizontalStackLayout Spacing="8">
+                <Button Text="Сбросить фильтры"
+                        Clicked="OnResetFiltersClicked" />
+                <Label x:Name="MatchesCounterLabel"
+                       VerticalTextAlignment="Center"
+                       TextColor="Gray" />
+            </HorizontalStackLayout>
+
+            <CollectionView x:Name="MatchesCollection">
                 <CollectionView.ItemTemplate>
                     <DataTemplate>
                         <Frame Margin="0,4"
@@ -29,20 +102,12 @@
                                         </MultiBinding>
                                     </Label.Text>
                                 </Label>
-                                <Grid ColumnDefinitions="Auto,Auto,Auto,Auto"
+                                <Grid ColumnDefinitions="Auto,Auto"
                                       ColumnSpacing="8">
                                     <Button Grid.Column="0"
-                                            Text="{x:Static res:AppResources.StartMatch}"
-                                            IsVisible="{Binding Status, Converter={StaticResource MatchStatusToStartVisible}}"
-                                            Clicked="OnStartMatchClicked" />
-                                    <Button Grid.Column="1"
-                                            Text="{x:Static res:AppResources.FinishMatch}"
-                                            IsVisible="{Binding IsLive}"
-                                            Clicked="OnFinishMatchClicked" />
-                                    <Button Grid.Column="2"
                                             Text="Редактировать"
                                             Clicked="OnEditMatchClicked" />
-                                    <Button Grid.Column="3"
+                                    <Button Grid.Column="1"
                                             Text="{x:Static res:AppResources.Delete}"
                                             Clicked="OnDeleteMatchClicked" />
                                 </Grid>

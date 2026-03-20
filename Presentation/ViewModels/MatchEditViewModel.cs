@@ -17,8 +17,9 @@ public sealed class MatchEditViewModel : INotifyPropertyChanged
     private Guid _tournamentId;
     private Guid _matchId;
     private Guid? _stageId;
+    private Guid? _seriesId;
     private Tournament? _tournament;
-    private MatchStatus? _editingStatus;
+    private MatchStatus _matchStatus = MatchStatus.Scheduled;
     private Team? _homeTeam;
     private Team? _awayTeam;
     private DateTime _date = DateTime.Today;
@@ -57,6 +58,12 @@ public sealed class MatchEditViewModel : INotifyPropertyChanged
     {
         get => _stageId;
         set => SetField(ref _stageId, value);
+    }
+
+    public Guid? SeriesId
+    {
+        get => _seriesId;
+        set => SetField(ref _seriesId, value);
     }
 
     public Team? HomeTeam
@@ -136,6 +143,42 @@ public sealed class MatchEditViewModel : INotifyPropertyChanged
     }
 
     public bool IsShootoutVisible => OutcomeType == OutcomeType.Shootout;
+    public bool IsScoreVisible => SelectedMatchStatus != MatchStatus.Scheduled;
+    public bool IsFinishedDetailsVisible => SelectedMatchStatus == MatchStatus.Finished;
+
+    public MatchStatus SelectedMatchStatus
+    {
+        get => _matchStatus;
+        set
+        {
+            if (SetField(ref _matchStatus, value))
+            {
+                OnPropertyChanged(nameof(MatchStatusIndex));
+                OnPropertyChanged(nameof(IsScoreVisible));
+                OnPropertyChanged(nameof(IsFinishedDetailsVisible));
+            }
+        }
+    }
+
+    public int MatchStatusIndex
+    {
+        get => SelectedMatchStatus switch
+        {
+            MatchStatus.Scheduled => 0,
+            MatchStatus.InProgress => 1,
+            MatchStatus.Finished => 2,
+            _ => 0
+        };
+        set
+        {
+            SelectedMatchStatus = value switch
+            {
+                1 => MatchStatus.InProgress,
+                2 => MatchStatus.Finished,
+                _ => MatchStatus.Scheduled
+            };
+        }
+    }
 
     public int P1Home { get => _p1Home; set => SetField(ref _p1Home, value); }
     public int P1Away { get => _p1Away; set => SetField(ref _p1Away, value); }
@@ -232,8 +275,9 @@ public sealed class MatchEditViewModel : INotifyPropertyChanged
         var match = await _matchRepository.GetByIdAsync(MatchId);
         if (match is null) return;
 
-        _editingStatus = match.Status;
+        SelectedMatchStatus = match.Status == MatchStatus.Cancelled ? MatchStatus.Scheduled : match.Status;
         StageId = match.StageId;
+        SeriesId = match.SeriesId;
         await LoadTeamsAsync();
         HomeTeam = Teams.FirstOrDefault(t => t.Id == match.HomeTeamId);
         AwayTeam = AwayTeamOptions.FirstOrDefault(t => t.Id == match.AwayTeamId) ?? Teams.FirstOrDefault(t => t.Id == match.AwayTeamId);
@@ -333,84 +377,118 @@ public sealed class MatchEditViewModel : INotifyPropertyChanged
 
         var dateTime = Date.Date + Time;
         var id = MatchId != Guid.Empty ? MatchId : Guid.NewGuid();
+        var statusToSave = SelectedMatchStatus;
 
-        var periodScores = new List<PeriodScore>
+        int? finalHomeGoals = null;
+        int? finalAwayGoals = null;
+        OutcomeType? finalOutcomeType = null;
+        Guid? winnerTeamId = null;
+        Guid? loserTeamId = null;
+        int? finalShootoutHome = null;
+        int? finalShootoutAway = null;
+        var periodScores = new List<PeriodScore>();
+
+        if (statusToSave == MatchStatus.InProgress)
         {
-            new() { PeriodNumber = 1, PeriodType = PeriodType.Regular, HomeGoals = P1Home, AwayGoals = P1Away },
-            new() { PeriodNumber = 2, PeriodType = PeriodType.Regular, HomeGoals = P2Home, AwayGoals = P2Away },
-            new() { PeriodNumber = 3, PeriodType = PeriodType.Regular, HomeGoals = P3Home, AwayGoals = P3Away }
-        };
-        if (HasOvertime)
-            periodScores.Add(new PeriodScore { PeriodNumber = 4, PeriodType = PeriodType.Overtime, HomeGoals = OTHome, AwayGoals = OTAway });
-
-        if (OutcomeType == OutcomeType.Shootout)
+            finalHomeGoals = HomeGoals;
+            finalAwayGoals = AwayGoals;
+        }
+        else if (statusToSave == MatchStatus.Finished)
         {
-            if (ShootoutHome == ShootoutAway)
-                return false;
+            var hasDetailedPeriods =
+                P1Home != 0 || P1Away != 0 ||
+                P2Home != 0 || P2Away != 0 ||
+                P3Home != 0 || P3Away != 0 ||
+                (HasOvertime && (OTHome != 0 || OTAway != 0)) ||
+                (OutcomeType == OutcomeType.Shootout && (ShootoutHome != 0 || ShootoutAway != 0));
 
-            var shootoutPeriodNumber = HasOvertime ? 5 : 4;
-            periodScores.Add(new PeriodScore
+            if (hasDetailedPeriods)
             {
-                PeriodNumber = shootoutPeriodNumber,
-                PeriodType = PeriodType.Shootout,
-                HomeGoals = ShootoutHome,
-                AwayGoals = ShootoutAway
-            });
-        }
+                periodScores.Add(new PeriodScore { PeriodNumber = 1, PeriodType = PeriodType.Regular, HomeGoals = P1Home, AwayGoals = P1Away });
+                periodScores.Add(new PeriodScore { PeriodNumber = 2, PeriodType = PeriodType.Regular, HomeGoals = P2Home, AwayGoals = P2Away });
+                periodScores.Add(new PeriodScore { PeriodNumber = 3, PeriodType = PeriodType.Regular, HomeGoals = P3Home, AwayGoals = P3Away });
+                if (HasOvertime)
+                    periodScores.Add(new PeriodScore { PeriodNumber = 4, PeriodType = PeriodType.Overtime, HomeGoals = OTHome, AwayGoals = OTAway });
 
-        var totalHome = P1Home + P2Home + P3Home + (HasOvertime ? OTHome : 0);
-        var totalAway = P1Away + P2Away + P3Away + (HasOvertime ? OTAway : 0);
+                if (OutcomeType == OutcomeType.Shootout)
+                {
+                    if (ShootoutHome == ShootoutAway)
+                        return false;
 
-        if (OutcomeType == OutcomeType.Shootout)
-        {
-            if (totalHome != totalAway)
-                return false;
+                    var shootoutPeriodNumber = HasOvertime ? 5 : 4;
+                    periodScores.Add(new PeriodScore
+                    {
+                        PeriodNumber = shootoutPeriodNumber,
+                        PeriodType = PeriodType.Shootout,
+                        HomeGoals = ShootoutHome,
+                        AwayGoals = ShootoutAway
+                    });
+                }
 
-            if (ShootoutHome > ShootoutAway)
-                totalHome += 1;
+                var totalHome = P1Home + P2Home + P3Home + (HasOvertime ? OTHome : 0);
+                var totalAway = P1Away + P2Away + P3Away + (HasOvertime ? OTAway : 0);
+
+                if (OutcomeType == OutcomeType.Shootout)
+                {
+                    if (totalHome != totalAway)
+                        return false;
+
+                    if (ShootoutHome > ShootoutAway)
+                        totalHome += 1;
+                    else
+                        totalAway += 1;
+                }
+                else if (totalHome == totalAway)
+                {
+                    return false;
+                }
+
+                finalHomeGoals = totalHome;
+                finalAwayGoals = totalAway;
+                finalOutcomeType = OutcomeType;
+                finalShootoutHome = OutcomeType == OutcomeType.Shootout ? ShootoutHome : null;
+                finalShootoutAway = OutcomeType == OutcomeType.Shootout ? ShootoutAway : null;
+            }
             else
-                totalAway += 1;
-        }
-        else if (totalHome == totalAway)
-        {
-            return false;
-        }
+            {
+                if (HomeGoals == AwayGoals)
+                    return false;
+                if (OutcomeType == OutcomeType.Shootout && ShootoutHome == ShootoutAway)
+                    return false;
 
-        var winnerTeamId = totalHome > totalAway ? HomeTeam.Id : AwayTeam.Id;
-        var loserTeamId = winnerTeamId == HomeTeam.Id ? AwayTeam.Id : HomeTeam.Id;
+                finalHomeGoals = HomeGoals;
+                finalAwayGoals = AwayGoals;
+                finalOutcomeType = OutcomeType;
+                finalShootoutHome = OutcomeType == OutcomeType.Shootout ? ShootoutHome : null;
+                finalShootoutAway = OutcomeType == OutcomeType.Shootout ? ShootoutAway : null;
+            }
+
+            winnerTeamId = finalHomeGoals > finalAwayGoals ? HomeTeam.Id : AwayTeam.Id;
+            loserTeamId = winnerTeamId == HomeTeam.Id ? AwayTeam.Id : HomeTeam.Id;
+        }
 
         var match = new Match
         {
             Id = id,
             TournamentId = TournamentId,
             StageId = StageId,
+            SeriesId = SeriesId,
             DateTime = dateTime,
             HomeTeamId = HomeTeam.Id,
             AwayTeamId = AwayTeam.Id,
-            HomeGoals = periodScores.Count > 0 ? totalHome : HomeGoals,
-            AwayGoals = periodScores.Count > 0 ? totalAway : AwayGoals,
-            OutcomeType = OutcomeType,
+            HomeGoals = finalHomeGoals,
+            AwayGoals = finalAwayGoals,
+            OutcomeType = finalOutcomeType,
             WinnerTeamId = winnerTeamId,
             LoserTeamId = loserTeamId,
-            ShootoutScoreHome = OutcomeType == OutcomeType.Shootout ? ShootoutHome : null,
-            ShootoutScoreAway = OutcomeType == OutcomeType.Shootout ? ShootoutAway : null,
-            Status = ResolveStatusForSave(),
+            ShootoutScoreHome = finalShootoutHome,
+            ShootoutScoreAway = finalShootoutAway,
+            Status = statusToSave,
             PeriodScores = periodScores
         };
 
         await _matchRepository.SaveAsync(match);
         return true;
-    }
-
-    private MatchStatus ResolveStatusForSave()
-    {
-        if (MatchId == Guid.Empty)
-            return MatchStatus.Scheduled;
-
-        if (_editingStatus == MatchStatus.InProgress)
-            return MatchStatus.Finished;
-
-        return _editingStatus ?? MatchStatus.Finished;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

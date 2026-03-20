@@ -44,7 +44,13 @@ public sealed class StageRepository : IStageRepository
             await _connection.UpdateAsync(entity);
     }
 
-    public Task DeleteAsync(Guid id) => _connection.DeleteAsync<StageEntity>(id);
+    public async Task DeleteAsync(Guid id)
+    {
+        await _connection.Table<PlayoffSeriesEntity>().Where(s => s.StageId == id).DeleteAsync();
+        await _connection.Table<PlayoffRoundEntity>().Where(r => r.StageId == id).DeleteAsync();
+        await _connection.DeleteAsync<PlayoffSettingsEntity>(id);
+        await _connection.DeleteAsync<StageEntity>(id);
+    }
 
     private static Stage MapToDomain(StageEntity entity) =>
         new()

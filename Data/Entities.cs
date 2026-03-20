@@ -102,6 +102,8 @@ public class MatchEntity
     public Guid TournamentId { get; set; }
 
     public Guid? StageId { get; set; }
+    [Indexed]
+    public Guid? SeriesId { get; set; }
 
     public DateTime? DateTime { get; set; }
 
@@ -123,5 +125,46 @@ public class MatchEntity
     public string? Notes { get; set; }
 
     public string? PeriodScoresJson { get; set; }
+}
+
+[Table("PlayoffSettings")]
+public class PlayoffSettingsEntity
+{
+    [PrimaryKey]
+    public Guid StageId { get; set; }
+    public int UseReseeding { get; set; }
+    public int HasThirdPlaceMatch { get; set; }
+}
+
+[Table("PlayoffRounds")]
+public class PlayoffRoundEntity
+{
+    [PrimaryKey]
+    public Guid Id { get; set; }
+    [Indexed]
+    public Guid StageId { get; set; }
+    [NotNull]
+    public string Name { get; set; } = string.Empty;
+    public int Order { get; set; }
+    public int DefaultBestOf { get; set; }
+}
+
+[Table("PlayoffSeries")]
+public class PlayoffSeriesEntity
+{
+    [PrimaryKey]
+    public Guid Id { get; set; }
+    [Indexed]
+    public Guid StageId { get; set; }
+    [Indexed]
+    public Guid RoundId { get; set; }
+    public int Slot { get; set; }
+    public Guid? HomeTeamId { get; set; }
+    public Guid? AwayTeamId { get; set; }
+    public int? HomeSeed { get; set; }
+    public int? AwaySeed { get; set; }
+    public int? BestOfOverride { get; set; }
+    public Guid? WinnerTeamId { get; set; }
+    public int IsThirdPlace { get; set; }
 }
 

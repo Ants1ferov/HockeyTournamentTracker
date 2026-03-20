@@ -52,5 +52,14 @@ public partial class StageDetailsPage : ContentPage, IQueryAttributable
         await Shell.Current.GoToAsync(
             $"{nameof(StageMatchesPage)}?TournamentId={_viewModel.Stage.TournamentId}&StageId={_viewModel.Stage.Id}");
     }
+
+    private async void OnOpenPlayoffClicked(object? sender, EventArgs e)
+    {
+        if (_viewModel.Stage is null)
+            return;
+
+        await Shell.Current.GoToAsync(
+            $"{nameof(PlayoffBracketPage)}?TournamentId={_viewModel.Stage.TournamentId}&StageId={_viewModel.Stage.Id}");
+    }
 }
 
