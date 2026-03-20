@@ -296,6 +296,15 @@ public sealed class StageDetailsViewModel : INotifyPropertyChanged
             await LoadAsync(Tournament.Id, Stage.Id);
     }
 
+    public async Task DeleteMatchAsync(Guid matchId)
+    {
+        if (Tournament is null || Stage is null)
+            return;
+
+        await _matchRepository.DeleteAsync(matchId);
+        await LoadAsync(Tournament.Id, Stage.Id);
+    }
+
     private List<StandingGroup> BuildStandingsByGroupFromMatches(
         Tournament tournament,
         IReadOnlyList<Team> teams,

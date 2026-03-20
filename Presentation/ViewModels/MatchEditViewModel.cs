@@ -18,6 +18,7 @@ public sealed class MatchEditViewModel : INotifyPropertyChanged
     private Guid _matchId;
     private Guid? _stageId;
     private Tournament? _tournament;
+    private MatchStatus? _editingStatus;
     private Team? _homeTeam;
     private Team? _awayTeam;
     private DateTime _date = DateTime.Today;
@@ -231,6 +232,7 @@ public sealed class MatchEditViewModel : INotifyPropertyChanged
         var match = await _matchRepository.GetByIdAsync(MatchId);
         if (match is null) return;
 
+        _editingStatus = match.Status;
         StageId = match.StageId;
         await LoadTeamsAsync();
         HomeTeam = Teams.FirstOrDefault(t => t.Id == match.HomeTeamId);
@@ -392,12 +394,23 @@ public sealed class MatchEditViewModel : INotifyPropertyChanged
             LoserTeamId = loserTeamId,
             ShootoutScoreHome = OutcomeType == OutcomeType.Shootout ? ShootoutHome : null,
             ShootoutScoreAway = OutcomeType == OutcomeType.Shootout ? ShootoutAway : null,
-            Status = MatchId != Guid.Empty ? MatchStatus.Finished : MatchStatus.Scheduled,
+            Status = ResolveStatusForSave(),
             PeriodScores = periodScores
         };
 
         await _matchRepository.SaveAsync(match);
         return true;
+    }
+
+    private MatchStatus ResolveStatusForSave()
+    {
+        if (MatchId == Guid.Empty)
+            return MatchStatus.Scheduled;
+
+        if (_editingStatus == MatchStatus.InProgress)
+            return MatchStatus.Finished;
+
+        return _editingStatus ?? MatchStatus.Finished;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

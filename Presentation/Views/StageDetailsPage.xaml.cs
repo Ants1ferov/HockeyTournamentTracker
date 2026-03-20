@@ -44,30 +44,13 @@ public partial class StageDetailsPage : ContentPage, IQueryAttributable
             $"{nameof(StageEditPage)}?TournamentId={_viewModel.Stage.TournamentId}&StageId={_viewModel.Stage.Id}");
     }
 
-    private async void OnAddMatchClicked(object? sender, EventArgs e)
+    private async void OnOpenMatchesClicked(object? sender, EventArgs e)
     {
         if (_viewModel.Stage is null)
             return;
 
         await Shell.Current.GoToAsync(
-            $"{nameof(MatchEditPage)}?TournamentId={_viewModel.Stage.TournamentId}&StageId={_viewModel.Stage.Id}");
-    }
-
-    private async void OnStartMatchClicked(object? sender, EventArgs e)
-    {
-        if ((sender as BindableObject)?.BindingContext is not MatchRow row)
-            return;
-
-        await _viewModel.SetMatchStatusAsync(row.MatchId, MatchStatus.InProgress);
-    }
-
-    private async void OnFinishMatchClicked(object? sender, EventArgs e)
-    {
-        if ((sender as BindableObject)?.BindingContext is not MatchRow row || _viewModel.Tournament is null)
-            return;
-
-        await Shell.Current.GoToAsync(
-            $"{nameof(MatchEditPage)}?TournamentId={_viewModel.Tournament.Id}&MatchId={row.MatchId}");
+            $"{nameof(StageMatchesPage)}?TournamentId={_viewModel.Stage.TournamentId}&StageId={_viewModel.Stage.Id}");
     }
 }
 
