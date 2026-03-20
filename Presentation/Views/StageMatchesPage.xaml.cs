@@ -179,8 +179,10 @@ public partial class StageMatchesPage : ContentPage, IQueryAttributable
                 to = now;
                 break;
             case 5:
-                from = FromDatePicker.Date.Date;
-                to = ToDatePicker.Date.Date.AddDays(1).AddTicks(-1);
+                var fromDate = FromDatePicker.Date ?? DateTime.Today;
+                var toDate = ToDatePicker.Date ?? fromDate;
+                from = fromDate.Date;
+                to = toDate.Date.AddDays(1).AddTicks(-1);
                 break;
         }
 
