@@ -56,9 +56,16 @@ public partial class PlayoffBracketPage : ContentPage, IQueryAttributable
         await _viewModel.AddRoundAsync(name, bestOf);
     }
 
-    private async void OnRenameRoundClicked(object? sender, EventArgs e)
+    private void OnRoundChipTapped(object? sender, TappedEventArgs e)
     {
-        if ((sender as Button)?.BindingContext is not PlayoffRoundUi round)
+        if ((sender as BindableObject)?.BindingContext is not PlayoffRoundUi round)
+            return;
+        _viewModel.SelectRound(round.Id);
+    }
+
+    private async void OnRenameSelectedRoundClicked(object? sender, EventArgs e)
+    {
+        if (_viewModel.SelectedRound is not PlayoffRoundUi round)
             return;
 
         var newName = await DisplayPromptAsync("Переименовать раунд", "Название", initialValue: round.Name);
@@ -68,9 +75,9 @@ public partial class PlayoffBracketPage : ContentPage, IQueryAttributable
         await _viewModel.RenameRoundAsync(round.Id, newName);
     }
 
-    private async void OnEditRoundBestOfClicked(object? sender, EventArgs e)
+    private async void OnEditSelectedRoundBestOfClicked(object? sender, EventArgs e)
     {
-        if ((sender as Button)?.BindingContext is not PlayoffRoundUi round)
+        if (_viewModel.SelectedRound is not PlayoffRoundUi round)
             return;
 
         var value = await DisplayPromptAsync("Best-of раунда", "Введите нечётное число", initialValue: round.DefaultBestOf.ToString(), keyboard: Keyboard.Numeric);
@@ -80,9 +87,9 @@ public partial class PlayoffBracketPage : ContentPage, IQueryAttributable
         await _viewModel.UpdateRoundBestOfAsync(round.Id, bestOf);
     }
 
-    private async void OnDeleteRoundClicked(object? sender, EventArgs e)
+    private async void OnDeleteSelectedRoundClicked(object? sender, EventArgs e)
     {
-        if ((sender as Button)?.BindingContext is not PlayoffRoundUi round)
+        if (_viewModel.SelectedRound is not PlayoffRoundUi round)
             return;
 
         var ok = await DisplayAlert(AppResources.Delete, $"Удалить раунд «{round.Name}»?", AppResources.Ok, AppResources.Cancel);
@@ -92,9 +99,9 @@ public partial class PlayoffBracketPage : ContentPage, IQueryAttributable
         await _viewModel.DeleteRoundAsync(round.Id);
     }
 
-    private async void OnAddSeriesClicked(object? sender, EventArgs e)
+    private async void OnAddSeriesInSelectedRoundClicked(object? sender, EventArgs e)
     {
-        if ((sender as Button)?.BindingContext is not PlayoffRoundUi round)
+        if (_viewModel.SelectedRound is not PlayoffRoundUi round)
             return;
 
         await _viewModel.AddSeriesAsync(round.Id);

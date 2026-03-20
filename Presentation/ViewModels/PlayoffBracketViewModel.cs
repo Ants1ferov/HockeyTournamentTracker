@@ -22,6 +22,7 @@ public sealed class PlayoffBracketViewModel : INotifyPropertyChanged
     private Stage? _stage;
     private bool _useReseeding;
     private bool _hasThirdPlaceMatch;
+    private PlayoffRoundUi? _selectedRound;
 
     public Tournament? Tournament
     {
@@ -56,6 +57,25 @@ public sealed class PlayoffBracketViewModel : INotifyPropertyChanged
     public ObservableCollection<Team> Teams { get; } = new();
     public ObservableCollection<Stage> SeedSourceStages { get; } = new();
     public ObservableCollection<PlayoffRoundUi> Rounds { get; } = new();
+    public ObservableCollection<PlayoffSeriesUi> ActiveRoundSeries { get; } = new();
+
+    public PlayoffRoundUi? SelectedRound
+    {
+        get => _selectedRound;
+        private set
+        {
+            if (SetField(ref _selectedRound, value))
+            {
+                OnPropertyChanged(nameof(HasSelectedRound));
+                OnPropertyChanged(nameof(SelectedRoundTitle));
+            }
+        }
+    }
+
+    public bool HasSelectedRound => SelectedRound is not null;
+    public string SelectedRoundTitle => SelectedRound is null
+        ? "Раунд не выбран"
+        : $"{SelectedRound.Name} (Bo{SelectedRound.DefaultBestOf})";
 
     public PlayoffBracketViewModel(
         ITournamentRepository tournamentRepository,
@@ -138,6 +158,11 @@ public sealed class PlayoffBracketViewModel : INotifyPropertyChanged
         await EnsureThirdPlaceSeriesAsync();
         await RecalculateWinnersAndAdvanceAsync();
         await LoadRoundsUiAsync();
+    }
+
+    public void SelectRound(Guid roundId)
+    {
+        SelectRoundInternal(roundId);
     }
 
     public async Task AddRoundAsync(string name, int bestOf)
@@ -557,18 +582,21 @@ public sealed class PlayoffBracketViewModel : INotifyPropertyChanged
             .Where(m => m.StageId == Stage.Id)
             .ToList();
         var teamById = Teams.ToDictionary(t => t.Id);
+        var previouslySelectedRoundId = SelectedRound?.Id;
 
         MainThread.BeginInvokeOnMainThread(() =>
         {
             Rounds.Clear();
-            foreach (var round in rounds)
+            for (var i = 0; i < rounds.Count; i++)
             {
+                var round = rounds[i];
                 var roundUi = new PlayoffRoundUi
                 {
                     Id = round.Id,
                     Name = round.Name,
                     Order = round.Order,
-                    DefaultBestOf = round.DefaultBestOf
+                    DefaultBestOf = round.DefaultBestOf,
+                    HasNextRound = i < rounds.Count - 1
                 };
 
                 var seriesInRound = allSeries
@@ -620,7 +648,30 @@ public sealed class PlayoffBracketViewModel : INotifyPropertyChanged
 
                 Rounds.Add(roundUi);
             }
+
+            var selectedId = previouslySelectedRoundId;
+            if (!selectedId.HasValue || Rounds.All(r => r.Id != selectedId.Value))
+                selectedId = Rounds.FirstOrDefault()?.Id;
+            SelectRoundInternal(selectedId);
         });
+    }
+
+    private void SelectRoundInternal(Guid? roundId)
+    {
+        PlayoffRoundUi? selected = null;
+        if (roundId.HasValue)
+            selected = Rounds.FirstOrDefault(r => r.Id == roundId.Value);
+
+        foreach (var round in Rounds)
+            round.IsSelected = selected is not null && round.Id == selected.Id;
+
+        SelectedRound = selected;
+        ActiveRoundSeries.Clear();
+        if (selected is null)
+            return;
+
+        foreach (var s in selected.Series)
+            ActiveRoundSeries.Add(s);
     }
 
     private static int NormalizeBestOf(int bestOf)
@@ -651,13 +702,28 @@ public sealed class PlayoffBracketViewModel : INotifyPropertyChanged
     private sealed record SeededTeam(Guid TeamId, int Seed);
 }
 
-public sealed class PlayoffRoundUi
+public sealed class PlayoffRoundUi : INotifyPropertyChanged
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public int Order { get; set; }
     public int DefaultBestOf { get; set; }
+    public bool HasNextRound { get; set; }
     public ObservableCollection<PlayoffSeriesUi> Series { get; } = new();
+
+    private bool _isSelected;
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set
+        {
+            if (_isSelected == value) return;
+            _isSelected = value;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsSelected)));
+        }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
 }
 
 public sealed class PlayoffSeriesUi
