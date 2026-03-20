@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:res="clr-namespace:HockeyTournamentTracker.Resources"
+             x:Class="HockeyTournamentTracker.Presentation.Views.PlayoffBracketPage"
+             x:Name="ThisPage"
+             Title="{Binding PageTitle}">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="12">
+            <Label Text="{Binding PageTitle}"
+                   FontAttributes="Bold"
+                   FontSize="20" />
+
+            <Frame Padding="12"
+                   HasShadow="True"
+                   CornerRadius="8">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Настройки стадии"
+                           FontAttributes="Bold"
+                           FontSize="16" />
+                    <Grid ColumnDefinitions="*,Auto"
+                          ColumnSpacing="8">
+                        <Label Text="Re-seeding после раунда"
+                               VerticalTextAlignment="Center" />
+                        <Switch Grid.Column="1"
+                                IsToggled="{Binding UseReseeding}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*,Auto"
+                          ColumnSpacing="8">
+                        <Label Text="Матч за 3-е место"
+                               VerticalTextAlignment="Center" />
+                        <Switch Grid.Column="1"
+                                IsToggled="{Binding HasThirdPlaceMatch}" />
+                    </Grid>
+                    <Button Text="Сохранить настройки"
+                            Clicked="OnSaveSettingsClicked" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <Frame Padding="12"
+                   HasShadow="True"
+                   CornerRadius="8">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Автозаполнение"
+                           FontAttributes="Bold"
+                           FontSize="16" />
+                    <Picker x:Name="SeedSourceStagePicker"
+                            Title="Источник посева"
+                            ItemsSource="{Binding SeedSourceStages}"
+                            ItemDisplayBinding="{Binding Name}" />
+                    <Button Text="Заполнить первый раунд по посеву"
+                            Clicked="OnAutoFillSeedClicked" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <Button Text="Добавить раунд"
+                    Clicked="OnAddRoundClicked" />
+
+            <CollectionView ItemsSource="{Binding Rounds}"
+                            SelectionMode="None">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Frame Margin="0,4"
+                               Padding="12"
+                               HasShadow="True"
+                               CornerRadius="8">
+                            <VerticalStackLayout Spacing="8">
+                                <Grid ColumnDefinitions="*,Auto,Auto,Auto"
+                                      ColumnSpacing="6">
+                                    <Label Grid.Column="0"
+                                           Text="{Binding Name}"
+                                           FontAttributes="Bold"
+                                           FontSize="16" />
+                                    <Button Grid.Column="1"
+                                            Text="{Binding DefaultBestOf, StringFormat='Bo{0}'}"
+                                            Clicked="OnEditRoundBestOfClicked" />
+                                    <Button Grid.Column="2"
+                                            Text="Переименовать"
+                                            Clicked="OnRenameRoundClicked" />
+                                    <Button Grid.Column="3"
+                                            Text="{x:Static res:AppResources.Delete}"
+                                            Clicked="OnDeleteRoundClicked" />
+                                </Grid>
+                                <Button Text="Добавить серию"
+                                        Clicked="OnAddSeriesClicked" />
+
+                                <CollectionView ItemsSource="{Binding Series}"
+                                                SelectionMode="None">
+                                    <CollectionView.ItemTemplate>
+                                        <DataTemplate>
+                                            <Frame Margin="0,4"
+                                                   Padding="10"
+                                                   BackgroundColor="#F3F4F6"
+                                                   HasShadow="False"
+                                                   CornerRadius="8">
+                                                <VerticalStackLayout Spacing="6">
+                                                    <Label Text="{Binding Title}"
+                                                           FontAttributes="Bold"
+                                                           FontSize="14" />
+                                                    <Label Text="{Binding ScoreText}"
+                                                           FontSize="12"
+                                                           TextColor="Gray" />
+                                                    <Label Text="{Binding WinnerText}"
+                                                           FontSize="12"
+                                                           TextColor="#166534"
+                                                           IsVisible="{Binding WinnerText, Converter={StaticResource GroupNameToVisibility}}" />
+                                                    <HorizontalStackLayout Spacing="6">
+                                                        <Button Text="Редактировать"
+                                                                Clicked="OnEditSeriesClicked" />
+                                                        <Button Text="+ Матч"
+                                                                Clicked="OnAddSeriesMatchClicked" />
+                                                        <Button Text="Матчи серии"
+                                                                Clicked="OnOpenSeriesMatchesClicked" />
+                                                        <Button Text="{x:Static res:AppResources.Delete}"
+                                                                Clicked="OnDeleteSeriesClicked" />
+                                                    </HorizontalStackLayout>
+                                                </VerticalStackLayout>
+                                            </Frame>
+                                        </DataTemplate>
+                                    </CollectionView.ItemTemplate>
+                                </CollectionView>
+                            </VerticalStackLayout>
+                        </Frame>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

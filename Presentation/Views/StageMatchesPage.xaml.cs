@@ -13,6 +13,7 @@ public partial class StageMatchesPage : ContentPage, IQueryAttributable
     private readonly ObservableCollection<MatchRow> _filteredMatches = new();
     private Guid _tournamentId;
     private Guid _stageId;
+    private Guid? _seriesId;
 
     public StageMatchesPage(StageDetailsViewModel viewModel)
     {
@@ -40,6 +41,10 @@ public partial class StageMatchesPage : ContentPage, IQueryAttributable
         {
             _tournamentId = tournamentId;
             _stageId = stageId;
+            if (query.TryGetValue("SeriesId", out var seriesVal) && seriesVal is string seriesStr && Guid.TryParse(seriesStr, out var seriesId))
+                _seriesId = seriesId;
+            else
+                _seriesId = null;
             await _viewModel.LoadAsync(_tournamentId, _stageId);
             ApplyFilters();
         }
@@ -61,8 +66,10 @@ public partial class StageMatchesPage : ContentPage, IQueryAttributable
         if (_stageId == Guid.Empty || _tournamentId == Guid.Empty)
             return;
 
-        await Shell.Current.GoToAsync(
-            $"{nameof(MatchEditPage)}?TournamentId={_tournamentId}&StageId={_stageId}");
+        var route = $"{nameof(MatchEditPage)}?TournamentId={_tournamentId}&StageId={_stageId}";
+        if (_seriesId.HasValue)
+            route += $"&SeriesId={_seriesId.Value}";
+        await Shell.Current.GoToAsync(route);
     }
 
     private async void OnEditMatchClicked(object? sender, EventArgs e)
@@ -127,6 +134,8 @@ public partial class StageMatchesPage : ContentPage, IQueryAttributable
     private void ApplyFilters()
     {
         IEnumerable<MatchRow> source = _viewModel.StageMatches;
+        if (_seriesId.HasValue)
+            source = source.Where(r => r.SeriesId == _seriesId.Value);
 
         var query = TeamSearchBar.Text?.Trim();
         if (!string.IsNullOrWhiteSpace(query))

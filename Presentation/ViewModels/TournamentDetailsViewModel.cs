@@ -534,6 +534,7 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
         new()
         {
             MatchId = m.Id,
+            SeriesId = m.SeriesId,
             DateTime = m.DateTime,
             HomeTeamName = homeName ?? string.Empty,
             AwayTeamName = awayName ?? string.Empty,
@@ -711,6 +712,7 @@ public sealed class StandingRow
 public sealed class MatchRow
 {
     public Guid MatchId { get; set; }
+    public Guid? SeriesId { get; set; }
     public DateTime? DateTime { get; set; }
     public string HomeTeamName { get; set; } = string.Empty;
     public string AwayTeamName { get; set; } = string.Empty;

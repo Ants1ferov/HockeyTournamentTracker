@@ -19,6 +19,9 @@ public sealed class LocalDatabase
         await _connection.CreateTableAsync<StageGroupEntity>();
         await _connection.CreateTableAsync<StageTeamEntity>();
         await _connection.CreateTableAsync<MatchEntity>();
+        await _connection.CreateTableAsync<PlayoffSettingsEntity>();
+        await _connection.CreateTableAsync<PlayoffRoundEntity>();
+        await _connection.CreateTableAsync<PlayoffSeriesEntity>();
 
         // Миграция: добавить колонку IconPath в Teams, если её ещё нет
         try { await _connection.ExecuteAsync("ALTER TABLE Teams ADD COLUMN IconPath TEXT"); }
@@ -39,6 +42,15 @@ public sealed class LocalDatabase
         // Миграция: добавить колонку StageId в Matches
         try { await _connection.ExecuteAsync("ALTER TABLE Matches ADD COLUMN StageId TEXT"); }
         catch { /* колонка уже есть */ }
+
+        // Миграция: добавить колонку SeriesId в Matches
+        try { await _connection.ExecuteAsync("ALTER TABLE Matches ADD COLUMN SeriesId TEXT"); }
+        catch { /* колонка уже есть */ }
+
+        // Индексы для быстрых фильтров списка матчей по стадии/дате/серии.
+        await _connection.ExecuteAsync("CREATE INDEX IF NOT EXISTS IX_Matches_StageId ON Matches(StageId)");
+        await _connection.ExecuteAsync("CREATE INDEX IF NOT EXISTS IX_Matches_DateTime ON Matches(DateTime)");
+        await _connection.ExecuteAsync("CREATE INDEX IF NOT EXISTS IX_Matches_SeriesId ON Matches(SeriesId)");
     }
 
     public SQLiteAsyncConnection Connection => _connection;

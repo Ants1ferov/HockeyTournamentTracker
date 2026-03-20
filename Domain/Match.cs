@@ -5,6 +5,7 @@ public sealed class Match
     public Guid Id { get; set; }
     public Guid TournamentId { get; set; }
     public Guid? StageId { get; set; }
+    public Guid? SeriesId { get; set; }
 
     public DateTime? DateTime { get; set; }
 

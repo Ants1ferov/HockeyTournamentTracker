@@ -17,6 +17,7 @@ public sealed class MatchEditViewModel : INotifyPropertyChanged
     private Guid _tournamentId;
     private Guid _matchId;
     private Guid? _stageId;
+    private Guid? _seriesId;
     private Tournament? _tournament;
     private MatchStatus _matchStatus = MatchStatus.Scheduled;
     private Team? _homeTeam;
@@ -57,6 +58,12 @@ public sealed class MatchEditViewModel : INotifyPropertyChanged
     {
         get => _stageId;
         set => SetField(ref _stageId, value);
+    }
+
+    public Guid? SeriesId
+    {
+        get => _seriesId;
+        set => SetField(ref _seriesId, value);
     }
 
     public Team? HomeTeam
@@ -270,6 +277,7 @@ public sealed class MatchEditViewModel : INotifyPropertyChanged
 
         SelectedMatchStatus = match.Status == MatchStatus.Cancelled ? MatchStatus.Scheduled : match.Status;
         StageId = match.StageId;
+        SeriesId = match.SeriesId;
         await LoadTeamsAsync();
         HomeTeam = Teams.FirstOrDefault(t => t.Id == match.HomeTeamId);
         AwayTeam = AwayTeamOptions.FirstOrDefault(t => t.Id == match.AwayTeamId) ?? Teams.FirstOrDefault(t => t.Id == match.AwayTeamId);
@@ -464,6 +472,7 @@ public sealed class MatchEditViewModel : INotifyPropertyChanged
             Id = id,
             TournamentId = TournamentId,
             StageId = StageId,
+            SeriesId = SeriesId,
             DateTime = dateTime,
             HomeTeamId = HomeTeam.Id,
             AwayTeamId = AwayTeam.Id,

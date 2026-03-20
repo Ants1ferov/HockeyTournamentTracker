@@ -28,6 +28,11 @@ public partial class MatchEditPage : ContentPage, IQueryAttributable
         else
             _viewModel.StageId = null;
 
+        if (query.TryGetValue("SeriesId", out var seriesVal) && seriesVal is string seriesStr && Guid.TryParse(seriesStr, out var seriesId))
+            _viewModel.SeriesId = seriesId;
+        else
+            _viewModel.SeriesId = null;
+
         if (_viewModel.TournamentId != Guid.Empty)
             await _viewModel.LoadTeamsAsync();
 
