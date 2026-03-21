@@ -1,23 +1,37 @@
 using HockeyTournamentTracker.Domain;
 using HockeyTournamentTracker.Presentation.ViewModels;
 using HockeyTournamentTracker.Resources;
+using HockeyTournamentTracker.Data;
 using System.Collections.ObjectModel;
-using System.Collections.Specialized;
 using System.Linq;
+using System.Threading;
 
 namespace HockeyTournamentTracker.Presentation.Views;
 
 public partial class StageMatchesPage : ContentPage, IQueryAttributable
 {
     private readonly StageDetailsViewModel _viewModel;
+    private readonly IMatchRepository _matchRepository;
+    private readonly ITeamRepository _teamRepository;
     private readonly ObservableCollection<MatchRow> _filteredMatches = new();
+    private readonly Dictionary<Guid, string> _teamNameById = new();
     private Guid _tournamentId;
     private Guid _stageId;
     private Guid? _seriesId;
+    private int _currentOffset;
+    private const int PageSize = 50;
+    private bool _hasMore;
+    private bool _isLoading;
+    private CancellationTokenSource? _searchDebounceCts;
 
-    public StageMatchesPage(StageDetailsViewModel viewModel)
+    public StageMatchesPage(
+        StageDetailsViewModel viewModel,
+        IMatchRepository matchRepository,
+        ITeamRepository teamRepository)
     {
         _viewModel = viewModel;
+        _matchRepository = matchRepository;
+        _teamRepository = teamRepository;
         BindingContext = _viewModel;
         InitializeComponent();
         MatchesCollection.ItemsSource = _filteredMatches;
@@ -28,7 +42,6 @@ public partial class StageMatchesPage : ContentPage, IQueryAttributable
         FromDatePicker.Date = today.AddDays(-30);
         ToDatePicker.Date = today;
 
-        _viewModel.StageMatches.CollectionChanged += OnStageMatchesCollectionChanged;
     }
 
     public async void ApplyQueryAttributes(IDictionary<string, object> query)
@@ -45,8 +58,8 @@ public partial class StageMatchesPage : ContentPage, IQueryAttributable
                 _seriesId = seriesId;
             else
                 _seriesId = null;
-            await _viewModel.LoadAsync(_tournamentId, _stageId);
-            ApplyFilters();
+            await EnsureTeamNamesLoadedAsync();
+            await ReloadFromRepositoryAsync();
         }
     }
 
@@ -56,9 +69,17 @@ public partial class StageMatchesPage : ContentPage, IQueryAttributable
 
         if (_tournamentId != Guid.Empty && _stageId != Guid.Empty)
         {
-            await _viewModel.LoadAsync(_tournamentId, _stageId);
-            ApplyFilters();
+            await EnsureTeamNamesLoadedAsync();
+            await ReloadFromRepositoryAsync();
         }
+    }
+
+    protected override void OnDisappearing()
+    {
+        base.OnDisappearing();
+        _searchDebounceCts?.Cancel();
+        _searchDebounceCts?.Dispose();
+        _searchDebounceCts = null;
     }
 
     private async void OnAddMatchClicked(object? sender, EventArgs e)
@@ -94,24 +115,42 @@ public partial class StageMatchesPage : ContentPage, IQueryAttributable
         if (!ok)
             return;
 
-        await _viewModel.DeleteMatchAsync(row.MatchId);
-        ApplyFilters();
+        await _matchRepository.DeleteAsync(row.MatchId);
+        await ReloadFromRepositoryAsync();
     }
 
     private void OnTeamSearchTextChanged(object? sender, TextChangedEventArgs e)
     {
-        ApplyFilters();
+        _searchDebounceCts?.Cancel();
+        _searchDebounceCts?.Dispose();
+        _searchDebounceCts = new CancellationTokenSource();
+        var token = _searchDebounceCts.Token;
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(250, token);
+                if (token.IsCancellationRequested)
+                    return;
+
+                await MainThread.InvokeOnMainThreadAsync(ReloadFromRepositoryAsync);
+            }
+            catch (TaskCanceledException)
+            {
+                // noop
+            }
+        }, token);
     }
 
     private void OnFilterChanged(object? sender, EventArgs e)
     {
         CustomRangePanel.IsVisible = PeriodFilterPicker.SelectedIndex == 5;
-        ApplyFilters();
+        _ = ReloadFromRepositoryAsync();
     }
 
     private void OnFilterChangedDate(object? sender, DateChangedEventArgs e)
     {
-        ApplyFilters();
+        _ = ReloadFromRepositoryAsync();
     }
 
     private void OnResetFiltersClicked(object? sender, EventArgs e)
@@ -123,28 +162,68 @@ public partial class StageMatchesPage : ContentPage, IQueryAttributable
         var today = DateTime.Today;
         FromDatePicker.Date = today.AddDays(-30);
         ToDatePicker.Date = today;
-        ApplyFilters();
+        _ = ReloadFromRepositoryAsync();
     }
 
-    private void OnStageMatchesCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    private async void OnRemainingItemsThresholdReached(object? sender, EventArgs e)
     {
-        ApplyFilters();
+        if (!MatchesCollection.IsVisible)
+            return;
+        if (_isLoading || !_hasMore)
+            return;
+
+        await LoadNextPageAsync();
     }
 
-    private void ApplyFilters()
+    private async void OnLoadMoreClicked(object? sender, EventArgs e)
     {
-        IEnumerable<MatchRow> source = _viewModel.StageMatches;
-        if (_seriesId.HasValue)
-            source = source.Where(r => r.SeriesId == _seriesId.Value);
+        await LoadNextPageAsync();
+    }
 
-        var query = TeamSearchBar.Text?.Trim();
-        if (!string.IsNullOrWhiteSpace(query))
+    private async Task ReloadFromRepositoryAsync()
+    {
+        if (_tournamentId == Guid.Empty || _stageId == Guid.Empty)
+            return;
+
+        if (_isLoading)
+            return;
+
+        _currentOffset = 0;
+        _hasMore = false;
+        _filteredMatches.Clear();
+        await LoadNextPageAsync();
+    }
+
+    private async Task LoadNextPageAsync()
+    {
+        if (_tournamentId == Guid.Empty || _stageId == Guid.Empty || _isLoading)
+            return;
+
+        _isLoading = true;
+        SetLoadingUi(true);
+        try
         {
-            source = source.Where(r =>
-                r.HomeTeamName.Contains(query, StringComparison.CurrentCultureIgnoreCase) ||
-                r.AwayTeamName.Contains(query, StringComparison.CurrentCultureIgnoreCase));
-        }
+            var query = BuildQuery(_currentOffset, PageSize);
+            var page = await _matchRepository.GetByStageAsync(query);
 
+            var rows = page.Items.Select(MapToRow).ToList();
+            foreach (var row in rows)
+                _filteredMatches.Add(row);
+
+            _currentOffset += rows.Count;
+            _hasMore = page.HasMore;
+            MatchesCounterLabel.Text = $"Показано матчей: {_filteredMatches.Count}";
+            LoadMoreButton.IsVisible = _hasMore;
+        }
+        finally
+        {
+            _isLoading = false;
+            SetLoadingUi(false);
+        }
+    }
+
+    private StageMatchQuery BuildQuery(int offset, int limit)
+    {
         var status = StatusFilterPicker.SelectedIndex switch
         {
             1 => MatchStatus.Scheduled,
@@ -153,8 +232,6 @@ public partial class StageMatchesPage : ContentPage, IQueryAttributable
             4 => MatchStatus.Cancelled,
             _ => (MatchStatus?)null
         };
-        if (status.HasValue)
-            source = source.Where(r => r.Status == status.Value);
 
         var now = DateTime.Now;
         DateTime? from = null;
@@ -193,19 +270,79 @@ public partial class StageMatchesPage : ContentPage, IQueryAttributable
             to = tmp;
         }
 
-        if (from.HasValue)
-            source = source.Where(r => r.DateTime.HasValue && r.DateTime.Value >= from.Value);
-        if (to.HasValue)
-            source = source.Where(r => r.DateTime.HasValue && r.DateTime.Value <= to.Value);
+        return new StageMatchQuery
+        {
+            TournamentId = _tournamentId,
+            StageId = _stageId,
+            SeriesId = _seriesId,
+            TeamSearch = TeamSearchBar.Text?.Trim(),
+            Status = status,
+            DateFrom = from,
+            DateTo = to,
+            Offset = offset,
+            Limit = limit,
+            SortDescending = true
+        };
+    }
 
-        var result = source
-            .OrderByDescending(r => r.DateTime ?? DateTime.MinValue)
-            .ToList();
+    private MatchRow MapToRow(Match match)
+    {
+        _teamNameById.TryGetValue(match.HomeTeamId, out var homeName);
+        _teamNameById.TryGetValue(match.AwayTeamId, out var awayName);
+        return new MatchRow
+        {
+            MatchId = match.Id,
+            SeriesId = match.SeriesId,
+            DateTime = match.DateTime,
+            HomeTeamName = homeName ?? string.Empty,
+            AwayTeamName = awayName ?? string.Empty,
+            DisplayScore = BuildScoreText(match),
+            IsLive = match.Status == MatchStatus.InProgress,
+            Status = match.Status
+        };
+    }
 
-        _filteredMatches.Clear();
-        foreach (var row in result)
-            _filteredMatches.Add(row);
+    private async Task EnsureTeamNamesLoadedAsync()
+    {
+        if (_tournamentId == Guid.Empty)
+            return;
+        if (_teamNameById.Count > 0)
+            return;
 
-        MatchesCounterLabel.Text = $"Найдено матчей: {_filteredMatches.Count}";
+        var teams = await _teamRepository.GetByTournamentAsync(_tournamentId);
+        _teamNameById.Clear();
+        foreach (var t in teams)
+            _teamNameById[t.Id] = t.Name;
+    }
+
+    private void SetLoadingUi(bool loading)
+    {
+        LoadingIndicator.IsVisible = loading;
+        LoadingIndicator.IsRunning = loading;
+        LoadMoreButton.IsEnabled = !loading;
+    }
+
+    private static string BuildScoreText(Match match)
+    {
+        if (match.HomeGoals is null || match.AwayGoals is null || match.OutcomeType is null)
+            return "— : —";
+
+        var effectiveScore = MatchOutcomeResolver.GetEffectiveFinalScore(match);
+        var finalHomeGoals = effectiveScore?.HomeGoals ?? match.HomeGoals.Value;
+        var finalAwayGoals = effectiveScore?.AwayGoals ?? match.AwayGoals.Value;
+        var baseScore = $"{finalHomeGoals}:{finalAwayGoals}";
+
+        var hasOvertimePeriod = match.PeriodScores?.Any(p => p.PeriodType == PeriodType.Overtime) == true;
+        var hasShootoutPeriod = match.PeriodScores?.Any(p => p.PeriodType == PeriodType.Shootout) == true;
+        var outcomeSuffix = match.OutcomeType switch
+        {
+            OutcomeType.Overtime => hasOvertimePeriod ? "" : " ОТ",
+            OutcomeType.Shootout => hasShootoutPeriod ? "" : (match.ShootoutScoreHome is { } sh && match.ShootoutScoreAway is { } sa
+                ? $" Б ({sh}:{sa})"
+                : " Б"),
+            _ => ""
+        };
+
+        return $"{baseScore}{outcomeSuffix}";
     }
 }
