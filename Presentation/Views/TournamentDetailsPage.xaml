@@ -101,46 +101,101 @@
                            HasShadow="False"
                            CornerRadius="8"
                            BorderColor="#E5E7EB">
-                        <VerticalStackLayout Spacing="4">
+                        <VerticalStackLayout Spacing="8">
                             <Label Text="Статистика турнира"
                                    FontAttributes="Bold"
                                    FontSize="15" />
-                            <Label Text="{Binding TournamentStats.FinishedMatches, StringFormat='Матчей: {0}'}" FontSize="12" />
-                            <Label Text="{Binding TournamentStats.WinsRegulation, StringFormat='Победы (осн.вр): {0}'}" FontSize="12" />
-                            <Label Text="{Binding TournamentStats.WinsOvertime, StringFormat='Победы (ОТ): {0}'}" FontSize="12" />
-                            <Label Text="{Binding TournamentStats.WinsShootout, StringFormat='Победы (бул.): {0}'}" FontSize="12" />
-                            <Label Text="{Binding TournamentStats.LossesRegulation, StringFormat='Поражения (осн.вр): {0}'}" FontSize="12" />
-                            <Label Text="{Binding TournamentStats.LossesOvertime, StringFormat='Поражения (ОТ): {0}'}" FontSize="12" />
-                            <Label Text="{Binding TournamentStats.LossesShootout, StringFormat='Поражения (бул.): {0}'}" FontSize="12" />
-                            <Label Text="{Binding TournamentStats.GoalsFor, StringFormat='Забито: {0}'}" FontSize="12" />
-                            <Label Text="{Binding TournamentStats.GoalsAgainst, StringFormat='Пропущено: {0}'}" FontSize="12" />
-                            <Label Text="{Binding TournamentStats.Period1.Wins, StringFormat='1 период W/D/L: {0}'}" FontSize="12" />
-                            <Label FontSize="12">
-                                <Label.Text>
-                                    <MultiBinding StringFormat="{}{0}/{1}">
-                                        <Binding Path="TournamentStats.Period1.Draws" />
-                                        <Binding Path="TournamentStats.Period1.Losses" />
-                                    </MultiBinding>
-                                </Label.Text>
-                            </Label>
-                            <Label Text="{Binding TournamentStats.Period2.Wins, StringFormat='2 период W/D/L: {0}'}" FontSize="12" />
-                            <Label FontSize="12">
-                                <Label.Text>
-                                    <MultiBinding StringFormat="{}{0}/{1}">
-                                        <Binding Path="TournamentStats.Period2.Draws" />
-                                        <Binding Path="TournamentStats.Period2.Losses" />
-                                    </MultiBinding>
-                                </Label.Text>
-                            </Label>
-                            <Label Text="{Binding TournamentStats.Period3.Wins, StringFormat='3 период W/D/L: {0}'}" FontSize="12" />
-                            <Label FontSize="12">
-                                <Label.Text>
-                                    <MultiBinding StringFormat="{}{0}/{1}">
-                                        <Binding Path="TournamentStats.Period3.Draws" />
-                                        <Binding Path="TournamentStats.Period3.Losses" />
-                                    </MultiBinding>
-                                </Label.Text>
-                            </Label>
+                            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="4">
+                                <Label Grid.Row="0" Grid.Column="0" Text="Сыграно матчей" FontSize="12" TextColor="Gray" />
+                                <Label Grid.Row="0" Grid.Column="1" Text="{Binding TournamentStats.FinishedMatches}" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="End" />
+
+                                <Label Grid.Row="1" Grid.Column="0" Text="Победы (осн./ОТ/бул.)" FontSize="12" TextColor="Gray" />
+                                <Label Grid.Row="1" Grid.Column="1" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="End">
+                                    <Label.Text>
+                                        <MultiBinding StringFormat="{0}/{1}/{2}">
+                                            <Binding Path="TournamentStats.WinsRegulation" />
+                                            <Binding Path="TournamentStats.WinsOvertime" />
+                                            <Binding Path="TournamentStats.WinsShootout" />
+                                        </MultiBinding>
+                                    </Label.Text>
+                                </Label>
+
+                                <Label Grid.Row="2" Grid.Column="0" Text="Поражения (осн./ОТ/бул.)" FontSize="12" TextColor="Gray" />
+                                <Label Grid.Row="2" Grid.Column="1" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="End">
+                                    <Label.Text>
+                                        <MultiBinding StringFormat="{0}/{1}/{2}">
+                                            <Binding Path="TournamentStats.LossesRegulation" />
+                                            <Binding Path="TournamentStats.LossesOvertime" />
+                                            <Binding Path="TournamentStats.LossesShootout" />
+                                        </MultiBinding>
+                                    </Label.Text>
+                                </Label>
+
+                                <Label Grid.Row="3" Grid.Column="0" Text="Забито / Пропущено" FontSize="12" TextColor="Gray" />
+                                <Label Grid.Row="3" Grid.Column="1" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="End">
+                                    <Label.Text>
+                                        <MultiBinding StringFormat="{0} / {1}">
+                                            <Binding Path="TournamentStats.GoalsFor" />
+                                            <Binding Path="TournamentStats.GoalsAgainst" />
+                                        </MultiBinding>
+                                    </Label.Text>
+                                </Label>
+
+                                <Label Grid.Row="4" Grid.Column="0" Text="1 период (В/Н/П)" FontSize="12" TextColor="Gray" />
+                                <Label Grid.Row="4" Grid.Column="1" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="End">
+                                    <Label.Text>
+                                        <MultiBinding StringFormat="{0}/{1}/{2}">
+                                            <Binding Path="TournamentStats.Period1.Wins" />
+                                            <Binding Path="TournamentStats.Period1.Draws" />
+                                            <Binding Path="TournamentStats.Period1.Losses" />
+                                        </MultiBinding>
+                                    </Label.Text>
+                                </Label>
+
+                                <Label Grid.Row="5" Grid.Column="0" Text="2 период (В/Н/П)" FontSize="12" TextColor="Gray" />
+                                <Label Grid.Row="5" Grid.Column="1" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="End">
+                                    <Label.Text>
+                                        <MultiBinding StringFormat="{0}/{1}/{2}">
+                                            <Binding Path="TournamentStats.Period2.Wins" />
+                                            <Binding Path="TournamentStats.Period2.Draws" />
+                                            <Binding Path="TournamentStats.Period2.Losses" />
+                                        </MultiBinding>
+                                    </Label.Text>
+                                </Label>
+
+                                <Label Grid.Row="6" Grid.Column="0" Text="3 период (В/Н/П)" FontSize="12" TextColor="Gray" />
+                                <Label Grid.Row="6" Grid.Column="1" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="End">
+                                    <Label.Text>
+                                        <MultiBinding StringFormat="{0}/{1}/{2}">
+                                            <Binding Path="TournamentStats.Period3.Wins" />
+                                            <Binding Path="TournamentStats.Period3.Draws" />
+                                            <Binding Path="TournamentStats.Period3.Losses" />
+                                        </MultiBinding>
+                                    </Label.Text>
+                                </Label>
+
+                                <Label Grid.Row="7" Grid.Column="0" Text="Овертайм (В/Н/П)" FontSize="12" TextColor="Gray" />
+                                <Label Grid.Row="7" Grid.Column="1" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="End">
+                                    <Label.Text>
+                                        <MultiBinding StringFormat="{0}/{1}/{2}">
+                                            <Binding Path="TournamentStats.Overtime.Wins" />
+                                            <Binding Path="TournamentStats.Overtime.Draws" />
+                                            <Binding Path="TournamentStats.Overtime.Losses" />
+                                        </MultiBinding>
+                                    </Label.Text>
+                                </Label>
+
+                                <Label Grid.Row="8" Grid.Column="0" Text="Буллиты (В/Н/П)" FontSize="12" TextColor="Gray" />
+                                <Label Grid.Row="8" Grid.Column="1" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="End">
+                                    <Label.Text>
+                                        <MultiBinding StringFormat="{0}/{1}/{2}">
+                                            <Binding Path="TournamentStats.Shootout.Wins" />
+                                            <Binding Path="TournamentStats.Shootout.Draws" />
+                                            <Binding Path="TournamentStats.Shootout.Losses" />
+                                        </MultiBinding>
+                                    </Label.Text>
+                                </Label>
+                            </Grid>
                         </VerticalStackLayout>
                     </Frame>
                     <Label Text="{x:Static res:AppResources.LastPlayedMatches}"

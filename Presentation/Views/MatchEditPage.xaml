@@ -166,41 +166,56 @@
                     Clicked="OnSaveClicked" />
 
             <Frame Margin="0,12,0,0"
-                   Padding="10"
+                   Padding="12"
                    HasShadow="False"
+                   BackgroundColor="#F9FAFB"
                    BorderColor="#E5E7EB"
                    IsVisible="{Binding HasHeadToHead}">
                 <VerticalStackLayout Spacing="4">
                     <Label Text="Статистика противостояния (стадия)"
                            FontAttributes="Bold"
                            FontSize="14" />
-                    <Label FontSize="12">
-                        <Label.Text>
-                            <MultiBinding StringFormat="Матчей: {0}">
-                                <Binding Path="HeadToHead.Matches" />
-                            </MultiBinding>
-                        </Label.Text>
-                    </Label>
-                    <Label FontSize="12">
-                        <Label.Text>
-                            <MultiBinding StringFormat="{0}: побед {1}, голов {2}:{3}">
-                                <Binding Path="HomeTeam.Name" />
-                                <Binding Path="HeadToHead.TeamAWins" />
-                                <Binding Path="HeadToHead.TeamAGoals" />
-                                <Binding Path="HeadToHead.TeamBGoals" />
-                            </MultiBinding>
-                        </Label.Text>
-                    </Label>
-                    <Label FontSize="12">
-                        <Label.Text>
-                            <MultiBinding StringFormat="{0}: побед {1}, голов {2}:{3}">
-                                <Binding Path="AwayTeam.Name" />
-                                <Binding Path="HeadToHead.TeamBWins" />
-                                <Binding Path="HeadToHead.TeamBGoals" />
-                                <Binding Path="HeadToHead.TeamAGoals" />
-                            </MultiBinding>
-                        </Label.Text>
-                    </Label>
+                    <Grid ColumnDefinitions="*,Auto"
+                          RowDefinitions="Auto,Auto,Auto"
+                          ColumnSpacing="8"
+                          RowSpacing="4">
+                        <Label Grid.Row="0" Grid.Column="0" Text="Матчей" FontSize="12" />
+                        <Label Grid.Row="0" Grid.Column="1" Text="{Binding HeadToHead.Matches}" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="End" />
+
+                        <Label Grid.Row="1" Grid.Column="0" FontSize="12">
+                            <Label.Text>
+                                <MultiBinding StringFormat="{0}: побед / голы">
+                                    <Binding Path="HomeTeam.Name" />
+                                </MultiBinding>
+                            </Label.Text>
+                        </Label>
+                        <Label Grid.Row="1" Grid.Column="1" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="End">
+                            <Label.Text>
+                                <MultiBinding StringFormat="{0} / {1}:{2}">
+                                    <Binding Path="HeadToHead.TeamAWins" />
+                                    <Binding Path="HeadToHead.TeamAGoals" />
+                                    <Binding Path="HeadToHead.TeamBGoals" />
+                                </MultiBinding>
+                            </Label.Text>
+                        </Label>
+
+                        <Label Grid.Row="2" Grid.Column="0" FontSize="12">
+                            <Label.Text>
+                                <MultiBinding StringFormat="{0}: побед / голы">
+                                    <Binding Path="AwayTeam.Name" />
+                                </MultiBinding>
+                            </Label.Text>
+                        </Label>
+                        <Label Grid.Row="2" Grid.Column="1" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="End">
+                            <Label.Text>
+                                <MultiBinding StringFormat="{0} / {1}:{2}">
+                                    <Binding Path="HeadToHead.TeamBWins" />
+                                    <Binding Path="HeadToHead.TeamBGoals" />
+                                    <Binding Path="HeadToHead.TeamAGoals" />
+                                </MultiBinding>
+                            </Label.Text>
+                        </Label>
+                    </Grid>
                 </VerticalStackLayout>
             </Frame>
         </VerticalStackLayout>
