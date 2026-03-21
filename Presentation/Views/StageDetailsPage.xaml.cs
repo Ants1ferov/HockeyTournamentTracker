@@ -6,6 +6,7 @@ namespace HockeyTournamentTracker.Presentation.Views;
 public partial class StageDetailsPage : ContentPage, IQueryAttributable
 {
     private readonly StageDetailsViewModel _viewModel;
+    private bool _isLoading;
 
     public StageDetailsPage(StageDetailsViewModel viewModel)
     {
@@ -16,13 +17,28 @@ public partial class StageDetailsPage : ContentPage, IQueryAttributable
 
     public async void ApplyQueryAttributes(IDictionary<string, object> query)
     {
+        if (_isLoading)
+            return;
+
         if (query.TryGetValue("TournamentId", out var tVal) &&
             query.TryGetValue("StageId", out var sVal) &&
             tVal is string tStr && sVal is string sStr &&
             Guid.TryParse(tStr, out var tournamentId) &&
             Guid.TryParse(sStr, out var stageId))
         {
-            await _viewModel.LoadAsync(tournamentId, stageId);
+            _isLoading = true;
+            try
+            {
+                await _viewModel.LoadAsync(tournamentId, stageId);
+            }
+            catch
+            {
+                // Keep page alive if loading fails unexpectedly.
+            }
+            finally
+            {
+                _isLoading = false;
+            }
         }
     }
 
