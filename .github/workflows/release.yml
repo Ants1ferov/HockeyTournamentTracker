@@ -1,0 +1,71 @@
+name: Сборка и публикация APK в релиз
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release-android:
+    name: Сборка и публикация релиза
+    runs-on: windows-latest
+
+    steps:
+      - name: Клонирование репозитория
+        uses: actions/checkout@v4
+
+      - name: Установка .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Установка MAUI
+        run: dotnet workload install maui
+
+      - name: Извлечение версии из тега
+        id: version
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $displayVersion = $tag.TrimStart("v")
+          "tag=$tag" >> $env:GITHUB_OUTPUT
+          "display_version=$displayVersion" >> $env:GITHUB_OUTPUT
+          "build_version=${{ github.run_number }}" >> $env:GITHUB_OUTPUT
+
+      - name: Восстановление зависимостей
+        run: dotnet restore ./HockeyTournamentTracker.csproj
+
+      - name: Сборка и публикация APK
+        run: >
+          dotnet publish ./HockeyTournamentTracker.csproj
+          -f net10.0-android
+          -c Release
+          -p:AndroidPackageFormat=apk
+          -p:ApplicationDisplayVersion=${{ steps.version.outputs.display_version }}
+          -p:ApplicationVersion=${{ steps.version.outputs.build_version }}
+
+      - name: Поиск APK
+        id: apk
+        shell: pwsh
+        run: |
+          $apk = Get-ChildItem -Path "$env:GITHUB_WORKSPACE" -Recurse -Filter *.apk | Select-Object -First 1
+          if (-not $apk) {
+            Write-Error "APK-файл не найден"
+            exit 1
+          }
+          "path=$($apk.FullName)" >> $env:GITHUB_OUTPUT
+          "name=$($apk.Name)" >> $env:GITHUB_OUTPUT
+
+      - name: Создание релиза и загрузка APK
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: >
+          gh release create ${{ steps.version.outputs.tag }}
+          "${{ steps.apk.outputs.path }}#${{ steps.apk.outputs.name }}"
+          --title "Версия ${{ steps.version.outputs.display_version }}"
+          --generate-notes
