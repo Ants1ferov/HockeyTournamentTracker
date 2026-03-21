@@ -603,7 +603,7 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
     private static IReadOnlyList<int> GetLast5ResultsForTeam(Guid teamId, List<Match> finishedOrderedByDateDesc)
     {
         var list = new List<int>(5);
-        foreach (var m in finishedOrderedByDateDesc.Take(50))
+        foreach (var m in finishedOrderedByDateDesc)
         {
             if (m.HomeTeamId != teamId && m.AwayTeamId != teamId)
                 continue;

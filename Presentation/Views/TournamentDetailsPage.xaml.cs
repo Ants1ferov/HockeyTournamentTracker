@@ -76,9 +76,12 @@ public partial class TournamentDetailsPage : ContentPage, IQueryAttributable
         _viewModel.SelectedStage = e.CurrentSelection?.FirstOrDefault() as Stage;
     }
 
-    private async void OnDeleteStageClicked(object? sender, EventArgs e)
+    private async void OnDeleteStageInvoked(object? sender, EventArgs e)
     {
-        if ((sender as BindableObject)?.BindingContext is not Stage stage || _viewModel.Tournament is null)
+        var stage = (sender as SwipeItem)?.Parent?.Parent is BindableObject bo
+            ? bo.BindingContext as Stage
+            : null;
+        if (stage is null || _viewModel.Tournament is null)
             return;
         if (!await DisplayAlert(AppResources.Delete, AppResources.DeleteStageConfirm, AppResources.Ok, AppResources.Cancel))
             return;
