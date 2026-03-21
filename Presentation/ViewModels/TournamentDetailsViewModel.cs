@@ -28,7 +28,7 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
     private string _pointsRegLossText = "—";
     private string _pointsOtLossText = "—";
     private string _pointsSoLossText = "—";
-    private CompetitionStats _tournamentStats = new();
+    private int _stageSelectionVersion;
 
     public Tournament? Tournament
     {
@@ -58,12 +58,6 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
     public string PointsRegLossText { get => _pointsRegLossText; private set => SetField(ref _pointsRegLossText, value); }
     public string PointsOtLossText { get => _pointsOtLossText; private set => SetField(ref _pointsOtLossText, value); }
     public string PointsSoLossText { get => _pointsSoLossText; private set => SetField(ref _pointsSoLossText, value); }
-    public CompetitionStats TournamentStats
-    {
-        get => _tournamentStats;
-        private set => SetField(ref _tournamentStats, value);
-    }
-
     public int StatusIndex
     {
         get => (int)(Tournament?.Status ?? TournamentStatus.Planned);
@@ -161,7 +155,6 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
 
             var teams = await _teamRepository.GetByTournamentAsync(tournamentId);
             var matches = await _matchRepository.GetByTournamentAsync(tournamentId);
-            TournamentStats = _statsService.CalculateCompetitionStats(matches);
 
             Standings.Clear();
             StandingsByGroup.Clear();
@@ -336,6 +329,7 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
             var stages = await _stageRepository.GetByTournamentAsync(tournamentId);
             foreach (var s in stages)
                 Stages.Add(s);
+            _stageSelectionVersion++;
             SelectedStage = null;
 
             ParticipantTeams.Clear();
@@ -351,75 +345,113 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
         }
     }
 
-    private async void RefreshStageMatches()
+    private void RefreshStageMatches()
     {
-        if (Tournament is null || SelectedStage is null)
-        {
-            StageMatches.Clear();
-            StandingsByGroupForStage.Clear();
-            return;
-        }
-        var stageId = SelectedStage.Id;
-        var matches = await _matchRepository.GetByTournamentAsync(Tournament.Id);
-        var stageMatches = matches
-            .Where(m => m.StageId == stageId)
-            .OrderByDescending(m => m.DateTime ?? DateTime.MinValue)
-            .ToList();
-        var allTeams = await _teamRepository.GetByTournamentAsync(Tournament.Id);
-        var teamById = allTeams.ToDictionary(t => t.Id);
+        _ = RefreshStageMatchesAsync();
+    }
 
-        // Состав стадии: ограничиваем команды для таблицы только теми, которые добавлены в StageTeams.
-        var stageTeamIds = (await _stageTeamRepository.GetTeamIdsByStageAsync(stageId)).ToHashSet();
-        if (stageTeamIds.Count == 0 && stageMatches.Count > 0)
+    private async Task RefreshStageMatchesAsync()
+    {
+        var myVersion = ++_stageSelectionVersion;
+        try
         {
-            // Backward-compatibility: если StageTeams пустая, но матчи уже есть — извлекаем команды из матчей.
-            var fromMatches = stageMatches
-                .SelectMany(m => new[] { m.HomeTeamId, m.AwayTeamId })
-                .Distinct()
+            if (Tournament is null || SelectedStage is null)
+            {
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    StageMatches.Clear();
+                    StandingsByGroupForStage.Clear();
+                });
+                return;
+            }
+
+            // Сразу очищаем UI при переключении стадии, чтобы не было "мигания"
+            // данных от предыдущей стадии, пока идет фоновая загрузка.
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                StageMatches.Clear();
+                StandingsByGroupForStage.Clear();
+            });
+
+            var stageId = SelectedStage.Id;
+            var matches = await _matchRepository.GetByTournamentAsync(Tournament.Id);
+            var stageMatches = matches
+                .Where(m => m.StageId == stageId)
+                .OrderByDescending(m => m.DateTime ?? DateTime.MinValue)
                 .ToList();
+            var allTeams = await _teamRepository.GetByTournamentAsync(Tournament.Id);
+            var teamById = allTeams.ToDictionary(t => t.Id);
 
-            var teamGroupByTeamId = fromMatches.ToDictionary(
-                id => id,
-                id => teamById.TryGetValue(id, out var t) ? t.GroupId : null);
+            // Состав стадии: ограничиваем команды для таблицы только теми, которые добавлены в StageTeams.
+            var stageTeamIds = (await _stageTeamRepository.GetTeamIdsByStageAsync(stageId)).ToHashSet();
+            if (stageTeamIds.Count == 0 && stageMatches.Count > 0)
+            {
+                // Backward-compatibility: если StageTeams пустая, но матчи уже есть — извлекаем команды из матчей.
+                var fromMatches = stageMatches
+                    .SelectMany(m => new[] { m.HomeTeamId, m.AwayTeamId })
+                    .Distinct()
+                    .ToList();
 
-            stageTeamIds = fromMatches.ToHashSet();
-            await _stageTeamRepository.AddTeamsToStageAsync(stageId, teamGroupByTeamId);
+                var teamGroupByTeamId = fromMatches.ToDictionary(
+                    id => id,
+                    id => teamById.TryGetValue(id, out var t) ? t.GroupId : null);
+
+                stageTeamIds = fromMatches.ToHashSet();
+                await _stageTeamRepository.AddTeamsToStageAsync(stageId, teamGroupByTeamId);
+            }
+
+            var teamsInStage = allTeams.Where(t => stageTeamIds.Contains(t.Id)).ToList();
+            var teamGroupIdsInStage = await _stageTeamRepository.GetTeamGroupIdsByStageAsync(stageId);
+
+            // Группы управляются внутри стадии.
+            var stageGroups = (await _stageGroupRepository.GetByStageAsync(stageId)).ToList();
+            if (stageGroups.Count == 0 && Tournament.Rules?.Groups is { Count: > 0 } globalGroups)
+            {
+                foreach (var g in globalGroups.OrderBy(x => x.Order).ThenBy(x => x.Name))
+                    await _stageGroupRepository.AddGroupAsync(stageId, g.Name);
+
+                stageGroups = (await _stageGroupRepository.GetByStageAsync(stageId)).ToList();
+            }
+
+            var rows = new List<MatchRow>();
+            foreach (var m in stageMatches)
+            {
+                teamById.TryGetValue(m.HomeTeamId, out var homeTeam);
+                teamById.TryGetValue(m.AwayTeamId, out var awayTeam);
+                rows.Add(CreateMatchRow(m, homeTeam?.Name, awayTeam?.Name, m.Status == MatchStatus.InProgress));
+            }
+
+            var stageStandingsGroups = BuildStandingsByGroupFromMatches(
+                Tournament,
+                teamsInStage,
+                teamGroupIdsInStage,
+                stageGroups,
+                stageMatches);
+
+            if (myVersion != _stageSelectionVersion)
+                return;
+
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                StageMatches.Clear();
+                foreach (var r in rows)
+                    StageMatches.Add(r);
+                StandingsByGroupForStage.Clear();
+                foreach (var g in stageStandingsGroups)
+                    StandingsByGroupForStage.Add(g);
+            });
         }
-
-        var teamsInStage = allTeams.Where(t => stageTeamIds.Contains(t.Id)).ToList();
-        var teamGroupIdsInStage = await _stageTeamRepository.GetTeamGroupIdsByStageAsync(stageId);
-
-        // Группы управляются внутри стадии.
-        var stageGroups = (await _stageGroupRepository.GetByStageAsync(stageId)).ToList();
-        if (stageGroups.Count == 0 && Tournament.Rules?.Groups is { Count: > 0 } globalGroups)
+        catch
         {
-            foreach (var g in globalGroups.OrderBy(x => x.Order).ThenBy(x => x.Name))
-                await _stageGroupRepository.AddGroupAsync(stageId, g.Name);
+            if (myVersion != _stageSelectionVersion)
+                return;
 
-            stageGroups = (await _stageGroupRepository.GetByStageAsync(stageId)).ToList();
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                StageMatches.Clear();
+                StandingsByGroupForStage.Clear();
+            });
         }
-        var rows = new List<MatchRow>();
-        foreach (var m in stageMatches)
-        {
-            teamById.TryGetValue(m.HomeTeamId, out var homeTeam);
-            teamById.TryGetValue(m.AwayTeamId, out var awayTeam);
-            rows.Add(CreateMatchRow(m, homeTeam?.Name, awayTeam?.Name, m.Status == MatchStatus.InProgress));
-        }
-        var stageStandingsGroups = BuildStandingsByGroupFromMatches(
-            Tournament,
-            teamsInStage,
-            teamGroupIdsInStage,
-            stageGroups,
-            stageMatches);
-        MainThread.BeginInvokeOnMainThread(() =>
-        {
-            StageMatches.Clear();
-            foreach (var r in rows)
-                StageMatches.Add(r);
-            StandingsByGroupForStage.Clear();
-            foreach (var g in stageStandingsGroups)
-                StandingsByGroupForStage.Add(g);
-        });
     }
 
     private List<StandingGroup> BuildStandingsByGroupFromMatches(
