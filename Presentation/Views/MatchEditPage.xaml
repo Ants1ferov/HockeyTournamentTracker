@@ -164,6 +164,45 @@
             <Button Text="{x:Static res:AppResources.Save}"
                     Margin="0,16,0,0"
                     Clicked="OnSaveClicked" />
+
+            <Frame Margin="0,12,0,0"
+                   Padding="10"
+                   HasShadow="False"
+                   BorderColor="#E5E7EB"
+                   IsVisible="{Binding HasHeadToHead}">
+                <VerticalStackLayout Spacing="4">
+                    <Label Text="Статистика противостояния (стадия)"
+                           FontAttributes="Bold"
+                           FontSize="14" />
+                    <Label FontSize="12">
+                        <Label.Text>
+                            <MultiBinding StringFormat="Матчей: {0}">
+                                <Binding Path="HeadToHead.Matches" />
+                            </MultiBinding>
+                        </Label.Text>
+                    </Label>
+                    <Label FontSize="12">
+                        <Label.Text>
+                            <MultiBinding StringFormat="{0}: побед {1}, голов {2}:{3}">
+                                <Binding Path="HomeTeam.Name" />
+                                <Binding Path="HeadToHead.TeamAWins" />
+                                <Binding Path="HeadToHead.TeamAGoals" />
+                                <Binding Path="HeadToHead.TeamBGoals" />
+                            </MultiBinding>
+                        </Label.Text>
+                    </Label>
+                    <Label FontSize="12">
+                        <Label.Text>
+                            <MultiBinding StringFormat="{0}: побед {1}, голов {2}:{3}">
+                                <Binding Path="AwayTeam.Name" />
+                                <Binding Path="HeadToHead.TeamBWins" />
+                                <Binding Path="HeadToHead.TeamBGoals" />
+                                <Binding Path="HeadToHead.TeamAGoals" />
+                            </MultiBinding>
+                        </Label.Text>
+                    </Label>
+                </VerticalStackLayout>
+            </Frame>
         </VerticalStackLayout>
     </ScrollView>
 

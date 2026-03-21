@@ -13,6 +13,7 @@ public sealed class MatchEditViewModel : INotifyPropertyChanged
     private readonly IMatchRepository _matchRepository;
     private readonly ITournamentRepository _tournamentRepository;
     private readonly IStageTeamRepository _stageTeamRepository;
+    private readonly StatsService _statsService;
 
     private Guid _tournamentId;
     private Guid _matchId;
@@ -38,6 +39,7 @@ public sealed class MatchEditViewModel : INotifyPropertyChanged
     private bool _hasOvertime;
     private int _otHome;
     private int _otAway;
+    private HeadToHeadStats _headToHead = new();
 
     public ObservableCollection<Team> Teams { get; } = new();
     public ObservableCollection<Team> AwayTeamOptions { get; } = new();
@@ -72,14 +74,21 @@ public sealed class MatchEditViewModel : INotifyPropertyChanged
         set
         {
             if (SetField(ref _homeTeam, value))
+            {
                 _ = RefreshAwayTeamOptionsAsync();
+                _ = RefreshHeadToHeadAsync();
+            }
         }
     }
 
     public Team? AwayTeam
     {
         get => _awayTeam;
-        set => SetField(ref _awayTeam, value);
+        set
+        {
+            if (SetField(ref _awayTeam, value))
+                _ = RefreshHeadToHeadAsync();
+        }
     }
 
     public DateTime Date
@@ -189,17 +198,25 @@ public sealed class MatchEditViewModel : INotifyPropertyChanged
     public bool HasOvertime { get => _hasOvertime; set => SetField(ref _hasOvertime, value); }
     public int OTHome { get => _otHome; set => SetField(ref _otHome, value); }
     public int OTAway { get => _otAway; set => SetField(ref _otAway, value); }
+    public HeadToHeadStats HeadToHead
+    {
+        get => _headToHead;
+        private set => SetField(ref _headToHead, value);
+    }
+    public bool HasHeadToHead => HeadToHead.Matches > 0;
 
     public MatchEditViewModel(
         ITeamRepository teamRepository,
         IMatchRepository matchRepository,
         ITournamentRepository tournamentRepository,
-        IStageTeamRepository stageTeamRepository)
+        IStageTeamRepository stageTeamRepository,
+        StatsService statsService)
     {
         _teamRepository = teamRepository;
         _matchRepository = matchRepository;
         _tournamentRepository = tournamentRepository;
         _stageTeamRepository = stageTeamRepository;
+        _statsService = statsService;
     }
 
     private async Task RefreshAwayTeamOptionsAsync()
@@ -267,6 +284,7 @@ public sealed class MatchEditViewModel : INotifyPropertyChanged
                 Teams.Add(team);
         }
         await RefreshAwayTeamOptionsAsync();
+        await RefreshHeadToHeadAsync();
     }
 
     public async Task LoadMatchAsync()
@@ -323,6 +341,8 @@ public sealed class MatchEditViewModel : INotifyPropertyChanged
             P1Home = match.HomeGoals ?? 0;
             P1Away = match.AwayGoals ?? 0;
         }
+
+        await RefreshHeadToHeadAsync();
     }
 
     public async Task<bool> SaveAsync()
@@ -489,6 +509,21 @@ public sealed class MatchEditViewModel : INotifyPropertyChanged
 
         await _matchRepository.SaveAsync(match);
         return true;
+    }
+
+    private async Task RefreshHeadToHeadAsync()
+    {
+        if (TournamentId == Guid.Empty || HomeTeam is null || AwayTeam is null || StageId is not { } stageId || stageId == Guid.Empty)
+        {
+            HeadToHead = new HeadToHeadStats();
+            OnPropertyChanged(nameof(HasHeadToHead));
+            return;
+        }
+
+        var matches = await _matchRepository.GetByTournamentAsync(TournamentId);
+        var stageMatches = matches.Where(m => m.StageId == stageId).ToList();
+        HeadToHead = _statsService.CalculateHeadToHead(stageMatches, HomeTeam.Id, AwayTeam.Id);
+        OnPropertyChanged(nameof(HasHeadToHead));
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

@@ -28,6 +28,7 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
     private string _pointsRegLossText = "—";
     private string _pointsOtLossText = "—";
     private string _pointsSoLossText = "—";
+    private CompetitionStats _tournamentStats = new();
 
     public Tournament? Tournament
     {
@@ -57,6 +58,11 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
     public string PointsRegLossText { get => _pointsRegLossText; private set => SetField(ref _pointsRegLossText, value); }
     public string PointsOtLossText { get => _pointsOtLossText; private set => SetField(ref _pointsOtLossText, value); }
     public string PointsSoLossText { get => _pointsSoLossText; private set => SetField(ref _pointsSoLossText, value); }
+    public CompetitionStats TournamentStats
+    {
+        get => _tournamentStats;
+        private set => SetField(ref _tournamentStats, value);
+    }
 
     public int StatusIndex
     {
@@ -155,6 +161,7 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
 
             var teams = await _teamRepository.GetByTournamentAsync(tournamentId);
             var matches = await _matchRepository.GetByTournamentAsync(tournamentId);
+            TournamentStats = _statsService.CalculateCompetitionStats(matches);
 
             Standings.Clear();
             StandingsByGroup.Clear();
@@ -719,5 +726,42 @@ public sealed class MatchRow
     public string DisplayScore { get; set; } = string.Empty;
     public bool IsLive { get; set; }
     public MatchStatus Status { get; set; }
+}
+
+public sealed class CompetitionStatsUi
+{
+    public string FinishedMatches { get; set; } = "0";
+    public string WinsRegulation { get; set; } = "0";
+    public string WinsOvertime { get; set; } = "0";
+    public string WinsShootout { get; set; } = "0";
+    public string LossesRegulation { get; set; } = "0";
+    public string LossesOvertime { get; set; } = "0";
+    public string LossesShootout { get; set; } = "0";
+    public string GoalsFor { get; set; } = "0";
+    public string GoalsAgainst { get; set; } = "0";
+    public string Period1 { get; set; } = "0-0-0";
+    public string Period2 { get; set; } = "0-0-0";
+    public string Period3 { get; set; } = "0-0-0";
+    public string Overtime { get; set; } = "0-0-0";
+    public string Shootout { get; set; } = "0-0-0";
+
+    public static CompetitionStatsUi FromDomain(CompetitionStats stats) =>
+        new()
+        {
+            FinishedMatches = stats.FinishedMatches.ToString(),
+            WinsRegulation = stats.WinsRegulation.ToString(),
+            WinsOvertime = stats.WinsOvertime.ToString(),
+            WinsShootout = stats.WinsShootout.ToString(),
+            LossesRegulation = stats.LossesRegulation.ToString(),
+            LossesOvertime = stats.LossesOvertime.ToString(),
+            LossesShootout = stats.LossesShootout.ToString(),
+            GoalsFor = stats.GoalsFor.ToString(),
+            GoalsAgainst = stats.GoalsAgainst.ToString(),
+            Period1 = $"{stats.Period1.Wins}-{stats.Period1.Draws}-{stats.Period1.Losses}",
+            Period2 = $"{stats.Period2.Wins}-{stats.Period2.Draws}-{stats.Period2.Losses}",
+            Period3 = $"{stats.Period3.Wins}-{stats.Period3.Draws}-{stats.Period3.Losses}",
+            Overtime = $"{stats.Overtime.Wins}-{stats.Overtime.Draws}-{stats.Overtime.Losses}",
+            Shootout = $"{stats.Shootout.Wins}-{stats.Shootout.Draws}-{stats.Shootout.Losses}"
+        };
 }
 

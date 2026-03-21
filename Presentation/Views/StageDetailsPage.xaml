@@ -124,6 +124,70 @@
                 <Label Text="{x:Static res:AppResources.Matches}"
                        FontAttributes="Bold"
                        FontSize="18" />
+                <Frame Padding="10"
+                       HasShadow="False"
+                       BackgroundColor="#F3F4F6"
+                       CornerRadius="8">
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Статистика стадии"
+                               FontAttributes="Bold"
+                               FontSize="14" />
+                        <Label FontSize="12">
+                            <Label.Text>
+                                <MultiBinding StringFormat="Матчей: {0}, ГЗ/ГП: {1}/{2}">
+                                    <Binding Path="StageStats.FinishedMatches" />
+                                    <Binding Path="StageStats.GoalsFor" />
+                                    <Binding Path="StageStats.GoalsAgainst" />
+                                </MultiBinding>
+                            </Label.Text>
+                        </Label>
+                        <Label FontSize="12">
+                            <Label.Text>
+                                <MultiBinding StringFormat="В (осн/ОТ/Б): {0}/{1}/{2}">
+                                    <Binding Path="StageStats.WinsRegulation" />
+                                    <Binding Path="StageStats.WinsOvertime" />
+                                    <Binding Path="StageStats.WinsShootout" />
+                                </MultiBinding>
+                            </Label.Text>
+                        </Label>
+                        <Label FontSize="12">
+                            <Label.Text>
+                                <MultiBinding StringFormat="П (осн/ОТ/Б): {0}/{1}/{2}">
+                                    <Binding Path="StageStats.LossesRegulation" />
+                                    <Binding Path="StageStats.LossesOvertime" />
+                                    <Binding Path="StageStats.LossesShootout" />
+                                </MultiBinding>
+                            </Label.Text>
+                        </Label>
+                        <Label FontSize="12">
+                            <Label.Text>
+                                <MultiBinding StringFormat="П1 (В/Н/П): {0}/{1}/{2}">
+                                    <Binding Path="StageStats.Period1.Wins" />
+                                    <Binding Path="StageStats.Period1.Draws" />
+                                    <Binding Path="StageStats.Period1.Losses" />
+                                </MultiBinding>
+                            </Label.Text>
+                        </Label>
+                        <Label FontSize="12">
+                            <Label.Text>
+                                <MultiBinding StringFormat="П2 (В/Н/П): {0}/{1}/{2}">
+                                    <Binding Path="StageStats.Period2.Wins" />
+                                    <Binding Path="StageStats.Period2.Draws" />
+                                    <Binding Path="StageStats.Period2.Losses" />
+                                </MultiBinding>
+                            </Label.Text>
+                        </Label>
+                        <Label FontSize="12">
+                            <Label.Text>
+                                <MultiBinding StringFormat="П3 (В/Н/П): {0}/{1}/{2}">
+                                    <Binding Path="StageStats.Period3.Wins" />
+                                    <Binding Path="StageStats.Period3.Draws" />
+                                    <Binding Path="StageStats.Period3.Losses" />
+                                </MultiBinding>
+                            </Label.Text>
+                        </Label>
+                    </VerticalStackLayout>
+                </Frame>
                 <Label Text="{Binding StageMatches.Count, StringFormat='Всего матчей: {0}'}"
                        FontSize="14"
                        TextColor="Gray" />

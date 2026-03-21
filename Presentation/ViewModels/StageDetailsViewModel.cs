@@ -20,6 +20,7 @@ public sealed class StageDetailsViewModel : INotifyPropertyChanged
 
     private Tournament? _tournament;
     private Stage? _stage;
+    private CompetitionStats _stageStats = new();
 
     public Tournament? Tournament
     {
@@ -44,6 +45,11 @@ public sealed class StageDetailsViewModel : INotifyPropertyChanged
     public string PageTitle => Stage?.Name ?? string.Empty;
     public bool IsPlayoffStage => Stage?.StageType == StageType.PlayOff;
     public bool IsSwissStage => Stage?.StageType != StageType.PlayOff;
+    public CompetitionStats StageStats
+    {
+        get => _stageStats;
+        private set => SetField(ref _stageStats, value);
+    }
 
     public ObservableCollection<MatchRow> StageMatches { get; } = new();
     public ObservableCollection<StandingGroup> StandingsByGroupForStage { get; } = new();
@@ -95,6 +101,7 @@ public sealed class StageDetailsViewModel : INotifyPropertyChanged
             .Where(m => m.StageId == stageId)
             .OrderByDescending(m => m.DateTime ?? DateTime.MinValue)
             .ToList();
+        StageStats = _statsService.CalculateCompetitionStats(stageMatches);
 
         var allTeams = await _teamRepository.GetByTournamentAsync(tournamentId);
         var teamById = allTeams.ToDictionary(t => t.Id);
