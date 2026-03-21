@@ -163,8 +163,7 @@
                            FontAttributes="Bold"
                            FontSize="18" />
                     <CollectionView ItemsSource="{Binding Stages}"
-                                    SelectionMode="Single"
-                                    SelectionChanged="OnStageSelectionChanged">
+                                    SelectionMode="None">
                         <CollectionView.ItemTemplate>
                             <DataTemplate>
                                 <SwipeView>
