@@ -8,6 +8,7 @@ namespace HockeyTournamentTracker.Presentation.Views;
 public partial class TournamentDetailsPage : ContentPage, IQueryAttributable
 {
     private readonly TournamentDetailsViewModel _viewModel;
+    private bool _isNavigatingToStage;
 
     public TournamentDetailsPage(TournamentDetailsViewModel viewModel)
     {
@@ -64,16 +65,20 @@ public partial class TournamentDetailsPage : ContentPage, IQueryAttributable
 
     private async void OnStageTapped(object? sender, TappedEventArgs e)
     {
+        if (_isNavigatingToStage)
+            return;
         if ((sender as BindableObject)?.BindingContext is not Stage stage || _viewModel.Tournament is null)
             return;
-
-        await Shell.Current.GoToAsync(
-            $"{nameof(StageDetailsPage)}?TournamentId={_viewModel.Tournament.Id}&StageId={stage.Id}");
-    }
-
-    private void OnStageSelectionChanged(object? sender, SelectionChangedEventArgs e)
-    {
-        _viewModel.SelectedStage = e.CurrentSelection?.FirstOrDefault() as Stage;
+        _isNavigatingToStage = true;
+        try
+        {
+            await Shell.Current.GoToAsync(
+                $"{nameof(StageDetailsPage)}?TournamentId={_viewModel.Tournament.Id}&StageId={stage.Id}");
+        }
+        finally
+        {
+            _isNavigatingToStage = false;
+        }
     }
 
     private async void OnDeleteStageInvoked(object? sender, EventArgs e)
