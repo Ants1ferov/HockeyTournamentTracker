@@ -7,6 +7,7 @@ namespace HockeyTournamentTracker.Data;
 public interface IMatchRepository
 {
     Task<IReadOnlyList<Match>> GetByTournamentAsync(Guid tournamentId);
+    Task<StageMatchPageResult> GetByStageAsync(StageMatchQuery query);
     Task<Match?> GetByIdAsync(Guid id);
     Task SaveAsync(Match match);
     Task DeleteAsync(Guid id);
@@ -28,6 +29,81 @@ public sealed class MatchRepository : IMatchRepository
             .ToListAsync();
 
         return entities.Select(MapToDomain).ToList();
+    }
+
+    public async Task<StageMatchPageResult> GetByStageAsync(StageMatchQuery query)
+    {
+        var limit = query.Limit <= 0 ? 50 : query.Limit;
+        var offset = query.Offset < 0 ? 0 : query.Offset;
+
+        if (string.IsNullOrWhiteSpace(query.TeamSearch))
+        {
+            var q = _connection.Table<MatchEntity>()
+                .Where(m => m.TournamentId == query.TournamentId && m.StageId == query.StageId);
+
+            if (query.SeriesId.HasValue)
+                q = q.Where(m => m.SeriesId == query.SeriesId.Value);
+            if (query.Status.HasValue)
+                q = q.Where(m => m.Status == (int)query.Status.Value);
+            if (query.DateFrom.HasValue)
+                q = q.Where(m => m.DateTime >= query.DateFrom.Value);
+            if (query.DateTo.HasValue)
+                q = q.Where(m => m.DateTime <= query.DateTo.Value);
+
+            q = query.SortDescending
+                ? q.OrderByDescending(m => m.DateTime)
+                : q.OrderBy(m => m.DateTime);
+
+            var pageEntities = await q.Skip(offset).Take(limit + 1).ToListAsync();
+            var hasMore = pageEntities.Count > limit;
+            var normalized = pageEntities.Take(limit).Select(MapToDomain).ToList();
+            return new StageMatchPageResult(normalized, hasMore);
+        }
+
+        var pattern = $"%{query.TeamSearch.Trim().ToLowerInvariant()}%";
+        var sql = """
+                  SELECT m.*
+                  FROM Matches m
+                  LEFT JOIN Teams ht ON ht.Id = m.HomeTeamId
+                  LEFT JOIN Teams at ON at.Id = m.AwayTeamId
+                  WHERE m.TournamentId = ?
+                    AND m.StageId = ?
+                    AND (LOWER(IFNULL(ht.Name, '')) LIKE ? OR LOWER(IFNULL(at.Name, '')) LIKE ?)
+                  """;
+        var args = new List<object> { query.TournamentId, query.StageId, pattern, pattern };
+
+        if (query.SeriesId.HasValue)
+        {
+            sql += " AND m.SeriesId = ?";
+            args.Add(query.SeriesId.Value);
+        }
+        if (query.Status.HasValue)
+        {
+            sql += " AND m.Status = ?";
+            args.Add((int)query.Status.Value);
+        }
+        if (query.DateFrom.HasValue)
+        {
+            sql += " AND m.DateTime >= ?";
+            args.Add(query.DateFrom.Value);
+        }
+        if (query.DateTo.HasValue)
+        {
+            sql += " AND m.DateTime <= ?";
+            args.Add(query.DateTo.Value);
+        }
+
+        sql += query.SortDescending
+            ? " ORDER BY m.DateTime DESC, m.Id DESC"
+            : " ORDER BY m.DateTime ASC, m.Id ASC";
+        sql += " LIMIT ? OFFSET ?";
+        args.Add(limit + 1);
+        args.Add(offset);
+
+        var searchedEntities = await _connection.QueryAsync<MatchEntity>(sql, args.ToArray());
+        var searchedHasMore = searchedEntities.Count > limit;
+        var searchedNormalized = searchedEntities.Take(limit).Select(MapToDomain).ToList();
+        return new StageMatchPageResult(searchedNormalized, searchedHasMore);
     }
 
     public async Task<Match?> GetByIdAsync(Guid id)
@@ -105,5 +181,31 @@ public sealed class MatchRepository : IMatchRepository
                 ? JsonSerializer.Serialize(list)
                 : null
         };
+}
+
+public sealed class StageMatchQuery
+{
+    public Guid TournamentId { get; set; }
+    public Guid StageId { get; set; }
+    public Guid? SeriesId { get; set; }
+    public string? TeamSearch { get; set; }
+    public MatchStatus? Status { get; set; }
+    public DateTime? DateFrom { get; set; }
+    public DateTime? DateTo { get; set; }
+    public int Offset { get; set; }
+    public int Limit { get; set; } = 50;
+    public bool SortDescending { get; set; } = true;
+}
+
+public sealed class StageMatchPageResult
+{
+    public StageMatchPageResult(IReadOnlyList<Match> items, bool hasMore)
+    {
+        Items = items;
+        HasMore = hasMore;
+    }
+
+    public IReadOnlyList<Match> Items { get; }
+    public bool HasMore { get; }
 }
 

@@ -5,8 +5,11 @@
              x:Class="HockeyTournamentTracker.Presentation.Views.StageMatchesPage"
              Title="{x:Static res:AppResources.Matches}">
 
-    <ScrollView>
-        <VerticalStackLayout Padding="16" Spacing="12">
+    <Grid RowDefinitions="Auto,*"
+          RowSpacing="8">
+        <VerticalStackLayout Grid.Row="0"
+                             Padding="16,12,16,0"
+                             Spacing="10">
             <Button Text="{x:Static res:AppResources.AddMatch}"
                     Clicked="OnAddMatchClicked" />
 
@@ -82,40 +85,56 @@
                        VerticalTextAlignment="Center"
                        TextColor="Gray" />
             </HorizontalStackLayout>
-
-            <CollectionView x:Name="MatchesCollection">
-                <CollectionView.ItemTemplate>
-                    <DataTemplate>
-                        <Frame Margin="0,4"
-                               Padding="12"
-                               HasShadow="True"
-                               CornerRadius="8">
-                            <VerticalStackLayout Spacing="8">
-                                <Label FontSize="12"
-                                       Text="{Binding DateTime, StringFormat='{}{0:dd.MM HH:mm}'}" />
-                                <Label FontSize="14">
-                                    <Label.Text>
-                                        <MultiBinding StringFormat="{}{0} – {1}  {2}">
-                                            <Binding Path="HomeTeamName" />
-                                            <Binding Path="AwayTeamName" />
-                                            <Binding Path="DisplayScore" />
-                                        </MultiBinding>
-                                    </Label.Text>
-                                </Label>
-                                <Grid ColumnDefinitions="Auto,Auto"
-                                      ColumnSpacing="8">
-                                    <Button Grid.Column="0"
-                                            Text="Редактировать"
-                                            Clicked="OnEditMatchClicked" />
-                                    <Button Grid.Column="1"
-                                            Text="{x:Static res:AppResources.Delete}"
-                                            Clicked="OnDeleteMatchClicked" />
-                                </Grid>
-                            </VerticalStackLayout>
-                        </Frame>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
         </VerticalStackLayout>
-    </ScrollView>
+
+        <CollectionView Grid.Row="1"
+                        x:Name="MatchesCollection"
+                        Margin="16,0,16,8"
+                        RemainingItemsThreshold="5"
+                        RemainingItemsThresholdReached="OnRemainingItemsThresholdReached">
+            <CollectionView.Footer>
+                <VerticalStackLayout Padding="0,8,0,16"
+                                     Spacing="8">
+                    <ActivityIndicator x:Name="LoadingIndicator"
+                                       IsVisible="False"
+                                       IsRunning="False" />
+                    <Button x:Name="LoadMoreButton"
+                            Text="Показать еще"
+                            IsVisible="False"
+                            Clicked="OnLoadMoreClicked" />
+                </VerticalStackLayout>
+            </CollectionView.Footer>
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Frame Margin="0,4"
+                           Padding="12"
+                           HasShadow="True"
+                           CornerRadius="8">
+                        <VerticalStackLayout Spacing="8">
+                            <Label FontSize="12"
+                                   Text="{Binding DateTime, StringFormat='{}{0:dd.MM HH:mm}'}" />
+                            <Label FontSize="14">
+                                <Label.Text>
+                                    <MultiBinding StringFormat="{}{0} – {1}  {2}">
+                                        <Binding Path="HomeTeamName" />
+                                        <Binding Path="AwayTeamName" />
+                                        <Binding Path="DisplayScore" />
+                                    </MultiBinding>
+                                </Label.Text>
+                            </Label>
+                            <Grid ColumnDefinitions="Auto,Auto"
+                                  ColumnSpacing="8">
+                                <Button Grid.Column="0"
+                                        Text="Редактировать"
+                                        Clicked="OnEditMatchClicked" />
+                                <Button Grid.Column="1"
+                                        Text="{x:Static res:AppResources.Delete}"
+                                        Clicked="OnDeleteMatchClicked" />
+                            </Grid>
+                        </VerticalStackLayout>
+                    </Frame>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+    </Grid>
 </ContentPage>
