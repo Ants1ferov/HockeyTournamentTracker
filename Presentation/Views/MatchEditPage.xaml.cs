@@ -63,6 +63,38 @@ public partial class MatchEditPage : ContentPage, IQueryAttributable
         ShootoutPanel.IsVisible = _viewModel.OutcomeType == OutcomeType.Shootout;
     }
 
+    private async void OnSelectHomeTeamClicked(object? sender, EventArgs e)
+    {
+        var selected = await PromptTeamAsync(AppResources.HomeTeam, _viewModel.HomeTeam, _viewModel.Teams);
+        if (selected is not null)
+            _viewModel.HomeTeam = selected;
+    }
+
+    private async void OnSelectAwayTeamClicked(object? sender, EventArgs e)
+    {
+        var selected = await PromptTeamAsync(AppResources.AwayTeam, _viewModel.AwayTeam, _viewModel.AwayTeamOptions);
+        if (selected is not null)
+            _viewModel.AwayTeam = selected;
+    }
+
+    private async Task<Team?> PromptTeamAsync(string title, Team? current, IEnumerable<Team> options)
+    {
+        var teams = options.ToList();
+        if (teams.Count == 0)
+        {
+            await DisplayAlert(AppResources.Error, "Нет доступных команд.", AppResources.Ok);
+            return null;
+        }
+
+        var cancel = AppResources.Cancel;
+        var labels = teams.Select(t => t.Name).ToArray();
+        var selected = await DisplayActionSheet(title, cancel, null, labels);
+        if (selected == cancel)
+            return current;
+
+        return teams.FirstOrDefault(t => string.Equals(t.Name, selected, StringComparison.Ordinal)) ?? current;
+    }
+
     private async void OnSaveClicked(object? sender, EventArgs e)
     {
         var success = await _viewModel.SaveAsync();
