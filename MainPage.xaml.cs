@@ -34,9 +34,11 @@ public partial class MainPage : ContentPage
         await Shell.Current.GoToAsync($"{nameof(TournamentDetailsPage)}?TournamentId={tournament.Id}");
     }
 
-    private async void OnDeleteTournamentClicked(object? sender, EventArgs e)
+    private async void OnDeleteTournamentInvoked(object? sender, EventArgs e)
     {
-        var tournament = (sender as BindableObject)?.BindingContext as Domain.Tournament;
+        var tournament = (sender as SwipeItem)?.Parent?.Parent is BindableObject bo
+            ? bo.BindingContext as Domain.Tournament
+            : null;
         if (tournament is null) return;
         var confirm = await DisplayAlert(AppResources.Delete, AppResources.DeleteTournamentConfirm, AppResources.Delete, AppResources.Cancel);
         if (!confirm) return;

@@ -7,21 +7,95 @@
 
     <ScrollView>
         <VerticalStackLayout Padding="16" Spacing="12">
-            <Label Text="{x:Static res:AppResources.HomeTeam}" />
-            <Picker ItemsSource="{Binding Teams}"
-                    ItemDisplayBinding="{Binding Name}"
-                    SelectedItem="{Binding HomeTeam}" />
+            <Grid ColumnDefinitions="*,Auto,*"
+                  ColumnSpacing="12">
+                <VerticalStackLayout Grid.Column="0"
+                                     Spacing="6"
+                                     HorizontalOptions="Center">
+                    <Frame WidthRequest="92"
+                           HeightRequest="92"
+                           CornerRadius="46"
+                           HasShadow="False"
+                           BorderColor="#D1D5DB"
+                           BackgroundColor="#FFFFFF"
+                           Padding="0">
+                        <Grid>
+                            <Image Source="{Binding HomeTeam.IconPath, Converter={StaticResource PathToImageSource}}"
+                                   Aspect="AspectFill"
+                                   WidthRequest="92"
+                                   HeightRequest="92" />
+                            <Label Text="Выбор"
+                                   IsVisible="{Binding HomeTeam, Converter={StaticResource NotNullToBool}, ConverterParameter=Invert}"
+                                   HorizontalTextAlignment="Center"
+                                   VerticalTextAlignment="Center"
+                                   TextColor="Gray"
+                                   FontSize="11" />
+                        </Grid>
+                    </Frame>
+                    <Button Text="{x:Static res:AppResources.HomeTeam}"
+                            FontSize="12"
+                            Clicked="OnSelectHomeTeamClicked" />
+                    <Label Text="{Binding HomeTeam.Name}"
+                           HorizontalTextAlignment="Center"
+                           FontSize="12"
+                           LineBreakMode="TailTruncation"
+                           WidthRequest="120" />
+                </VerticalStackLayout>
 
-            <Label Text="{x:Static res:AppResources.AwayTeam}" />
-            <Picker ItemsSource="{Binding AwayTeamOptions}"
-                    ItemDisplayBinding="{Binding Name}"
-                    SelectedItem="{Binding AwayTeam}" />
+                <Label Grid.Column="1"
+                       Text="VS"
+                       FontAttributes="Bold"
+                       FontSize="18"
+                       VerticalTextAlignment="Center"
+                       HorizontalTextAlignment="Center" />
 
-            <Label Text="{x:Static res:AppResources.Date}" />
-            <DatePicker Date="{Binding Date}" />
+                <VerticalStackLayout Grid.Column="2"
+                                     Spacing="6"
+                                     HorizontalOptions="Center">
+                    <Frame WidthRequest="92"
+                           HeightRequest="92"
+                           CornerRadius="46"
+                           HasShadow="False"
+                           BorderColor="#D1D5DB"
+                           BackgroundColor="#FFFFFF"
+                           Padding="0">
+                        <Grid>
+                            <Image Source="{Binding AwayTeam.IconPath, Converter={StaticResource PathToImageSource}}"
+                                   Aspect="AspectFill"
+                                   WidthRequest="92"
+                                   HeightRequest="92" />
+                            <Label Text="Выбор"
+                                   IsVisible="{Binding AwayTeam, Converter={StaticResource NotNullToBool}, ConverterParameter=Invert}"
+                                   HorizontalTextAlignment="Center"
+                                   VerticalTextAlignment="Center"
+                                   TextColor="Gray"
+                                   FontSize="11" />
+                        </Grid>
+                    </Frame>
+                    <Button Text="{x:Static res:AppResources.AwayTeam}"
+                            FontSize="12"
+                            Clicked="OnSelectAwayTeamClicked" />
+                    <Label Text="{Binding AwayTeam.Name}"
+                           HorizontalTextAlignment="Center"
+                           FontSize="12"
+                           LineBreakMode="TailTruncation"
+                           WidthRequest="120" />
+                </VerticalStackLayout>
+            </Grid>
 
-            <Label Text="{x:Static res:AppResources.Time}" />
-            <TimePicker Time="{Binding Time}" />
+            <Grid ColumnDefinitions="*,*"
+                  ColumnSpacing="12">
+                <VerticalStackLayout Grid.Column="0"
+                                     Spacing="4">
+                    <Label Text="{x:Static res:AppResources.Date}" />
+                    <DatePicker Date="{Binding Date}" />
+                </VerticalStackLayout>
+                <VerticalStackLayout Grid.Column="1"
+                                     Spacing="4">
+                    <Label Text="{x:Static res:AppResources.Time}" />
+                    <TimePicker Time="{Binding Time}" />
+                </VerticalStackLayout>
+            </Grid>
 
             <Label Text="Статус матча" />
             <Picker SelectedIndex="{Binding MatchStatusIndex}">
@@ -90,6 +164,60 @@
             <Button Text="{x:Static res:AppResources.Save}"
                     Margin="0,16,0,0"
                     Clicked="OnSaveClicked" />
+
+            <Frame Margin="0,12,0,0"
+                   Padding="12"
+                   HasShadow="False"
+                   BackgroundColor="#F9FAFB"
+                   BorderColor="#E5E7EB"
+                   IsVisible="{Binding HasHeadToHead}">
+                <VerticalStackLayout Spacing="4">
+                    <Label Text="Статистика противостояния (стадия)"
+                           FontAttributes="Bold"
+                           FontSize="14" />
+                    <Grid ColumnDefinitions="*,Auto"
+                          RowDefinitions="Auto,Auto,Auto"
+                          ColumnSpacing="8"
+                          RowSpacing="4">
+                        <Label Grid.Row="0" Grid.Column="0" Text="Матчей" FontSize="12" />
+                        <Label Grid.Row="0" Grid.Column="1" Text="{Binding HeadToHead.Matches}" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="End" />
+
+                        <Label Grid.Row="1" Grid.Column="0" FontSize="12">
+                            <Label.Text>
+                                <MultiBinding StringFormat="{0}: побед / голы">
+                                    <Binding Path="HomeTeam.Name" />
+                                </MultiBinding>
+                            </Label.Text>
+                        </Label>
+                        <Label Grid.Row="1" Grid.Column="1" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="End">
+                            <Label.Text>
+                                <MultiBinding StringFormat="{0} / {1}:{2}">
+                                    <Binding Path="HeadToHead.TeamAWins" />
+                                    <Binding Path="HeadToHead.TeamAGoals" />
+                                    <Binding Path="HeadToHead.TeamBGoals" />
+                                </MultiBinding>
+                            </Label.Text>
+                        </Label>
+
+                        <Label Grid.Row="2" Grid.Column="0" FontSize="12">
+                            <Label.Text>
+                                <MultiBinding StringFormat="{0}: побед / голы">
+                                    <Binding Path="AwayTeam.Name" />
+                                </MultiBinding>
+                            </Label.Text>
+                        </Label>
+                        <Label Grid.Row="2" Grid.Column="1" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="End">
+                            <Label.Text>
+                                <MultiBinding StringFormat="{0} / {1}:{2}">
+                                    <Binding Path="HeadToHead.TeamBWins" />
+                                    <Binding Path="HeadToHead.TeamBGoals" />
+                                    <Binding Path="HeadToHead.TeamAGoals" />
+                                </MultiBinding>
+                            </Label.Text>
+                        </Label>
+                    </Grid>
+                </VerticalStackLayout>
+            </Frame>
         </VerticalStackLayout>
     </ScrollView>
 
