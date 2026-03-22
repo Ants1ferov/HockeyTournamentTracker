@@ -23,7 +23,19 @@ jobs:
 
       - name: Восстановление ключа
         shell: pwsh
-        run: $bytes = [Convert]::FromBase64String("${{ secrets.ANDROID_KEYSTORE_BASE64 }}")
+        run: |
+         $bytes = [Convert]::FromBase64String("${{ secrets.ANDROID_KEYSTORE_BASE64 }}")
+         [IO.File]::WriteAllBytes("$env:GITHUB_WORKSPACE\debug.keystore", $bytes)
+      
+      - name: Проверка наличия ключа
+        shell: pwsh
+        run: |
+          Write-Host "Workspace: $env:GITHUB_WORKSPACE"
+          Get-ChildItem $env:GITHUB_WORKSPACE
+          if (!(Test-Path "$env:GITHUB_WORKSPACE\debug.keystore"))
+          {
+            throw "Файл debug.keystore не найден после восстановления"
+          }
 
       - name: Восстановление зависимостей
         run: dotnet restore ./HockeyTournamentTracker.csproj
