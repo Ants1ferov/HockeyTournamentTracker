@@ -36,6 +36,10 @@ jobs:
           "display_version=$displayVersion" >> $env:GITHUB_OUTPUT
           "build_version=${{ github.run_number }}" >> $env:GITHUB_OUTPUT
 
+      - name: Восстановление ключа
+        shell: pwsh
+        run: $bytes = [Convert]::FromBase64String("${{ secrets.ANDROID_KEYSTORE_BASE64 }}")
+
       - name: Восстановление зависимостей
         run: dotnet restore ./HockeyTournamentTracker.csproj
 
@@ -45,8 +49,16 @@ jobs:
           -f net10.0-android
           -c Release
           -p:AndroidPackageFormat=apk
-          -p:ApplicationDisplayVersion=${{ steps.version.outputs.display_version }}
-          -p:ApplicationVersion=${{ steps.version.outputs.build_version }}
+          -p:ApplicationDisplayVersion=1.4.${{ github.run_number }}
+          -p:ApplicationVersion=${{ github.run_number }}
+          -p:AndroidSigningKeyStore=%GITHUB_WORKSPACE%\debug.keystore
+          -p:AndroidSigningKeyAlias=env:ANDROID_KEY_ALIAS
+          -p:AndroidSigningKeyPass=env:ANDROID_KEY_PASSWORD
+          -p:AndroidSigningStorePass=env:ANDROID_KEYSTORE_PASSWORD
+        env:
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
 
       - name: Поиск APK
         id: apk

@@ -21,6 +21,10 @@ jobs:
       - name: Установка MAUI
         run: dotnet workload install maui
 
+      - name: Восстановление ключа
+        shell: pwsh
+        run: $bytes = [Convert]::FromBase64String("${{ secrets.ANDROID_KEYSTORE_BASE64 }}")
+
       - name: Восстановление зависимостей
         run: dotnet restore ./HockeyTournamentTracker.csproj
 
@@ -32,6 +36,14 @@ jobs:
           -p:AndroidPackageFormat=apk
           -p:ApplicationDisplayVersion=1.4.${{ github.run_number }}
           -p:ApplicationVersion=${{ github.run_number }}
+          -p:AndroidSigningKeyStore=%GITHUB_WORKSPACE%\debug.keystore
+          -p:AndroidSigningKeyAlias=env:ANDROID_KEY_ALIAS
+          -p:AndroidSigningKeyPass=env:ANDROID_KEY_PASSWORD
+          -p:AndroidSigningStorePass=env:ANDROID_KEYSTORE_PASSWORD
+        env:
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
 
       - name: Загрузка APK в временное хранилище
         uses: actions/upload-artifact@v4
