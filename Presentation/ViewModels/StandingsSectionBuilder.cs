@@ -14,7 +14,6 @@ internal static class StandingsSectionBuilder
         List<Match> matches,
         IReadOnlyDictionary<Guid, Guid?>? teamZoneIds,
         IReadOnlyDictionary<Guid, string>? zoneColorByZoneId,
-        IReadOnlyList<Guid>? pickerZoneOrder,
         int zoneBarColumnWidth = 0)
     {
         var result = new List<StandingGroup>();
@@ -35,33 +34,19 @@ internal static class StandingsSectionBuilder
         {
             Guid? zid = null;
             string? zoneHex = null;
-            var pickerIndex = 0;
             if (teamZoneIds is not null && teamZoneIds.TryGetValue(team.Id, out var z) && z.HasValue)
             {
                 zid = z;
                 if (zoneColorByZoneId is not null && zoneColorByZoneId.TryGetValue(z.Value, out var hx))
                     zoneHex = hx;
-                if (pickerZoneOrder is not null)
-                {
-                    var idx = -1;
-                    for (var i = 0; i < pickerZoneOrder.Count; i++)
-                    {
-                        if (pickerZoneOrder[i] == z.Value)
-                        {
-                            idx = i;
-                            break;
-                        }
-                    }
-                    pickerIndex = idx >= 0 ? idx + 1 : 0;
-                }
             }
 
             return new StandingRow
             {
                 TeamId = team.Id,
                 ZoneId = zid,
-                ZonePickerIndex = pickerIndex,
                 ZoneBarColumnWidth = zoneBarColumnWidth,
+                ShowZoneBarStripe = zoneBarColumnWidth > 0 && !string.IsNullOrWhiteSpace(zoneHex),
                 Place = place,
                 GroupName = groupName,
                 TeamName = string.IsNullOrWhiteSpace(team.Name) ? "—" : team.Name,

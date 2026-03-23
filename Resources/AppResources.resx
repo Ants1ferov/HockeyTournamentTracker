@@ -385,6 +385,9 @@
   <data name="StandingZoneColumn" xml:space="preserve">
     <value>Зона</value>
   </data>
+  <data name="TeamZoneAssignmentTitle" xml:space="preserve">
+    <value>Зоны для команд</value>
+  </data>
   <data name="LegendTitle" xml:space="preserve">
     <value>Легенда</value>
   </data>

@@ -79,9 +79,9 @@ public partial class StageDetailsPage : ContentPage, IQueryAttributable
             $"{nameof(PlayoffBracketPage)}?TournamentId={_viewModel.Stage.TournamentId}&StageId={_viewModel.Stage.Id}");
     }
 
-    private async void OnStandingZonePickerChanged(object? sender, EventArgs e)
+    private async void OnTeamZoneAssignmentChanged(object? sender, EventArgs e)
     {
-        if (sender is not Picker p || p.BindingContext is not StandingRow row)
+        if (sender is not Picker p || p.BindingContext is not TeamZoneAssignmentRow row)
             return;
         await _viewModel.SetStandingRowZoneFromPickerAsync(row.TeamId, p.SelectedIndex);
     }

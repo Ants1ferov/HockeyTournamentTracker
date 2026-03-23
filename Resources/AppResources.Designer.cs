@@ -116,6 +116,7 @@ public static class AppResources
     public static string StatsSwissStagePicker => GetString(nameof(StatsSwissStagePicker));
     public static string StatsTeamPicker => GetString(nameof(StatsTeamPicker));
     public static string StandingZoneColumn => GetString(nameof(StandingZoneColumn));
+    public static string TeamZoneAssignmentTitle => GetString(nameof(TeamZoneAssignmentTitle));
     public static string LegendTitle => GetString(nameof(LegendTitle));
     public static string DeleteColorZoneConfirm => GetString(nameof(DeleteColorZoneConfirm));
     public static string LastPlayedMatches => GetString(nameof(LastPlayedMatches));
