@@ -1,5 +1,6 @@
 using HockeyTournamentTracker.Domain;
 using HockeyTournamentTracker.Presentation.ViewModels;
+using HockeyTournamentTracker.Resources;
 
 namespace HockeyTournamentTracker.Presentation.Views;
 
@@ -77,5 +78,6 @@ public partial class StageDetailsPage : ContentPage, IQueryAttributable
         await Shell.Current.GoToAsync(
             $"{nameof(PlayoffBracketPage)}?TournamentId={_viewModel.Stage.TournamentId}&StageId={_viewModel.Stage.Id}");
     }
+
 }
 

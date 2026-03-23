@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:res="clr-namespace:HockeyTournamentTracker.Resources"
              x:Class="HockeyTournamentTracker.Presentation.Views.TournamentDetailsPage"
+             x:Name="ThisPage"
              Title="{Binding PageTitle}">
 
     <Grid x:Name="MainGrid" RowDefinitions="*,56" VerticalOptions="Fill">
@@ -200,7 +201,7 @@
                         <CollectionView ItemsSource="{Binding StandingsByGroupForStage}"
                                         IsGrouped="True"
                                         VerticalOptions="Start"
-                                        MinimumWidthRequest="780">
+                                        MinimumWidthRequest="820">
                             <CollectionView.GroupHeaderTemplate>
                                 <DataTemplate>
                                     <VerticalStackLayout Margin="0,12,0,4" Spacing="4">
@@ -341,13 +342,25 @@
                         </CollectionView.ItemTemplate>
                     </CollectionView>
                 </VerticalStackLayout>
+
+                <!-- Вкладка Статистика -->
+                <VerticalStackLayout IsVisible="{Binding SelectedTabIndex, Converter={StaticResource IndexEqualsToBool}, ConverterParameter=3}" Spacing="12">
+                    <Label Text="{x:Static res:AppResources.TabStatistics}"
+                           FontAttributes="Bold"
+                           FontSize="18" />
+                    <Label Text="{x:Static res:AppResources.StatisticsTabHint}"
+                           FontSize="13"
+                           TextColor="Gray" />
+                    <Button Text="{x:Static res:AppResources.OpenStatistics}"
+                            Clicked="OnOpenStatisticsClicked" />
+                </VerticalStackLayout>
             </VerticalStackLayout>
         </ScrollView>
 
         <!-- Нижняя панель вкладок: полностью своя разметка без стилей Button,
              чтобы текст не обрезался и был виден в любой теме -->
         <Border Grid.Row="1" StrokeThickness="0" BackgroundColor="{AppThemeBinding Light={StaticResource Gray200Brush}, Dark={StaticResource Gray600Brush}}" Padding="0,4">
-            <Grid ColumnDefinitions="*,*,*" VerticalOptions="Center" HeightRequest="64">
+            <Grid ColumnDefinitions="*,*,*,*" VerticalOptions="Center" HeightRequest="64">
                 <!-- Главная -->
                 <VerticalStackLayout Grid.Column="0"
                                       HorizontalOptions="Center"
@@ -396,6 +409,24 @@
                            TextColor="{AppThemeBinding Light={StaticResource Gray950}, Dark={StaticResource White}}" />
                     <VerticalStackLayout.GestureRecognizers>
                         <TapGestureRecognizer Tapped="OnTabParticipantsClicked" />
+                    </VerticalStackLayout.GestureRecognizers>
+                </VerticalStackLayout>
+
+                <!-- Статистика -->
+                <VerticalStackLayout Grid.Column="3"
+                                      HorizontalOptions="Center"
+                                      VerticalOptions="Center"
+                                      Spacing="2">
+                    <Label Text="▣"
+                           FontSize="20"
+                           HorizontalTextAlignment="Center"
+                           TextColor="{Binding StatisticsTabLabelColorHex, Converter={StaticResource HexColorToColor}}" />
+                    <Label Text="{x:Static res:AppResources.TabStatistics}"
+                           FontSize="11"
+                           HorizontalTextAlignment="Center"
+                           TextColor="{Binding StatisticsTabLabelColorHex, Converter={StaticResource HexColorToColor}}" />
+                    <VerticalStackLayout.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnTabStatisticsClicked" />
                     </VerticalStackLayout.GestureRecognizers>
                 </VerticalStackLayout>
             </Grid>

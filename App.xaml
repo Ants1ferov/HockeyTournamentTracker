@@ -20,6 +20,8 @@
             <converters:NotNullToBoolConverter x:Key="NotNullToBool" />
             <converters:IndexEqualsToBoolConverter x:Key="IndexEqualsToBool" />
             <converters:MauiImageAliasToImageSourceConverter x:Key="MauiImageAliasToImageSource" />
+            <converters:HexColorToColorConverter x:Key="HexColorToColor" />
+            <converters:BoolToDoubleConverter x:Key="BoolToDouble" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

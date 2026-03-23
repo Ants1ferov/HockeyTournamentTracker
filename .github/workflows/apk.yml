@@ -1,0 +1,67 @@
+name: Сборка APK-файла
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    runs-on: windows-latest
+
+    steps:
+      - name: Клонирование репозитория
+        uses: actions/checkout@v4
+
+      - name: Установка .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Установка MAUI
+        run: dotnet workload install maui
+
+      - name: Восстановление ключа
+        shell: pwsh
+        run: |
+         $bytes = [Convert]::FromBase64String("${{ secrets.ANDROID_KEYSTORE_BASE64 }}")
+         [IO.File]::WriteAllBytes("$env:GITHUB_WORKSPACE\debug.keystore", $bytes)
+      
+      - name: Проверка наличия ключа
+        shell: pwsh
+        run: |
+          Write-Host "Workspace: $env:GITHUB_WORKSPACE"
+          Get-ChildItem $env:GITHUB_WORKSPACE
+          if (!(Test-Path "$env:GITHUB_WORKSPACE\debug.keystore"))
+          {
+            throw "Файл debug.keystore не найден после восстановления"
+          }
+
+      - name: Восстановление зависимостей
+        run: dotnet restore ./HockeyTournamentTracker.csproj
+
+      - name: Сборка и публикация APK
+        shell: pwsh
+        run: >
+          dotnet publish ./HockeyTournamentTracker.csproj
+          -f net10.0-android
+          -c Release
+          -p:AndroidPackageFormat=apk
+          -p:AndroidKeyStore=true
+          -p:ApplicationDisplayVersion=1.4.${{ github.run_number }}
+          -p:ApplicationVersion=${{ github.run_number }}
+          -p:AndroidSigningKeyStore="$env:GITHUB_WORKSPACE\debug.keystore"
+          -p:AndroidSigningKeyAlias=env:ANDROID_KEY_ALIAS
+          -p:AndroidSigningKeyPass=env:ANDROID_KEY_PASSWORD
+          -p:AndroidSigningStorePass=env:ANDROID_KEYSTORE_PASSWORD
+        env:
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+
+      - name: Загрузка APK в временное хранилище
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: |
+            **/bin/Release/net10.0-android/**/*.apk

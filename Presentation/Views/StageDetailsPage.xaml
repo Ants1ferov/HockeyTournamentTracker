@@ -8,7 +8,6 @@
 
     <ScrollView>
         <VerticalStackLayout Padding="16" Spacing="16">
-            <!-- Шапка стадии -->
             <VerticalStackLayout Spacing="4">
                 <Label Text="{Binding Stage.Name}"
                        FontAttributes="Bold"
@@ -18,7 +17,6 @@
                        TextColor="Gray" />
             </VerticalStackLayout>
 
-            <!-- Действия со стадией -->
             <HorizontalStackLayout Spacing="12"
                                    IsVisible="{Binding Stage, Converter={StaticResource NotNullToBool}}">
                 <Button Text="Редактировать стадию"
@@ -37,7 +35,6 @@
                         Clicked="OnOpenPlayoffClicked" />
             </VerticalStackLayout>
 
-            <!-- Турнирная таблица стадии -->
             <Label Text="{x:Static res:AppResources.StandingsTable}"
                    FontAttributes="Bold"
                    FontSize="18"
