@@ -22,6 +22,8 @@ public sealed class LocalDatabase
         await _connection.CreateTableAsync<PlayoffSettingsEntity>();
         await _connection.CreateTableAsync<PlayoffRoundEntity>();
         await _connection.CreateTableAsync<PlayoffSeriesEntity>();
+        await _connection.CreateTableAsync<StageColorZoneEntity>();
+        await _connection.CreateTableAsync<StageTeamZoneEntity>();
 
         // Миграция: добавить колонку IconPath в Teams, если её ещё нет
         try { await _connection.ExecuteAsync("ALTER TABLE Teams ADD COLUMN IconPath TEXT"); }

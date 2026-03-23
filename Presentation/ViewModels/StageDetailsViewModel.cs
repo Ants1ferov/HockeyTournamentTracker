@@ -16,6 +16,7 @@ public sealed class StageDetailsViewModel : INotifyPropertyChanged
     private readonly IMatchRepository _matchRepository;
     private readonly IStageTeamRepository _stageTeamRepository;
     private readonly IStageGroupRepository _stageGroupRepository;
+    private readonly IStageColorZoneRepository _stageColorZoneRepository;
     private readonly StatsService _statsService;
 
     private Tournament? _tournament;
@@ -51,6 +52,8 @@ public sealed class StageDetailsViewModel : INotifyPropertyChanged
     public ObservableCollection<TeamForAddUi> AvailableTeams { get; } = new();
     public ObservableCollection<StageGroupColumn> StageGroupColumns { get; } = new();
     public ObservableCollection<GroupInfo> StageGroups { get; } = new();
+    public ObservableCollection<StageColorZoneListItem> ColorZones { get; } = new();
+    public ObservableCollection<StageZonePickerRow> StageZonePickerRows { get; } = new();
 
     private readonly HashSet<Guid> _moveSelectedTeamIds = new();
     public int MoveSelectedCount => _moveSelectedTeamIds.Count;
@@ -64,6 +67,7 @@ public sealed class StageDetailsViewModel : INotifyPropertyChanged
         IMatchRepository matchRepository,
         IStageTeamRepository stageTeamRepository,
         IStageGroupRepository stageGroupRepository,
+        IStageColorZoneRepository stageColorZoneRepository,
         StatsService statsService)
     {
         _tournamentRepository = tournamentRepository;
@@ -72,6 +76,7 @@ public sealed class StageDetailsViewModel : INotifyPropertyChanged
         _matchRepository = matchRepository;
         _stageTeamRepository = stageTeamRepository;
         _stageGroupRepository = stageGroupRepository;
+        _stageColorZoneRepository = stageColorZoneRepository;
         _statsService = statsService;
 
         MoveSelectedTeamsToGroupCommand = new Command<Guid?>(async gid =>
@@ -145,12 +150,58 @@ public sealed class StageDetailsViewModel : INotifyPropertyChanged
             rows.Add(CreateMatchRow(m, homeTeam?.Name, awayTeam?.Name, m.Status == MatchStatus.InProgress));
         }
 
-        var stageStandingsGroups = BuildStandingsByGroupFromMatches(
+        IReadOnlyList<StageColorZone>? swissZones = null;
+        IReadOnlyDictionary<Guid, Guid?>? teamZoneIds = null;
+        IReadOnlyDictionary<Guid, string>? zoneColorById = null;
+        if (Stage.StageType == StageType.Swiss)
+        {
+            swissZones = await _stageColorZoneRepository.GetZonesByStageAsync(stageId);
+            zoneColorById = swissZones.ToDictionary(z => z.Id, z => z.ColorHex);
+            var assign = await _stageColorZoneRepository.GetTeamZoneAssignmentsAsync(stageId);
+            teamZoneIds = assign.ToDictionary(kv => kv.Key, kv => (Guid?)kv.Value);
+        }
+
+        IReadOnlyList<Guid>? zonePickerOrder = null;
+        if (Stage.StageType == StageType.Swiss && swissZones is not null)
+        {
+            zonePickerOrder = swissZones
+                .OrderBy(z => z.SortOrder)
+                .ThenBy(z => z.Name, StringComparer.Ordinal)
+                .Select(z => z.Id)
+                .ToList();
+        }
+
+        var barW = Stage.StageType == StageType.Swiss ? 6 : 0;
+        var stageStandingsGroups = StandingsSectionBuilder.Build(
+            _statsService,
             Tournament,
             teamsInStage,
             teamGroupIdsInStage,
             stageGroups,
-            stageMatches);
+            stageMatches,
+            teamZoneIds,
+            zoneColorById,
+            zonePickerOrder,
+            barW);
+
+        List<StageColorZoneListItem>? zoneItems = null;
+        if (Stage.StageType == StageType.Swiss && swissZones is not null)
+        {
+            var usedZoneIds = stageStandingsGroups
+                .SelectMany(g => g)
+                .Where(r => r.ZoneId.HasValue)
+                .Select(r => r.ZoneId!.Value)
+                .ToHashSet();
+            zoneItems = swissZones
+                .OrderBy(z => z.SortOrder)
+                .ThenBy(z => z.Name, StringComparer.Ordinal)
+                .Select(z => new StageColorZoneListItem(
+                    z.Id,
+                    z.Name,
+                    z.ColorHex,
+                    !usedZoneIds.Contains(z.Id)))
+                .ToList();
+        }
 
         MainThread.BeginInvokeOnMainThread(() =>
         {
@@ -161,6 +212,19 @@ public sealed class StageDetailsViewModel : INotifyPropertyChanged
             StandingsByGroupForStage.Clear();
             foreach (var g in stageStandingsGroups)
                 StandingsByGroupForStage.Add(g);
+
+            ColorZones.Clear();
+            if (zoneItems is not null)
+                foreach (var z in zoneItems)
+                    ColorZones.Add(z);
+
+            StageZonePickerRows.Clear();
+            if (Stage.StageType == StageType.Swiss && swissZones is not null)
+            {
+                StageZonePickerRows.Add(new StageZonePickerRow { ZoneId = null, Title = "Без зоны" });
+                foreach (var z in swissZones.OrderBy(x => x.SortOrder).ThenBy(x => x.Name, StringComparer.Ordinal))
+                    StageZonePickerRows.Add(new StageZonePickerRow { ZoneId = z.Id, Title = z.Name });
+            }
 
             StageGroups.Clear();
             foreach (var g in stageGroups)
@@ -311,119 +375,72 @@ public sealed class StageDetailsViewModel : INotifyPropertyChanged
         await LoadAsync(Tournament.Id, Stage.Id);
     }
 
-    private List<StandingGroup> BuildStandingsByGroupFromMatches(
-        Tournament tournament,
-        IReadOnlyList<Team> teams,
-        IReadOnlyDictionary<Guid, Guid?> teamGroupIdsInStage,
-        IReadOnlyList<GroupInfo> stageGroups,
-        List<Match> matches)
+    public async Task AddColorZoneAsync()
     {
-        var result = new List<StandingGroup>();
-        var standings = _statsService.CalculateStandings(tournament, teams, matches);
-        var teamById = teams.ToDictionary(t => t.Id);
-        var finishedMatches = matches
-            .Where(m => m.Status == MatchStatus.Finished && m.OutcomeType.HasValue && m.HomeGoals.HasValue && m.AwayGoals.HasValue)
-            .OrderByDescending(m => m.DateTime ?? DateTime.MinValue)
-            .ToList();
-        var maxPointsPerGame = tournament.Rules != null
-            ? Math.Max(tournament.Rules.PointsForRegulationWin,
-                Math.Max(tournament.Rules.PointsForOvertimeWin, tournament.Rules.PointsForShootoutWin))
-            : 3;
-        var rules = tournament.Rules ?? new TournamentRules();
-        var groups = stageGroups.ToList();
+        if (Tournament is null || Stage is null || Stage.StageType != StageType.Swiss)
+            return;
 
-        StandingRow CreateRow(Standing s, Team team, int place, string groupName, IReadOnlyList<int> last5)
+        var existing = await _stageColorZoneRepository.GetZonesByStageAsync(Stage.Id);
+        var zone = new StageColorZone
         {
-            return new StandingRow
-            {
-                Place = place,
-                GroupName = groupName,
-                TeamName = string.IsNullOrWhiteSpace(team.Name) ? "—" : team.Name,
-                TeamIconPath = team.IconPath,
-                Games = s.Games,
-                WinsReg = s.WinsRegulation,
-                WinsOt = s.WinsOvertime,
-                WinsSo = s.WinsShootout,
-                LossesReg = s.LossesRegulation,
-                LossesOt = s.LossesOvertime,
-                LossesSo = s.LossesShootout,
-                GoalsFor = s.GoalsFor,
-                GoalsAgainst = s.GoalsAgainst,
-                GoalDiff = s.GoalDifference,
-                Last5Results = last5,
-                PointsPct = FormatPointsPercentage(s.Points, s.Games, maxPointsPerGame),
-                Points = s.Points
-            };
-        }
+            Id = Guid.NewGuid(),
+            StageId = Stage.Id,
+            Name = $"Зона {existing.Count + 1}",
+            ColorHex = "#3B82F6",
+            SortOrder = existing.Count
+        };
+        await _stageColorZoneRepository.SaveZoneAsync(zone);
+        await LoadAsync(Tournament.Id, Stage.Id);
+    }
 
-        if (groups.Count > 0)
-        {
-            foreach (var group in groups)
-            {
-                var teamIdsInGroup = teams
-                    .Where(t => teamGroupIdsInStage.TryGetValue(t.Id, out var gid) && gid == group.Id)
-                    .Select(t => t.Id)
-                    .ToHashSet();
-                var inGroup = standings.Where(s => teamIdsInGroup.Contains(s.TeamId)).ToList();
-                var sortedInGroup = StatsService.SortByRules(inGroup, rules);
-                var groupRows = new ObservableCollection<StandingRow>();
-                var place = 1;
-                foreach (var s in sortedInGroup)
-                {
-                    if (!teamById.TryGetValue(s.TeamId, out var team))
-                        continue;
-                    var last5 = GetLast5ResultsForTeam(s.TeamId, finishedMatches);
-                    groupRows.Add(CreateRow(s, team, place++, group.Name, last5));
-                }
-                if (groupRows.Count > 0)
-                {
-                    var g = new StandingGroup { GroupName = group.Name };
-                    foreach (var row in groupRows) g.Add(row);
-                    result.Add(g);
-                }
-            }
-            var noGroupTeamIds = teams
-                .Where(t => !teamGroupIdsInStage.TryGetValue(t.Id, out var gid) || gid is null)
-                .Select(t => t.Id)
-                .ToHashSet();
-            var noGroup = standings.Where(s => noGroupTeamIds.Contains(s.TeamId)).ToList();
-            if (noGroup.Count > 0)
-            {
-                var sortedNoGroup = StatsService.SortByRules(noGroup, rules);
-                var noGroupRows = new ObservableCollection<StandingRow>();
-                var place = 1;
-                foreach (var s in sortedNoGroup)
-                {
-                    if (!teamById.TryGetValue(s.TeamId, out var team))
-                        continue;
-                    var last5 = GetLast5ResultsForTeam(s.TeamId, finishedMatches);
-                    noGroupRows.Add(CreateRow(s, team, place++, "—", last5));
-                }
-                var noGr = new StandingGroup { GroupName = "—" };
-                foreach (var row in noGroupRows) noGr.Add(row);
-                result.Add(noGr);
-            }
-        }
-        else
-        {
-            var place = 1;
-            var allRows = new ObservableCollection<StandingRow>();
-            foreach (var s in standings)
-            {
-                if (!teamById.TryGetValue(s.TeamId, out var team))
-                    continue;
-                var last5 = GetLast5ResultsForTeam(s.TeamId, finishedMatches);
-                allRows.Add(CreateRow(s, team, place++, string.Empty, last5));
-            }
-            if (allRows.Count > 0)
-            {
-                var allGr = new StandingGroup { GroupName = string.Empty };
-                foreach (var row in allRows) allGr.Add(row);
-                result.Add(allGr);
-            }
-        }
+    public async Task DeleteColorZoneAsync(Guid zoneId)
+    {
+        if (Tournament is null || Stage is null)
+            return;
+        await _stageColorZoneRepository.DeleteZoneAsync(zoneId);
+        await LoadAsync(Tournament.Id, Stage.Id);
+    }
 
-        return result;
+    public async Task UpdateZoneColorAsync(Guid zoneId, string colorHex)
+    {
+        if (Tournament is null || Stage is null)
+            return;
+        var z = await _stageColorZoneRepository.GetZoneByIdAsync(zoneId);
+        if (z is null)
+            return;
+        z.ColorHex = colorHex;
+        await _stageColorZoneRepository.SaveZoneAsync(z);
+        await LoadAsync(Tournament.Id, Stage.Id);
+    }
+
+    public async Task RenameZoneAsync(Guid zoneId, string newName)
+    {
+        if (Tournament is null || Stage is null || string.IsNullOrWhiteSpace(newName))
+            return;
+        var z = await _stageColorZoneRepository.GetZoneByIdAsync(zoneId);
+        if (z is null)
+            return;
+        z.Name = newName.Trim();
+        await _stageColorZoneRepository.SaveZoneAsync(z);
+        await LoadAsync(Tournament.Id, Stage.Id);
+    }
+
+    public async Task SetStandingRowZoneFromPickerAsync(Guid teamId, int pickerIndex)
+    {
+        if (Tournament is null || Stage is null || Stage.StageType != StageType.Swiss)
+            return;
+        Guid? zoneId = null;
+        if (pickerIndex > 0 && pickerIndex < StageZonePickerRows.Count)
+            zoneId = StageZonePickerRows[pickerIndex].ZoneId;
+        await SetStandingRowZoneAsync(teamId, zoneId);
+    }
+
+    public async Task SetStandingRowZoneAsync(Guid teamId, Guid? zoneId)
+    {
+        if (Tournament is null || Stage is null || Stage.StageType != StageType.Swiss)
+            return;
+        await _stageColorZoneRepository.SetTeamZoneAsync(Stage.Id, teamId, zoneId);
+        await LoadAsync(Tournament.Id, Stage.Id);
     }
 
     private static MatchRow CreateMatchRow(Match m, string? homeName, string? awayName, bool isLive) =>
@@ -438,34 +455,6 @@ public sealed class StageDetailsViewModel : INotifyPropertyChanged
             IsLive = isLive,
             Status = m.Status
         };
-
-    private static IReadOnlyList<int> GetLast5ResultsForTeam(Guid teamId, List<Match> finishedOrderedByDateDesc)
-    {
-        var list = new List<int>(5);
-        foreach (var m in finishedOrderedByDateDesc)
-        {
-            if (m.HomeTeamId != teamId && m.AwayTeamId != teamId)
-                continue;
-            if (!MatchOutcomeResolver.TryGetWinnerTeamId(m, out var winnerTeamId))
-                continue;
-
-            list.Add(winnerTeamId == teamId ? 1 : 2);
-            if (list.Count >= 5)
-                break;
-        }
-        while (list.Count < 5)
-            list.Add(0);
-        return list;
-    }
-
-    private static string FormatPointsPercentage(int points, int games, int maxPointsPerGame)
-    {
-        if (games == 0 || maxPointsPerGame <= 0)
-            return "0";
-        var pct = (double)points / (games * maxPointsPerGame) * 100.0;
-        var rounded = Math.Round(pct, 2, MidpointRounding.AwayFromZero);
-        return rounded.ToString("0.##", System.Globalization.CultureInfo.CurrentCulture);
-    }
 
     private static string BuildScoreText(Match match)
     {
@@ -514,6 +503,23 @@ public sealed class StageDetailsViewModel : INotifyPropertyChanged
         field = value;
         OnPropertyChanged(propertyName);
         return true;
+    }
+}
+
+public sealed class StageColorZoneListItem
+{
+    public Guid ZoneId { get; }
+    public string Name { get; }
+    public string ColorHex { get; }
+    /// <summary>True — зона не назначена ни одной строке таблицы.</summary>
+    public bool ShowUnusedWarning { get; }
+
+    public StageColorZoneListItem(Guid zoneId, string name, string colorHex, bool showUnusedWarning)
+    {
+        ZoneId = zoneId;
+        Name = name;
+        ColorHex = colorHex;
+        ShowUnusedWarning = showUnusedWarning;
     }
 }
 

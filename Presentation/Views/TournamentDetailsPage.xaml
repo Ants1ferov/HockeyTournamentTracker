@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:res="clr-namespace:HockeyTournamentTracker.Resources"
              x:Class="HockeyTournamentTracker.Presentation.Views.TournamentDetailsPage"
+             x:Name="ThisPage"
              Title="{Binding PageTitle}">
 
     <Grid x:Name="MainGrid" RowDefinitions="*,56" VerticalOptions="Fill">
@@ -200,7 +201,7 @@
                         <CollectionView ItemsSource="{Binding StandingsByGroupForStage}"
                                         IsGrouped="True"
                                         VerticalOptions="Start"
-                                        MinimumWidthRequest="780">
+                                        MinimumWidthRequest="900">
                             <CollectionView.GroupHeaderTemplate>
                                 <DataTemplate>
                                     <VerticalStackLayout Margin="0,12,0,4" Spacing="4">
@@ -208,53 +209,78 @@
                                                FontAttributes="Bold"
                                                FontSize="14"
                                                IsVisible="{Binding GroupName, Converter={StaticResource GroupNameToVisibility}}" />
-                                        <Grid ColumnDefinitions="36,170,50,50,40,40,40,40,40,40,44,44,46,88,*"
+                                        <Grid ColumnDefinitions="6,80,36,170,50,50,40,40,40,40,40,40,44,44,46,88,*"
                                               Padding="0,6"
                                               ColumnSpacing="6"
                                               BackgroundColor="#F3F4F6">
-                                            <Label Grid.Column="0" Text="{x:Static res:AppResources.StandingsColPlace}" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
-                                            <Label Grid.Column="1" Text="{x:Static res:AppResources.StandingsColTeam}" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
-                                            <Label Grid.Column="2" Text="{x:Static res:AppResources.StandingsColPoints}" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" BackgroundColor="#E5E7EB" />
-                                            <Label Grid.Column="3" Text="{x:Static res:AppResources.StandingsColGames}" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
-                                            <Label Grid.Column="4" Text="{x:Static res:AppResources.StandingsColW}" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" BackgroundColor="#E5E7EB" />
-                                            <Label Grid.Column="5" Text="{x:Static res:AppResources.StandingsColWot}" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
-                                            <Label Grid.Column="6" Text="{x:Static res:AppResources.StandingsColWso}" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" BackgroundColor="#E5E7EB" />
-                                            <Label Grid.Column="7" Text="{x:Static res:AppResources.StandingsColLso}" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
-                                            <Label Grid.Column="8" Text="{x:Static res:AppResources.StandingsColLot}" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" BackgroundColor="#E5E7EB" />
-                                            <Label Grid.Column="9" Text="{x:Static res:AppResources.StandingsColL}" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
-                                            <Label Grid.Column="10" Text="{x:Static res:AppResources.StandingsColGoalsFor}" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" BackgroundColor="#E5E7EB" />
-                                            <Label Grid.Column="11" Text="{x:Static res:AppResources.StandingsColGoalsAgainst}" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
-                                            <Label Grid.Column="12" Text="{x:Static res:AppResources.StandingsColGoalDiff}" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" BackgroundColor="#E5E7EB" />
-                                            <Label Grid.Column="13" Text="{x:Static res:AppResources.StandingsColLast5}" FontSize="11" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
-                                            <Label Grid.Column="14" Text="{x:Static res:AppResources.StandingsColPct}" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" BackgroundColor="#E5E7EB" />
+                                            <BoxView Grid.Column="0"
+                                                     WidthRequest="{Binding Source={x:Reference ThisPage}, Path=BindingContext.IsSelectedStageSwiss, Converter={StaticResource BoolToDouble}, ConverterParameter=6|0}"
+                                                     Color="Transparent" />
+                                            <Label Grid.Column="1"
+                                                   Text="{x:Static res:AppResources.StandingZoneColumn}"
+                                                   FontSize="11"
+                                                   FontAttributes="Bold"
+                                                   VerticalTextAlignment="Center"
+                                                   WidthRequest="{Binding Source={x:Reference ThisPage}, Path=BindingContext.IsSelectedStageSwiss, Converter={StaticResource BoolToDouble}, ConverterParameter=80|0}"
+                                                   IsVisible="{Binding Source={x:Reference ThisPage}, Path=BindingContext.IsSelectedStageSwiss}" />
+                                            <Label Grid.Column="2" Text="{x:Static res:AppResources.StandingsColPlace}" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+                                            <Label Grid.Column="3" Text="{x:Static res:AppResources.StandingsColTeam}" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+                                            <Label Grid.Column="4" Text="{x:Static res:AppResources.StandingsColPoints}" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" BackgroundColor="#E5E7EB" />
+                                            <Label Grid.Column="5" Text="{x:Static res:AppResources.StandingsColGames}" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+                                            <Label Grid.Column="6" Text="{x:Static res:AppResources.StandingsColW}" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" BackgroundColor="#E5E7EB" />
+                                            <Label Grid.Column="7" Text="{x:Static res:AppResources.StandingsColWot}" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+                                            <Label Grid.Column="8" Text="{x:Static res:AppResources.StandingsColWso}" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" BackgroundColor="#E5E7EB" />
+                                            <Label Grid.Column="9" Text="{x:Static res:AppResources.StandingsColLso}" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+                                            <Label Grid.Column="10" Text="{x:Static res:AppResources.StandingsColLot}" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" BackgroundColor="#E5E7EB" />
+                                            <Label Grid.Column="11" Text="{x:Static res:AppResources.StandingsColL}" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+                                            <Label Grid.Column="12" Text="{x:Static res:AppResources.StandingsColGoalsFor}" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" BackgroundColor="#E5E7EB" />
+                                            <Label Grid.Column="13" Text="{x:Static res:AppResources.StandingsColGoalsAgainst}" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+                                            <Label Grid.Column="14" Text="{x:Static res:AppResources.StandingsColGoalDiff}" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" BackgroundColor="#E5E7EB" />
+                                            <Label Grid.Column="15" Text="{x:Static res:AppResources.StandingsColLast5}" FontSize="11" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+                                            <Label Grid.Column="16" Text="{x:Static res:AppResources.StandingsColPct}" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" BackgroundColor="#E5E7EB" />
                                         </Grid>
                                     </VerticalStackLayout>
                                 </DataTemplate>
                             </CollectionView.GroupHeaderTemplate>
                             <CollectionView.ItemTemplate>
                                 <DataTemplate>
-                                    <Grid ColumnDefinitions="36,170,50,50,40,40,40,40,40,40,44,44,46,88,*"
+                                    <Grid ColumnDefinitions="6,80,36,170,50,50,40,40,40,40,40,40,44,44,46,88,*"
                                           Padding="0,6"
                                           ColumnSpacing="6">
-                                        <Label Grid.Column="0" Text="{Binding Place}" FontSize="12" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
-                                        <HorizontalStackLayout Grid.Column="1" Spacing="6" VerticalOptions="Center" HorizontalOptions="Fill" Padding="4,0">
+                                        <BoxView Grid.Column="0"
+                                                 WidthRequest="{Binding ZoneBarColumnWidth}"
+                                                 CornerRadius="2"
+                                                 VerticalOptions="Fill"
+                                                 HorizontalOptions="Fill"
+                                                 Color="{Binding ZoneBarColorHex, Converter={StaticResource HexColorToColor}}"
+                                                 IsVisible="{Binding ShowZoneUi}" />
+                                        <Picker Grid.Column="1"
+                                                ItemsSource="{Binding Source={x:Reference ThisPage}, Path=BindingContext.StageZonePickerRows}"
+                                                ItemDisplayBinding="{Binding Title}"
+                                                SelectedIndex="{Binding ZonePickerIndex}"
+                                                FontSize="11"
+                                                WidthRequest="{Binding ShowZoneUi, Converter={StaticResource BoolToDouble}, ConverterParameter=86|0}"
+                                                IsVisible="{Binding ShowZoneUi}"
+                                                SelectedIndexChanged="OnStandingZonePickerChanged" />
+                                        <Label Grid.Column="2" Text="{Binding Place}" FontSize="12" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+                                        <HorizontalStackLayout Grid.Column="3" Spacing="6" VerticalOptions="Center" HorizontalOptions="Fill" Padding="4,0">
                                             <Image WidthRequest="24" HeightRequest="24"
                                                    Source="{Binding TeamIconPath, Converter={StaticResource PathToImageSource}}"
                                                    Aspect="AspectFill" />
                                             <Label Text="{Binding TeamName}" FontSize="12" LineBreakMode="TailTruncation" VerticalTextAlignment="Center" HorizontalTextAlignment="Center" HorizontalOptions="FillAndExpand" />
                                         </HorizontalStackLayout>
-                                        <Label Grid.Column="2" Text="{Binding Points}" FontSize="12" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" BackgroundColor="#F3F4F6" />
-                                        <Label Grid.Column="3" Text="{Binding Games}" FontSize="12" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
-                                        <Label Grid.Column="4" Text="{Binding WinsReg}" FontSize="12" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" BackgroundColor="#F3F4F6" />
-                                        <Label Grid.Column="5" Text="{Binding WinsOt}" FontSize="12" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
-                                        <Label Grid.Column="6" Text="{Binding WinsSo}" FontSize="12" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" BackgroundColor="#F3F4F6" />
-                                        <Label Grid.Column="7" Text="{Binding LossesSo}" FontSize="12" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
-                                        <Label Grid.Column="8" Text="{Binding LossesOt}" FontSize="12" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" BackgroundColor="#F3F4F6" />
-                                        <Label Grid.Column="9" Text="{Binding LossesReg}" FontSize="12" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
-                                        <Label Grid.Column="10" Text="{Binding GoalsFor}" FontSize="12" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" BackgroundColor="#F3F4F6" />
-                                        <Label Grid.Column="11" Text="{Binding GoalsAgainst}" FontSize="12" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
-                                        <Label Grid.Column="12" Text="{Binding GoalDiff}" FontSize="12" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" BackgroundColor="#F3F4F6" />
-                                        <HorizontalStackLayout Grid.Column="13"
+                                        <Label Grid.Column="4" Text="{Binding Points}" FontSize="12" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" BackgroundColor="#F3F4F6" />
+                                        <Label Grid.Column="5" Text="{Binding Games}" FontSize="12" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+                                        <Label Grid.Column="6" Text="{Binding WinsReg}" FontSize="12" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" BackgroundColor="#F3F4F6" />
+                                        <Label Grid.Column="7" Text="{Binding WinsOt}" FontSize="12" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+                                        <Label Grid.Column="8" Text="{Binding WinsSo}" FontSize="12" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" BackgroundColor="#F3F4F6" />
+                                        <Label Grid.Column="9" Text="{Binding LossesSo}" FontSize="12" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+                                        <Label Grid.Column="10" Text="{Binding LossesOt}" FontSize="12" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" BackgroundColor="#F3F4F6" />
+                                        <Label Grid.Column="11" Text="{Binding LossesReg}" FontSize="12" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+                                        <Label Grid.Column="12" Text="{Binding GoalsFor}" FontSize="12" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" BackgroundColor="#F3F4F6" />
+                                        <Label Grid.Column="13" Text="{Binding GoalsAgainst}" FontSize="12" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+                                        <Label Grid.Column="14" Text="{Binding GoalDiff}" FontSize="12" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" BackgroundColor="#F3F4F6" />
+                                        <HorizontalStackLayout Grid.Column="15"
                                                               Spacing="2"
                                                               VerticalOptions="Center"
                                                               HorizontalOptions="Center"
@@ -266,12 +292,37 @@
                                                 </DataTemplate>
                                             </BindableLayout.ItemTemplate>
                                         </HorizontalStackLayout>
-                                        <Label Grid.Column="14" Text="{Binding PointsPct}" FontSize="12" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" BackgroundColor="#F3F4F6" />
+                                        <Label Grid.Column="16" Text="{Binding PointsPct}" FontSize="12" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" BackgroundColor="#F3F4F6" />
                                     </Grid>
                                 </DataTemplate>
                             </CollectionView.ItemTemplate>
                         </CollectionView>
                     </ScrollView>
+                    <VerticalStackLayout Spacing="8"
+                                         Margin="0,8,0,0"
+                                         IsVisible="{Binding IsSelectedStageSwiss}">
+                        <Label Text="{x:Static res:AppResources.LegendTitle}"
+                               FontAttributes="Bold"
+                               FontSize="14" />
+                        <FlexLayout Wrap="Wrap"
+                                    AlignItems="Start"
+                                    BindableLayout.ItemsSource="{Binding StageZoneLegend}">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate>
+                                    <HorizontalStackLayout Spacing="8" Margin="0,0,16,8">
+                                        <BoxView WidthRequest="16"
+                                                 HeightRequest="16"
+                                                 CornerRadius="8"
+                                                 VerticalOptions="Center"
+                                                 Color="{Binding ColorHex, Converter={StaticResource HexColorToColor}}" />
+                                        <Label Text="{Binding Name}"
+                                               FontSize="12"
+                                               VerticalOptions="Center" />
+                                    </HorizontalStackLayout>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </FlexLayout>
+                    </VerticalStackLayout>
                     <Label Text="{x:Static res:AppResources.Matches}"
                            FontAttributes="Bold"
                            FontSize="16"
@@ -341,13 +392,25 @@
                         </CollectionView.ItemTemplate>
                     </CollectionView>
                 </VerticalStackLayout>
+
+                <!-- Вкладка Статистика -->
+                <VerticalStackLayout IsVisible="{Binding SelectedTabIndex, Converter={StaticResource IndexEqualsToBool}, ConverterParameter=3}" Spacing="12">
+                    <Label Text="{x:Static res:AppResources.TabStatistics}"
+                           FontAttributes="Bold"
+                           FontSize="18" />
+                    <Label Text="{x:Static res:AppResources.StatisticsTabHint}"
+                           FontSize="13"
+                           TextColor="Gray" />
+                    <Button Text="{x:Static res:AppResources.OpenStatistics}"
+                            Clicked="OnOpenStatisticsClicked" />
+                </VerticalStackLayout>
             </VerticalStackLayout>
         </ScrollView>
 
         <!-- Нижняя панель вкладок: полностью своя разметка без стилей Button,
              чтобы текст не обрезался и был виден в любой теме -->
         <Border Grid.Row="1" StrokeThickness="0" BackgroundColor="{StaticResource Gray200Brush}" Padding="0,4">
-            <Grid ColumnDefinitions="*,*,*" VerticalOptions="Center" HeightRequest="64">
+            <Grid ColumnDefinitions="*,*,*,*" VerticalOptions="Center" HeightRequest="64">
                 <!-- Главная -->
                 <VerticalStackLayout Grid.Column="0"
                                       HorizontalOptions="Center"
@@ -396,6 +459,24 @@
                            TextColor="{AppThemeBinding Light={StaticResource Gray950}, Dark={StaticResource White}}" />
                     <VerticalStackLayout.GestureRecognizers>
                         <TapGestureRecognizer Tapped="OnTabParticipantsClicked" />
+                    </VerticalStackLayout.GestureRecognizers>
+                </VerticalStackLayout>
+
+                <!-- Статистика -->
+                <VerticalStackLayout Grid.Column="3"
+                                      HorizontalOptions="Center"
+                                      VerticalOptions="Center"
+                                      Spacing="2">
+                    <Label Text="▣"
+                           FontSize="20"
+                           HorizontalTextAlignment="Center"
+                           TextColor="{Binding StatisticsTabLabelColorHex, Converter={StaticResource HexColorToColor}}" />
+                    <Label Text="{x:Static res:AppResources.TabStatistics}"
+                           FontSize="11"
+                           HorizontalTextAlignment="Center"
+                           TextColor="{Binding StatisticsTabLabelColorHex, Converter={StaticResource HexColorToColor}}" />
+                    <VerticalStackLayout.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnTabStatisticsClicked" />
                     </VerticalStackLayout.GestureRecognizers>
                 </VerticalStackLayout>
             </Grid>

@@ -46,6 +46,8 @@ public sealed class StageRepository : IStageRepository
 
     public async Task DeleteAsync(Guid id)
     {
+        await _connection.Table<StageTeamZoneEntity>().Where(z => z.StageId == id).DeleteAsync();
+        await _connection.Table<StageColorZoneEntity>().Where(z => z.StageId == id).DeleteAsync();
         await _connection.Table<PlayoffSeriesEntity>().Where(s => s.StageId == id).DeleteAsync();
         await _connection.Table<PlayoffRoundEntity>().Where(r => r.StageId == id).DeleteAsync();
         await _connection.DeleteAsync<PlayoffSettingsEntity>(id);

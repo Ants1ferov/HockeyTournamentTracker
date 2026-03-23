@@ -149,6 +149,40 @@ public class PlayoffRoundEntity
     public int DefaultBestOf { get; set; }
 }
 
+[Table("StageColorZones")]
+public class StageColorZoneEntity
+{
+    [PrimaryKey]
+    public Guid Id { get; set; }
+
+    [Indexed]
+    public Guid StageId { get; set; }
+
+    [NotNull]
+    public string Name { get; set; } = string.Empty;
+
+    [NotNull]
+    public string ColorHex { get; set; } = "#808080";
+
+    public int SortOrder { get; set; }
+}
+
+/// <summary>Привязка команды к цветовой зоне в рамках стадии (не более одной зоны на команду).</summary>
+[Table("StageTeamZones")]
+public class StageTeamZoneEntity
+{
+    [PrimaryKey]
+    public Guid Id { get; set; }
+
+    [Indexed]
+    public Guid StageId { get; set; }
+
+    [Indexed]
+    public Guid TeamId { get; set; }
+
+    public Guid ZoneId { get; set; }
+}
+
 [Table("PlayoffSeries")]
 public class PlayoffSeriesEntity
 {
