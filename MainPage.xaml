@@ -10,6 +10,16 @@
             <Label Text="{x:Static res:AppResources.MyTournaments}"
                    FontSize="20"
                    HorizontalOptions="StartAndExpand" />
+            <Picker x:Name="ThemePicker"
+                    Title="{x:Static res:AppResources.Theme}"
+                    WidthRequest="130"
+                    SelectedIndexChanged="OnThemeChanged">
+                <Picker.Items>
+                    <x:String>{x:Static res:AppResources.ThemeSystem}</x:String>
+                    <x:String>{x:Static res:AppResources.ThemeLight}</x:String>
+                    <x:String>{x:Static res:AppResources.ThemeDark}</x:String>
+                </Picker.Items>
+            </Picker>
             <Button Text="{x:Static res:AppResources.Add}"
                     Clicked="OnAddTournamentClicked" />
         </HorizontalStackLayout>

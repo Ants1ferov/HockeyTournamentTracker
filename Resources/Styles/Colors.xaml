@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <ResourceDictionary 
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
@@ -26,6 +26,12 @@
     <Color x:Key="Gray600">#404040</Color>
     <Color x:Key="Gray900">#212121</Color>
     <Color x:Key="Gray950">#141414</Color>
+    <Color x:Key="TableCellLight">#FFFFFF</Color>
+    <Color x:Key="TableCellAltLight">#F3F4F6</Color>
+    <Color x:Key="TableHeaderAltLight">#E5E7EB</Color>
+    <Color x:Key="TableCellDark">#1F2937</Color>
+    <Color x:Key="TableCellAltDark">#111827</Color>
+    <Color x:Key="TableHeaderAltDark">#374151</Color>
 
     <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource Primary}"/>
     <SolidColorBrush x:Key="SecondaryBrush" Color="{StaticResource Secondary}"/>

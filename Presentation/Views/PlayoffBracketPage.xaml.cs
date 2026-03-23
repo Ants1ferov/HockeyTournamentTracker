@@ -50,7 +50,7 @@ public partial class PlayoffBracketPage : ContentPage, IQueryAttributable
         if (string.IsNullOrWhiteSpace(name))
             return;
 
-        var bestOfInput = await DisplayPromptAsync("Новый раунд", "Best-of (нечётное число)", initialValue: "3", keyboard: Keyboard.Numeric);
+        var bestOfInput = await DisplayPromptAsync("Новый раунд", AppResources.PlayoffBestOfPrompt, initialValue: "3", keyboard: Keyboard.Numeric);
         var bestOf = int.TryParse(bestOfInput, out var bo) ? bo : 3;
 
         await _viewModel.AddRoundAsync(name, bestOf);
@@ -80,7 +80,7 @@ public partial class PlayoffBracketPage : ContentPage, IQueryAttributable
         if (_viewModel.SelectedRound is not PlayoffRoundUi round)
             return;
 
-        var value = await DisplayPromptAsync("Best-of раунда", "Введите нечётное число", initialValue: round.DefaultBestOf.ToString(), keyboard: Keyboard.Numeric);
+        var value = await DisplayPromptAsync(AppResources.PlayoffBestOfRoundTitle, AppResources.PlayoffBestOfPrompt, initialValue: round.DefaultBestOf.ToString(), keyboard: Keyboard.Numeric);
         if (!int.TryParse(value, out var bestOf))
             return;
 
@@ -121,7 +121,7 @@ public partial class PlayoffBracketPage : ContentPage, IQueryAttributable
             return;
 
         var bestOfPrompt = await DisplayPromptAsync(
-            "Best-of серии",
+            AppResources.PlayoffBestOfSeriesTitle,
             "Оставьте пустым для значения раунда",
             initialValue: series.BestOfOverride?.ToString() ?? string.Empty,
             keyboard: Keyboard.Numeric);
