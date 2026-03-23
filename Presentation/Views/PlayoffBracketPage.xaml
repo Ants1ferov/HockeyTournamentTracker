@@ -38,22 +38,6 @@
                 </VerticalStackLayout>
             </Frame>
 
-            <Frame Padding="12"
-                   HasShadow="True"
-                   CornerRadius="8">
-                <VerticalStackLayout Spacing="8">
-                    <Label Text="Автозаполнение"
-                           FontAttributes="Bold"
-                           FontSize="16" />
-                    <Picker x:Name="SeedSourceStagePicker"
-                            Title="Источник посева"
-                            ItemsSource="{Binding SeedSourceStages}"
-                            ItemDisplayBinding="{Binding Name}" />
-                    <Button Text="Заполнить первый раунд по посеву"
-                            Clicked="OnAutoFillSeedClicked" />
-                </VerticalStackLayout>
-            </Frame>
-
             <Label Text="Раунды"
                    FontAttributes="Bold"
                    FontSize="16" />
@@ -139,16 +123,27 @@
                                        FontSize="12"
                                        TextColor="#166534"
                                        IsVisible="{Binding WinnerText, Converter={StaticResource GroupNameToVisibility}}" />
-                                <HorizontalStackLayout Spacing="6">
-                                    <Button Text="Редактировать"
+                                <Grid ColumnDefinitions="*,*"
+                                      RowDefinitions="Auto,Auto"
+                                      ColumnSpacing="6"
+                                      RowSpacing="6">
+                                    <Button Grid.Row="0"
+                                            Grid.Column="0"
+                                            Text="Редактировать"
                                             Clicked="OnEditSeriesClicked" />
-                                    <Button Text="+ Матч"
+                                    <Button Grid.Row="0"
+                                            Grid.Column="1"
+                                            Text="+ Матч"
                                             Clicked="OnAddSeriesMatchClicked" />
-                                    <Button Text="Матчи серии"
+                                    <Button Grid.Row="1"
+                                            Grid.Column="0"
+                                            Text="Матчи серии"
                                             Clicked="OnOpenSeriesMatchesClicked" />
-                                    <Button Text="{x:Static res:AppResources.Delete}"
+                                    <Button Grid.Row="1"
+                                            Grid.Column="1"
+                                            Text="{x:Static res:AppResources.Delete}"
                                             Clicked="OnDeleteSeriesClicked" />
-                                </HorizontalStackLayout>
+                                </Grid>
                             </VerticalStackLayout>
                         </Frame>
                     </DataTemplate>
@@ -170,8 +165,20 @@
                     <BindableLayout.ItemTemplate>
                         <DataTemplate>
                             <Grid WidthRequest="224"
-                                  HeightRequest="{Binding CanvasHeight}">
-                                <AbsoluteLayout InputTransparent="True"
+                                  RowDefinitions="Auto,*">
+                                <Label Text="{Binding Name}"
+                                       FontAttributes="Bold"
+                                       FontSize="12"
+                                       BackgroundColor="#FEE2E2"
+                                       TextColor="#7F1D1D"
+                                       Padding="6,2"
+                                       Margin="0,0,0,6"
+                                       HorizontalOptions="Start"
+                                       VerticalOptions="Start" />
+
+                                <AbsoluteLayout Grid.Row="1"
+                                                HeightRequest="{Binding CanvasHeight}"
+                                                InputTransparent="True"
                                                 BindableLayout.ItemsSource="{Binding ConnectorSegments}">
                                     <BindableLayout.ItemTemplate>
                                         <DataTemplate>
@@ -182,7 +189,9 @@
                                     </BindableLayout.ItemTemplate>
                                 </AbsoluteLayout>
 
-                                <AbsoluteLayout BindableLayout.ItemsSource="{Binding Series}">
+                                <AbsoluteLayout Grid.Row="1"
+                                                HeightRequest="{Binding CanvasHeight}"
+                                                BindableLayout.ItemsSource="{Binding Series}">
                                     <BindableLayout.ItemTemplate>
                                         <DataTemplate>
                                             <Frame Padding="8"
@@ -194,29 +203,23 @@
                                                    AbsoluteLayout.LayoutFlags="None">
                                                 <VerticalStackLayout Spacing="2">
                                                     <Label Text="{Binding HomeTeamName}"
-                                                           FontSize="12"
+                                                           FontSize="11"
+                                                           MaxLines="1"
                                                            LineBreakMode="TailTruncation" />
                                                     <Label Text="{Binding AwayTeamName}"
-                                                           FontSize="12"
+                                                           FontSize="11"
+                                                           MaxLines="1"
                                                            LineBreakMode="TailTruncation" />
                                                     <Label Text="{Binding ScoreText}"
                                                            FontSize="10"
+                                                           MaxLines="1"
+                                                           LineBreakMode="TailTruncation"
                                                            TextColor="Gray" />
                                                 </VerticalStackLayout>
                                             </Frame>
                                         </DataTemplate>
                                     </BindableLayout.ItemTemplate>
                                 </AbsoluteLayout>
-
-                                <Label Text="{Binding Name}"
-                                       FontAttributes="Bold"
-                                       FontSize="12"
-                                       BackgroundColor="#FEE2E2"
-                                       TextColor="#7F1D1D"
-                                       Padding="6,2"
-                                       Margin="0,-2,0,0"
-                                       HorizontalOptions="Start"
-                                       VerticalOptions="Start" />
                             </Grid>
                         </DataTemplate>
                     </BindableLayout.ItemTemplate>

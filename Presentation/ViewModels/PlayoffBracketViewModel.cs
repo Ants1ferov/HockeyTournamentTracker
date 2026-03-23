@@ -16,9 +16,7 @@ public sealed class PlayoffBracketViewModel : INotifyPropertyChanged
     private readonly ITeamRepository _teamRepository;
     private readonly IMatchRepository _matchRepository;
     private readonly IStageTeamRepository _stageTeamRepository;
-    private readonly IStageGroupRepository _stageGroupRepository;
     private readonly IPlayoffRepository _playoffRepository;
-    private readonly StatsService _statsService;
 
     private Tournament? _tournament;
     private Stage? _stage;
@@ -57,7 +55,6 @@ public sealed class PlayoffBracketViewModel : INotifyPropertyChanged
     }
 
     public ObservableCollection<Team> Teams { get; } = new();
-    public ObservableCollection<Stage> SeedSourceStages { get; } = new();
     public ObservableCollection<PlayoffRoundUi> Rounds { get; } = new();
     public ObservableCollection<PlayoffSeriesUi> ActiveRoundSeries { get; } = new();
 
@@ -85,18 +82,14 @@ public sealed class PlayoffBracketViewModel : INotifyPropertyChanged
         ITeamRepository teamRepository,
         IMatchRepository matchRepository,
         IStageTeamRepository stageTeamRepository,
-        IStageGroupRepository stageGroupRepository,
-        IPlayoffRepository playoffRepository,
-        StatsService statsService)
+        IPlayoffRepository playoffRepository)
     {
         _tournamentRepository = tournamentRepository;
         _stageRepository = stageRepository;
         _teamRepository = teamRepository;
         _matchRepository = matchRepository;
         _stageTeamRepository = stageTeamRepository;
-        _stageGroupRepository = stageGroupRepository;
         _playoffRepository = playoffRepository;
-        _statsService = statsService;
     }
 
     public async Task LoadAsync(Guid tournamentId, Guid stageId)
@@ -126,20 +119,6 @@ public sealed class PlayoffBracketViewModel : INotifyPropertyChanged
             Teams.Clear();
             foreach (var t in sortedTeams)
                 Teams.Add(t);
-        });
-
-        var stages = await _stageRepository.GetByTournamentAsync(tournamentId);
-        var seedStages = stages
-            .Where(s => s.Id != stageId && s.StageType == StageType.Swiss)
-            .OrderBy(s => s.Order)
-            .ThenBy(s => s.Name)
-            .ToList();
-
-        MainThread.BeginInvokeOnMainThread(() =>
-        {
-            SeedSourceStages.Clear();
-            foreach (var s in seedStages)
-                SeedSourceStages.Add(s);
         });
 
         await EnsureThirdPlaceSeriesAsync();
@@ -294,159 +273,6 @@ public sealed class PlayoffBracketViewModel : INotifyPropertyChanged
         await RecalculateWinnersAndAdvanceAsync();
         await LoadRoundsUiAsync();
         return true;
-    }
-
-    public async Task<bool> AutoFillFirstRoundFromStageAsync(Guid sourceStageId)
-    {
-        if (Stage is null || Tournament is null)
-            return false;
-
-        var rounds = (await _playoffRepository.GetRoundsAsync(Stage.Id))
-            .OrderBy(r => r.Order)
-            .ToList();
-        if (rounds.Count == 0)
-            return false;
-
-        var firstRound = rounds[0];
-        var series = (await _playoffRepository.GetSeriesByRoundAsync(firstRound.Id))
-            .Where(s => !s.IsThirdPlace)
-            .OrderBy(s => s.Slot)
-            .ToList();
-        if (series.Count == 0)
-            return false;
-
-        var seededGroups = await BuildSeededGroupsFromStageAsync(sourceStageId);
-        var totalSeeded = seededGroups.Sum(g => g.Count);
-        if (totalSeeded < 2)
-            return false;
-
-        var seriesIndex = 0;
-        var assignedTeamIds = new HashSet<Guid>();
-
-        foreach (var group in seededGroups)
-        {
-            if (seriesIndex >= series.Count)
-                break;
-            if (group.Count < 2)
-                continue;
-
-            var pairableTeamCount = Math.Min(group.Count, (series.Count - seriesIndex) * 2);
-            var pairsInGroup = pairableTeamCount / 2;
-            for (var i = 0; i < pairsInGroup && seriesIndex < series.Count; i++)
-            {
-                var home = group[i];
-                var away = group[pairableTeamCount - 1 - i];
-                if (home.TeamId == away.TeamId)
-                    continue;
-
-                assignedTeamIds.Add(home.TeamId);
-                assignedTeamIds.Add(away.TeamId);
-
-                series[seriesIndex].HomeTeamId = home.TeamId;
-                series[seriesIndex].AwayTeamId = away.TeamId;
-                series[seriesIndex].HomeSeed = home.Seed;
-                series[seriesIndex].AwaySeed = away.Seed;
-                series[seriesIndex].WinnerTeamId = null;
-                await _playoffRepository.SaveSeriesAsync(series[seriesIndex]);
-                seriesIndex++;
-            }
-        }
-
-        if (seriesIndex < series.Count)
-        {
-            var remaining = seededGroups
-                .SelectMany(g => g)
-                .Where(s => !assignedTeamIds.Contains(s.TeamId))
-                .ToList();
-
-            var required = Math.Min((series.Count - seriesIndex) * 2, remaining.Count);
-            for (var i = 0; i < required / 2 && seriesIndex < series.Count; i++)
-            {
-                var home = remaining[i];
-                var away = remaining[required - 1 - i];
-                if (home.TeamId == away.TeamId)
-                    continue;
-
-                series[seriesIndex].HomeTeamId = home.TeamId;
-                series[seriesIndex].AwayTeamId = away.TeamId;
-                series[seriesIndex].HomeSeed = home.Seed;
-                series[seriesIndex].AwaySeed = away.Seed;
-                series[seriesIndex].WinnerTeamId = null;
-                await _playoffRepository.SaveSeriesAsync(series[seriesIndex]);
-                seriesIndex++;
-            }
-        }
-
-        await RecalculateWinnersAndAdvanceAsync();
-        await LoadRoundsUiAsync();
-        return true;
-    }
-
-    private async Task<List<List<SeededTeam>>> BuildSeededGroupsFromStageAsync(Guid sourceStageId)
-    {
-        if (Tournament is null)
-            return new List<List<SeededTeam>>();
-
-        var allTeams = await _teamRepository.GetByTournamentAsync(Tournament.Id);
-        var matches = await _matchRepository.GetByTournamentAsync(Tournament.Id);
-        var sourceMatches = matches.Where(m => m.StageId == sourceStageId).ToList();
-
-        var stageTeamIds = (await _stageTeamRepository.GetTeamIdsByStageAsync(sourceStageId)).ToHashSet();
-        if (stageTeamIds.Count == 0)
-        {
-            foreach (var tid in sourceMatches.SelectMany(m => new[] { m.HomeTeamId, m.AwayTeamId }).Distinct())
-                stageTeamIds.Add(tid);
-        }
-
-        var teamsInStage = allTeams.Where(t => stageTeamIds.Contains(t.Id)).ToList();
-        var stageGroupIds = await _stageTeamRepository.GetTeamGroupIdsByStageAsync(sourceStageId);
-        var stageGroups = await _stageGroupRepository.GetByStageAsync(sourceStageId);
-        var result = new List<List<SeededTeam>>();
-        var rules = Tournament.Rules ?? new TournamentRules();
-
-        foreach (var group in stageGroups.OrderBy(g => g.Order).ThenBy(g => g.Name))
-        {
-            var groupTeams = teamsInStage
-                .Where(t => stageGroupIds.TryGetValue(t.Id, out var gid) && gid == group.Id)
-                .ToList();
-            if (groupTeams.Count == 0)
-                continue;
-
-            var groupStandings = _statsService.CalculateStandings(Tournament, groupTeams, sourceMatches);
-            var sortedGroup = StatsService.SortByRules(groupStandings, rules);
-            var seeded = new List<SeededTeam>();
-            var seed = 1;
-            foreach (var row in sortedGroup)
-                seeded.Add(new SeededTeam(row.TeamId, seed++));
-            result.Add(seeded);
-        }
-
-        var noGroupTeams = teamsInStage
-            .Where(t => !stageGroupIds.TryGetValue(t.Id, out var gid) || gid is null)
-            .ToList();
-        if (noGroupTeams.Count > 0)
-        {
-            var standings = _statsService.CalculateStandings(Tournament, noGroupTeams, sourceMatches);
-            var sorted = StatsService.SortByRules(standings, rules);
-            var seeded = new List<SeededTeam>();
-            var seed = 1;
-            foreach (var row in sorted)
-                seeded.Add(new SeededTeam(row.TeamId, seed++));
-            result.Add(seeded);
-        }
-
-        if (result.Count == 0)
-        {
-            var standings = _statsService.CalculateStandings(Tournament, teamsInStage, sourceMatches);
-            var sorted = StatsService.SortByRules(standings, rules);
-            var seeded = new List<SeededTeam>();
-            var seed = 1;
-            foreach (var row in sorted)
-                seeded.Add(new SeededTeam(row.TeamId, seed++));
-            result.Add(seeded);
-        }
-
-        return result;
     }
 
     private async Task EnsureThirdPlaceSeriesAsync()
@@ -744,7 +570,7 @@ public sealed class PlayoffBracketViewModel : INotifyPropertyChanged
         const double cardHeight = 78;
         const double firstRoundGap = 12;
         const double connectorWidth = 22;
-        const double topPadding = 22;
+        const double topPadding = 10;
         var baseStep = cardHeight + firstRoundGap;
 
         double maxNormalBottom = 0;
@@ -868,7 +694,17 @@ public sealed class PlayoffRoundUi : INotifyPropertyChanged
     public bool HasNextRound { get; set; }
     public ObservableCollection<PlayoffSeriesUi> Series { get; } = new();
     public ObservableCollection<PlayoffBracketSegmentUi> ConnectorSegments { get; } = new();
-    public double CanvasHeight { get; set; } = 200;
+    private double _canvasHeight = 200;
+    public double CanvasHeight
+    {
+        get => _canvasHeight;
+        set
+        {
+            if (Math.Abs(_canvasHeight - value) < 0.01) return;
+            _canvasHeight = value;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CanvasHeight)));
+        }
+    }
 
     private bool _isSelected;
     public bool IsSelected
@@ -885,7 +721,7 @@ public sealed class PlayoffRoundUi : INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
 }
 
-public sealed class PlayoffSeriesUi
+public sealed class PlayoffSeriesUi : INotifyPropertyChanged
 {
     public Guid Id { get; set; }
     public Guid RoundId { get; set; }
@@ -903,7 +739,19 @@ public sealed class PlayoffSeriesUi
     public string Title { get; set; } = string.Empty;
     public string ScoreText { get; set; } = string.Empty;
     public string WinnerText { get; set; } = string.Empty;
-    public Rect BracketBounds { get; set; } = new Rect(0, 0, 200, 78);
+    private Rect _bracketBounds = new(0, 0, 200, 78);
+    public Rect BracketBounds
+    {
+        get => _bracketBounds;
+        set
+        {
+            if (_bracketBounds.Equals(value)) return;
+            _bracketBounds = value;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(BracketBounds)));
+        }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
 }
 
 public sealed class PlayoffBracketSegmentUi

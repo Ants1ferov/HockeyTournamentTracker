@@ -1,4 +1,3 @@
-using HockeyTournamentTracker.Domain;
 using HockeyTournamentTracker.Presentation.ViewModels;
 using HockeyTournamentTracker.Resources;
 using System.Linq;
@@ -163,19 +162,6 @@ public partial class PlayoffBracketPage : ContentPage, IQueryAttributable
 
         await Shell.Current.GoToAsync(
             $"{nameof(StageMatchesPage)}?TournamentId={_tournamentId}&StageId={_stageId}&SeriesId={series.Id}");
-    }
-
-    private async void OnAutoFillSeedClicked(object? sender, EventArgs e)
-    {
-        if (SeedSourceStagePicker.SelectedItem is not Stage sourceStage)
-        {
-            await DisplayAlert(AppResources.Error, "Выберите стадию для посева.", AppResources.Ok);
-            return;
-        }
-
-        var ok = await _viewModel.AutoFillFirstRoundFromStageAsync(sourceStage.Id);
-        if (!ok)
-            await DisplayAlert(AppResources.Error, "Не удалось автозаполнить сетку. Проверьте раунды/серии и данные стадии.", AppResources.Ok);
     }
 
     private async Task<(Guid? TeamId, bool Cancelled)> PromptTeamAsync(string title, Guid? current)
