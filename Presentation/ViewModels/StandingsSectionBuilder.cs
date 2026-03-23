@@ -43,7 +43,15 @@ internal static class StandingsSectionBuilder
                     zoneHex = hx;
                 if (pickerZoneOrder is not null)
                 {
-                    var idx = pickerZoneOrder.IndexOf(z.Value);
+                    var idx = -1;
+                    for (var i = 0; i < pickerZoneOrder.Count; i++)
+                    {
+                        if (pickerZoneOrder[i] == z.Value)
+                        {
+                            idx = i;
+                            break;
+                        }
+                    }
                     pickerIndex = idx >= 0 ? idx + 1 : 0;
                 }
             }
