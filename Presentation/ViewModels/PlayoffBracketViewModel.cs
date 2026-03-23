@@ -280,6 +280,30 @@ public sealed class PlayoffBracketViewModel : INotifyPropertyChanged, IMatchUpda
         return true;
     }
 
+    public async Task<bool> SwapSeriesSlotsAsync(Guid sourceSeriesId, Guid targetSeriesId)
+    {
+        if (Stage is null || sourceSeriesId == targetSeriesId)
+            return false;
+
+        var allSeries = (await _playoffRepository.GetSeriesByStageAsync(Stage.Id)).ToList();
+        var source = allSeries.FirstOrDefault(s => s.Id == sourceSeriesId);
+        var target = allSeries.FirstOrDefault(s => s.Id == targetSeriesId);
+        if (source is null || target is null)
+            return false;
+        if (source.RoundId != target.RoundId || source.IsThirdPlace || target.IsThirdPlace)
+            return false;
+
+        var sourceSlot = source.Slot;
+        source.Slot = target.Slot;
+        target.Slot = sourceSlot;
+
+        await _playoffRepository.SaveSeriesAsync(source);
+        await _playoffRepository.SaveSeriesAsync(target);
+        await RecalculateWinnersAndAdvanceAsync();
+        await LoadRoundsUiAsync();
+        return true;
+    }
+
     private async Task EnsureThirdPlaceSeriesAsync()
     {
         if (Stage is null)

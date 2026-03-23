@@ -9,6 +9,7 @@ public partial class PlayoffBracketPage : ContentPage, IQueryAttributable
     private readonly PlayoffBracketViewModel _viewModel;
     private Guid _tournamentId;
     private Guid _stageId;
+    private Guid? _dragSeriesId;
 
     public PlayoffBracketPage(PlayoffBracketViewModel viewModel)
     {
@@ -162,6 +163,59 @@ public partial class PlayoffBracketPage : ContentPage, IQueryAttributable
 
         await Shell.Current.GoToAsync(
             $"{nameof(StageMatchesPage)}?TournamentId={_tournamentId}&StageId={_stageId}&SeriesId={series.Id}");
+    }
+
+    private void OnSeriesDragStarting(object? sender, DragStartingEventArgs e)
+    {
+        if ((sender as BindableObject)?.BindingContext is not PlayoffSeriesUi series || series.IsThirdPlace)
+        {
+            _dragSeriesId = null;
+            return;
+        }
+
+        _dragSeriesId = series.Id;
+    }
+
+    private void OnSeriesDragOver(object? sender, DragEventArgs e)
+    {
+        if ((sender as BindableObject)?.BindingContext is not PlayoffSeriesUi target || target.IsThirdPlace || !_dragSeriesId.HasValue)
+        {
+            e.AcceptedOperation = DataPackageOperation.None;
+            return;
+        }
+
+        var source = _viewModel.ActiveRoundSeries.FirstOrDefault(s => s.Id == _dragSeriesId.Value);
+        if (source is null || source.IsThirdPlace || source.RoundId != target.RoundId || source.Id == target.Id)
+        {
+            e.AcceptedOperation = DataPackageOperation.None;
+            return;
+        }
+
+        e.AcceptedOperation = DataPackageOperation.Copy;
+    }
+
+    private async void OnSeriesDrop(object? sender, DropEventArgs e)
+    {
+        try
+        {
+            if ((sender as BindableObject)?.BindingContext is not PlayoffSeriesUi target || !_dragSeriesId.HasValue)
+                return;
+
+            var sourceId = _dragSeriesId.Value;
+            _dragSeriesId = null;
+            if (sourceId == target.Id)
+                return;
+
+            var source = _viewModel.ActiveRoundSeries.FirstOrDefault(s => s.Id == sourceId);
+            if (source is null || source.IsThirdPlace || target.IsThirdPlace || source.RoundId != target.RoundId)
+                return;
+
+            await _viewModel.SwapSeriesSlotsAsync(sourceId, target.Id);
+        }
+        finally
+        {
+            _dragSeriesId = null;
+        }
     }
 
     private async Task<(Guid? TeamId, bool Cancelled)> PromptTeamAsync(string title, Guid? current)

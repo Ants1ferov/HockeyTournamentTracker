@@ -104,6 +104,12 @@
                                BackgroundColor="#F3F4F6"
                                HasShadow="False"
                                CornerRadius="8">
+                            <Frame.GestureRecognizers>
+                                <DragGestureRecognizer DragStarting="OnSeriesDragStarting" />
+                                <DropGestureRecognizer AllowDrop="True"
+                                                       DragOver="OnSeriesDragOver"
+                                                       Drop="OnSeriesDrop" />
+                            </Frame.GestureRecognizers>
                             <VerticalStackLayout Spacing="6">
                                 <Grid ColumnDefinitions="*,Auto"
                                       ColumnSpacing="8">
