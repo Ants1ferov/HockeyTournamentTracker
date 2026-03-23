@@ -11,10 +11,11 @@ internal static class StandingsSectionBuilder
         IReadOnlyList<Team> teams,
         IReadOnlyDictionary<Guid, Guid?> teamGroupIdsInStage,
         IReadOnlyList<GroupInfo> stageGroups,
-        List<Match> matches)
+        List<Match> matches,
+        bool includeInProgress = false)
     {
         var result = new List<StandingGroup>();
-        var standings = statsService.CalculateStandings(tournament, teams, matches);
+        var standings = statsService.CalculateStandings(tournament, teams, matches, includeInProgress);
         var teamById = teams.ToDictionary(t => t.Id);
         var finishedMatches = matches
             .Where(m => m.Status == MatchStatus.Finished && m.OutcomeType.HasValue && m.HomeGoals.HasValue && m.AwayGoals.HasValue)

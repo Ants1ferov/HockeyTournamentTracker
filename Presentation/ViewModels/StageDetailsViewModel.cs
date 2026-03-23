@@ -4,10 +4,11 @@ using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using HockeyTournamentTracker.Data;
 using HockeyTournamentTracker.Domain;
+using HockeyTournamentTracker.Presentation.Services;
 
 namespace HockeyTournamentTracker.Presentation.ViewModels;
 
-public sealed class StageDetailsViewModel : INotifyPropertyChanged
+public sealed class StageDetailsViewModel : INotifyPropertyChanged, IMatchUpdatesListener
 {
     private readonly ITournamentRepository _tournamentRepository;
     private readonly ITeamRepository _teamRepository;
@@ -16,6 +17,7 @@ public sealed class StageDetailsViewModel : INotifyPropertyChanged
     private readonly IStageTeamRepository _stageTeamRepository;
     private readonly IStageGroupRepository _stageGroupRepository;
     private readonly StatsService _statsService;
+    private readonly IMatchUpdatesNotifier _matchUpdatesNotifier;
 
     private Tournament? _tournament;
     private Stage? _stage;
@@ -63,7 +65,8 @@ public sealed class StageDetailsViewModel : INotifyPropertyChanged
         IMatchRepository matchRepository,
         IStageTeamRepository stageTeamRepository,
         IStageGroupRepository stageGroupRepository,
-        StatsService statsService)
+        StatsService statsService,
+        IMatchUpdatesNotifier matchUpdatesNotifier)
     {
         _tournamentRepository = tournamentRepository;
         _teamRepository = teamRepository;
@@ -72,6 +75,8 @@ public sealed class StageDetailsViewModel : INotifyPropertyChanged
         _stageTeamRepository = stageTeamRepository;
         _stageGroupRepository = stageGroupRepository;
         _statsService = statsService;
+        _matchUpdatesNotifier = matchUpdatesNotifier;
+        _matchUpdatesNotifier.Subscribe(this);
 
         MoveSelectedTeamsToGroupCommand = new Command<Guid?>(async gid =>
         {
@@ -150,7 +155,8 @@ public sealed class StageDetailsViewModel : INotifyPropertyChanged
             teamsInStage,
             teamGroupIdsInStage,
             stageGroups,
-            stageMatches);
+            stageMatches,
+            includeInProgress: true);
 
         MainThread.BeginInvokeOnMainThread(() =>
         {
@@ -297,6 +303,11 @@ public sealed class StageDetailsViewModel : INotifyPropertyChanged
 
         match.Status = status;
         await _matchRepository.SaveAsync(match);
+        _matchUpdatesNotifier.Publish(new MatchUpdatedMessage(
+            Tournament.Id,
+            match.Id,
+            match.StageId,
+            status));
 
         if (Stage is not null)
             await LoadAsync(Tournament.Id, Stage.Id);
@@ -326,14 +337,18 @@ public sealed class StageDetailsViewModel : INotifyPropertyChanged
 
     private static string BuildScoreText(Match match)
     {
-        if (match.HomeGoals is null || match.AwayGoals is null || match.OutcomeType is null)
-        {
+        if (match.HomeGoals is null || match.AwayGoals is null)
             return "— : —";
+
+        var finalHomeGoals = match.HomeGoals.Value;
+        var finalAwayGoals = match.AwayGoals.Value;
+        if (match.Status == MatchStatus.Finished && match.OutcomeType is not null)
+        {
+            var effectiveScore = MatchOutcomeResolver.GetEffectiveFinalScore(match);
+            finalHomeGoals = effectiveScore?.HomeGoals ?? finalHomeGoals;
+            finalAwayGoals = effectiveScore?.AwayGoals ?? finalAwayGoals;
         }
 
-        var effectiveScore = MatchOutcomeResolver.GetEffectiveFinalScore(match);
-        var finalHomeGoals = effectiveScore?.HomeGoals ?? match.HomeGoals.Value;
-        var finalAwayGoals = effectiveScore?.AwayGoals ?? match.AwayGoals.Value;
         var baseScore = $"{finalHomeGoals}:{finalAwayGoals}";
         var periodPart = "";
         if (match.PeriodScores is { Count: > 0 } periods)
@@ -358,6 +373,16 @@ public sealed class StageDetailsViewModel : INotifyPropertyChanged
             _ => ""
         };
         return $"{baseScore}{outcomeSuffix}{periodPart}";
+    }
+
+    public void OnMatchUpdated(MatchUpdatedMessage message)
+    {
+        if (Tournament is null || Stage is null)
+            return;
+        if (message.TournamentId != Tournament.Id || message.StageId != Stage.Id)
+            return;
+
+        _ = LoadAsync(Tournament.Id, Stage.Id);
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

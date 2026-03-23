@@ -16,6 +16,10 @@ public partial class MainPage : ContentPage
         _viewModel = viewModel;
         _themeSettings = themeSettings;
         BindingContext = _viewModel;
+        ThemePicker.Items.Clear();
+        ThemePicker.Items.Add(AppResources.ThemeSystem);
+        ThemePicker.Items.Add(AppResources.ThemeLight);
+        ThemePicker.Items.Add(AppResources.ThemeDark);
         ThemePicker.SelectedIndex = _themeSettings.GetSelectedIndex();
     }
 

@@ -5,11 +5,12 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using HockeyTournamentTracker.Data;
 using HockeyTournamentTracker.Domain;
+using HockeyTournamentTracker.Presentation.Services;
 using Microsoft.Maui.Graphics;
 
 namespace HockeyTournamentTracker.Presentation.ViewModels;
 
-public sealed class PlayoffBracketViewModel : INotifyPropertyChanged
+public sealed class PlayoffBracketViewModel : INotifyPropertyChanged, IMatchUpdatesListener
 {
     private readonly ITournamentRepository _tournamentRepository;
     private readonly IStageRepository _stageRepository;
@@ -17,6 +18,7 @@ public sealed class PlayoffBracketViewModel : INotifyPropertyChanged
     private readonly IMatchRepository _matchRepository;
     private readonly IStageTeamRepository _stageTeamRepository;
     private readonly IPlayoffRepository _playoffRepository;
+    private readonly IMatchUpdatesNotifier _matchUpdatesNotifier;
 
     private Tournament? _tournament;
     private Stage? _stage;
@@ -82,7 +84,8 @@ public sealed class PlayoffBracketViewModel : INotifyPropertyChanged
         ITeamRepository teamRepository,
         IMatchRepository matchRepository,
         IStageTeamRepository stageTeamRepository,
-        IPlayoffRepository playoffRepository)
+        IPlayoffRepository playoffRepository,
+        IMatchUpdatesNotifier matchUpdatesNotifier)
     {
         _tournamentRepository = tournamentRepository;
         _stageRepository = stageRepository;
@@ -90,6 +93,8 @@ public sealed class PlayoffBracketViewModel : INotifyPropertyChanged
         _matchRepository = matchRepository;
         _stageTeamRepository = stageTeamRepository;
         _playoffRepository = playoffRepository;
+        _matchUpdatesNotifier = matchUpdatesNotifier;
+        _matchUpdatesNotifier.Subscribe(this);
     }
 
     public async Task LoadAsync(Guid tournamentId, Guid stageId)
@@ -516,6 +521,14 @@ public sealed class PlayoffBracketViewModel : INotifyPropertyChanged
                     var finished = matches.Where(m => m.SeriesId == series.Id && m.Status == MatchStatus.Finished).ToList();
                     var homeWins = series.HomeTeamId.HasValue ? finished.Count(m => m.WinnerTeamId == series.HomeTeamId.Value) : 0;
                     var awayWins = series.AwayTeamId.HasValue ? finished.Count(m => m.WinnerTeamId == series.AwayTeamId.Value) : 0;
+                    var inProgress = matches.Where(m => m.SeriesId == series.Id && m.Status == MatchStatus.InProgress).ToList();
+                    var homeLiveWins = series.HomeTeamId.HasValue
+                        ? inProgress.Count(m => (m.HomeGoals ?? 0) > (m.AwayGoals ?? 0))
+                        : 0;
+                    var awayLiveWins = series.AwayTeamId.HasValue
+                        ? inProgress.Count(m => (m.AwayGoals ?? 0) > (m.HomeGoals ?? 0))
+                        : 0;
+                    var liveSuffix = inProgress.Count > 0 ? " [live]" : string.Empty;
 
                     var homeName = series.HomeTeamId.HasValue && teamById.TryGetValue(series.HomeTeamId.Value, out var ht)
                         ? ht.Name
@@ -547,7 +560,7 @@ public sealed class PlayoffBracketViewModel : INotifyPropertyChanged
                         IsThirdPlace = series.IsThirdPlace,
                         WinnerTeamId = series.WinnerTeamId,
                         Title = $"{(series.IsThirdPlace ? "Матч за 3-е место" : $"Серия {series.Slot + 1}")}: {homeSeedText}{homeName} — {awaySeedText}{awayName}",
-                        ScoreText = $"Счёт серии: {homeWins}:{awayWins} (до {winsNeeded} побед)",
+                        ScoreText = $"Счёт серии: {homeWins + homeLiveWins}:{awayWins + awayLiveWins} (до {winsNeeded} побед){liveSuffix}",
                         WinnerText = string.IsNullOrWhiteSpace(winnerName) ? string.Empty : $"Победитель серии: {winnerName}"
                     });
                 }
@@ -668,6 +681,16 @@ public sealed class PlayoffBracketViewModel : INotifyPropertyChanged
 
     private static int GetEffectiveBestOf(PlayoffSeries series, int defaultBestOf) =>
         NormalizeBestOf(series.BestOfOverride ?? defaultBestOf);
+
+    public void OnMatchUpdated(MatchUpdatedMessage message)
+    {
+        if (Tournament is null || Stage is null)
+            return;
+        if (message.TournamentId != Tournament.Id || message.StageId != Stage.Id)
+            return;
+
+        _ = LoadAsync(Tournament.Id, Stage.Id);
+    }
 
     public event PropertyChangedEventHandler? PropertyChanged;
 

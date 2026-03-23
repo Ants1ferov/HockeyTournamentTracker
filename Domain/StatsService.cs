@@ -5,7 +5,8 @@ public sealed class StatsService
     public IReadOnlyList<Standing> CalculateStandings(
         Tournament tournament,
         IReadOnlyList<Team> teams,
-        IReadOnlyList<Match> matches)
+        IReadOnlyList<Match> matches,
+        bool includeInProgress = false)
     {
         var rules = tournament.Rules;
 
@@ -17,25 +18,44 @@ public sealed class StatsService
                 TeamId = t.Id
             });
 
-        foreach (var match in matches.Where(m => m.Status == MatchStatus.Finished))
-        {
-            if (match.OutcomeType is null)
-            {
-                continue;
-            }
+        var relevantMatches = includeInProgress
+            ? matches.Where(m => m.Status == MatchStatus.Finished || m.Status == MatchStatus.InProgress)
+            : matches.Where(m => m.Status == MatchStatus.Finished);
 
+        foreach (var match in relevantMatches)
+        {
             if (!standings.TryGetValue(match.HomeTeamId, out var homeStanding) ||
                 !standings.TryGetValue(match.AwayTeamId, out var awayStanding))
             {
                 continue;
             }
 
-            var effectiveScore = MatchOutcomeResolver.GetEffectiveFinalScore(match);
-            if (effectiveScore is null)
-                continue;
+            int homeGoals;
+            int awayGoals;
+            OutcomeType? outcomeType;
 
-            var homeGoals = effectiveScore.Value.HomeGoals;
-            var awayGoals = effectiveScore.Value.AwayGoals;
+            if (match.Status == MatchStatus.Finished)
+            {
+                if (match.OutcomeType is null)
+                    continue;
+
+                var effectiveScore = MatchOutcomeResolver.GetEffectiveFinalScore(match);
+                if (effectiveScore is null)
+                    continue;
+
+                homeGoals = effectiveScore.Value.HomeGoals;
+                awayGoals = effectiveScore.Value.AwayGoals;
+                outcomeType = match.OutcomeType;
+            }
+            else
+            {
+                if (!includeInProgress || !match.HomeGoals.HasValue || !match.AwayGoals.HasValue)
+                    continue;
+
+                homeGoals = match.HomeGoals.Value;
+                awayGoals = match.AwayGoals.Value;
+                outcomeType = match.OutcomeType ?? OutcomeType.Regulation;
+            }
 
             homeStanding.Games++;
             awayStanding.Games++;
@@ -46,7 +66,7 @@ public sealed class StatsService
             awayStanding.GoalsFor += awayGoals;
             awayStanding.GoalsAgainst += homeGoals;
 
-            switch (match.OutcomeType)
+            switch (outcomeType)
             {
                 case OutcomeType.Regulation:
                     ApplyRegulationOutcome(match, homeGoals, awayGoals, homeStanding, awayStanding, rules);

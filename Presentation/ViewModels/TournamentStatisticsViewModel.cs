@@ -4,16 +4,18 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using HockeyTournamentTracker.Data;
 using HockeyTournamentTracker.Domain;
+using HockeyTournamentTracker.Presentation.Services;
 
 namespace HockeyTournamentTracker.Presentation.ViewModels;
 
-public sealed class TournamentStatisticsViewModel : INotifyPropertyChanged
+public sealed class TournamentStatisticsViewModel : INotifyPropertyChanged, IMatchUpdatesListener
 {
     private readonly ITournamentRepository _tournamentRepository;
     private readonly ITeamRepository _teamRepository;
     private readonly IStageRepository _stageRepository;
     private readonly IMatchRepository _matchRepository;
     private readonly IStageTeamRepository _stageTeamRepository;
+    private readonly IMatchUpdatesNotifier _matchUpdatesNotifier;
 
     private Guid _tournamentId;
     private Tournament? _tournament;
@@ -73,13 +75,16 @@ public sealed class TournamentStatisticsViewModel : INotifyPropertyChanged
         ITeamRepository teamRepository,
         IStageRepository stageRepository,
         IMatchRepository matchRepository,
-        IStageTeamRepository stageTeamRepository)
+        IStageTeamRepository stageTeamRepository,
+        IMatchUpdatesNotifier matchUpdatesNotifier)
     {
         _tournamentRepository = tournamentRepository;
         _teamRepository = teamRepository;
         _stageRepository = stageRepository;
         _matchRepository = matchRepository;
         _stageTeamRepository = stageTeamRepository;
+        _matchUpdatesNotifier = matchUpdatesNotifier;
+        _matchUpdatesNotifier.Subscribe(this);
     }
 
     public async Task LoadAsync(Guid tournamentId)
@@ -231,5 +236,13 @@ public sealed class TournamentStatisticsViewModel : INotifyPropertyChanged
         field = value;
         OnPropertyChanged(propertyName);
         return true;
+    }
+
+    public void OnMatchUpdated(MatchUpdatedMessage message)
+    {
+        if (TournamentId == Guid.Empty || message.TournamentId != TournamentId)
+            return;
+
+        _ = LoadAsync(TournamentId);
     }
 }

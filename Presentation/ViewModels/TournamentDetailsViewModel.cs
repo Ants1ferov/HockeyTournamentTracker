@@ -5,10 +5,11 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using HockeyTournamentTracker.Data;
 using HockeyTournamentTracker.Domain;
+using HockeyTournamentTracker.Presentation.Services;
 
 namespace HockeyTournamentTracker.Presentation.ViewModels;
 
-public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
+public sealed class TournamentDetailsViewModel : INotifyPropertyChanged, IMatchUpdatesListener
 {
     private readonly ITournamentRepository _tournamentRepository;
     private readonly ITeamRepository _teamRepository;
@@ -17,6 +18,7 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
     private readonly IStageTeamRepository _stageTeamRepository;
     private readonly IStageGroupRepository _stageGroupRepository;
     private readonly StatsService _statsService;
+    private readonly IMatchUpdatesNotifier _matchUpdatesNotifier;
     private readonly SemaphoreSlim _loadSemaphore = new(1, 1);
 
     private Tournament? _tournament;
@@ -135,7 +137,8 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
         IMatchRepository matchRepository,
         IStageTeamRepository stageTeamRepository,
         IStageGroupRepository stageGroupRepository,
-        StatsService statsService)
+        StatsService statsService,
+        IMatchUpdatesNotifier matchUpdatesNotifier)
     {
         _tournamentRepository = tournamentRepository;
         _teamRepository = teamRepository;
@@ -144,6 +147,8 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
         _stageTeamRepository = stageTeamRepository;
         _stageGroupRepository = stageGroupRepository;
         _statsService = statsService;
+        _matchUpdatesNotifier = matchUpdatesNotifier;
+        _matchUpdatesNotifier.Subscribe(this);
         // Уведомляем начальное состояние вкладок, чтобы контент отобразился при первом показе страницы
         OnPropertyChanged(nameof(IsHomeTabSelected));
         OnPropertyChanged(nameof(IsStagesTabSelected));
@@ -169,7 +174,7 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
 
             Standings.Clear();
             StandingsByGroup.Clear();
-            var standings = _statsService.CalculateStandings(Tournament, teams, matches);
+            var standings = _statsService.CalculateStandings(Tournament, teams, matches, includeInProgress: true);
             var teamById = teams.ToDictionary(t => t.Id);
 
             var finishedMatches = matches
@@ -440,7 +445,8 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
                 teamsInStage,
                 teamGroupIdsInStage,
                 stageGroups,
-                stageMatches);
+                stageMatches,
+                includeInProgress: true);
 
             if (myVersion != _stageSelectionVersion)
                 return;
@@ -488,6 +494,11 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
         if (match is null) return;
         match.Status = status;
         await _matchRepository.SaveAsync(match);
+        _matchUpdatesNotifier.Publish(new MatchUpdatedMessage(
+            Tournament.Id,
+            match.Id,
+            match.StageId,
+            status));
         await LoadAsync(Tournament.Id);
     }
 
@@ -571,14 +582,18 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
 
     private static string BuildScoreText(Match match)
     {
-        if (match.HomeGoals is null || match.AwayGoals is null || match.OutcomeType is null)
-        {
+        if (match.HomeGoals is null || match.AwayGoals is null)
             return "— : —";
+
+        var finalHomeGoals = match.HomeGoals.Value;
+        var finalAwayGoals = match.AwayGoals.Value;
+        if (match.Status == MatchStatus.Finished && match.OutcomeType is not null)
+        {
+            var effectiveScore = MatchOutcomeResolver.GetEffectiveFinalScore(match);
+            finalHomeGoals = effectiveScore?.HomeGoals ?? finalHomeGoals;
+            finalAwayGoals = effectiveScore?.AwayGoals ?? finalAwayGoals;
         }
 
-        var effectiveScore = MatchOutcomeResolver.GetEffectiveFinalScore(match);
-        var finalHomeGoals = effectiveScore?.HomeGoals ?? match.HomeGoals.Value;
-        var finalAwayGoals = effectiveScore?.AwayGoals ?? match.AwayGoals.Value;
         var baseScore = $"{finalHomeGoals}:{finalAwayGoals}";
         var periodPart = "";
         if (match.PeriodScores is { Count: > 0 } periods)
@@ -603,6 +618,14 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
             _ => ""
         };
         return $"{baseScore}{outcomeSuffix}{periodPart}";
+    }
+
+    public void OnMatchUpdated(MatchUpdatedMessage message)
+    {
+        if (Tournament is null || message.TournamentId != Tournament.Id)
+            return;
+
+        _ = LoadAsync(Tournament.Id);
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

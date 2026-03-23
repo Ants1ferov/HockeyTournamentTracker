@@ -338,13 +338,22 @@ public partial class StageMatchesPage : ContentPage, IQueryAttributable
 
     private static string BuildScoreText(Match match)
     {
-        if (match.HomeGoals is null || match.AwayGoals is null || match.OutcomeType is null)
+        if (match.HomeGoals is null || match.AwayGoals is null)
             return "— : —";
 
-        var effectiveScore = MatchOutcomeResolver.GetEffectiveFinalScore(match);
-        var finalHomeGoals = effectiveScore?.HomeGoals ?? match.HomeGoals.Value;
-        var finalAwayGoals = effectiveScore?.AwayGoals ?? match.AwayGoals.Value;
+        var finalHomeGoals = match.HomeGoals.Value;
+        var finalAwayGoals = match.AwayGoals.Value;
+        if (match.Status == MatchStatus.Finished && match.OutcomeType is not null)
+        {
+            var effectiveScore = MatchOutcomeResolver.GetEffectiveFinalScore(match);
+            finalHomeGoals = effectiveScore?.HomeGoals ?? finalHomeGoals;
+            finalAwayGoals = effectiveScore?.AwayGoals ?? finalAwayGoals;
+        }
+
         var baseScore = $"{finalHomeGoals}:{finalAwayGoals}";
+        var periodPart = "";
+        if (match.PeriodScores is { Count: > 0 } periods)
+            periodPart = " (" + string.Join(", ", periods.Select(p => $"{p.HomeGoals}:{p.AwayGoals}")) + ")";
 
         var hasOvertimePeriod = match.PeriodScores?.Any(p => p.PeriodType == PeriodType.Overtime) == true;
         var hasShootoutPeriod = match.PeriodScores?.Any(p => p.PeriodType == PeriodType.Shootout) == true;
@@ -357,6 +366,6 @@ public partial class StageMatchesPage : ContentPage, IQueryAttributable
             _ => ""
         };
 
-        return $"{baseScore}{outcomeSuffix}";
+        return $"{baseScore}{outcomeSuffix}{periodPart}";
     }
 }

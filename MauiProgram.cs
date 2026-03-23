@@ -1,6 +1,7 @@
 using HockeyTournamentTracker.Data;
 using HockeyTournamentTracker.Domain;
 using HockeyTournamentTracker.Presentation;
+using HockeyTournamentTracker.Presentation.Services;
 using HockeyTournamentTracker.Presentation.ViewModels;
 using HockeyTournamentTracker.Presentation.Views;
 using Microsoft.Extensions.Logging;
@@ -45,6 +46,7 @@ public static class MauiProgram
 
 		builder.Services.AddSingleton<StatsService>();
 		builder.Services.AddSingleton<IAppThemeSettings, AppThemeSettings>();
+		builder.Services.AddSingleton<IMatchUpdatesNotifier, MatchUpdatesNotifier>();
 
 		builder.Services.AddSingleton<TournamentsListViewModel>();
 		builder.Services.AddTransient<MainPage>();

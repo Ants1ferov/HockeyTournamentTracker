@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Linq;
 using HockeyTournamentTracker.Data;
 using HockeyTournamentTracker.Domain;
+using HockeyTournamentTracker.Presentation.Services;
 
 namespace HockeyTournamentTracker.Presentation.ViewModels;
 
@@ -14,6 +15,7 @@ public sealed class MatchEditViewModel : INotifyPropertyChanged
     private readonly ITournamentRepository _tournamentRepository;
     private readonly IStageTeamRepository _stageTeamRepository;
     private readonly StatsService _statsService;
+    private readonly IMatchUpdatesNotifier _matchUpdatesNotifier;
 
     private Guid _tournamentId;
     private Guid _matchId;
@@ -153,6 +155,7 @@ public sealed class MatchEditViewModel : INotifyPropertyChanged
 
     public bool IsShootoutVisible => OutcomeType == OutcomeType.Shootout;
     public bool IsScoreVisible => SelectedMatchStatus != MatchStatus.Scheduled;
+    public bool IsPeriodScoresVisible => SelectedMatchStatus != MatchStatus.Scheduled;
     public bool IsFinishedDetailsVisible => SelectedMatchStatus == MatchStatus.Finished;
 
     public MatchStatus SelectedMatchStatus
@@ -164,6 +167,7 @@ public sealed class MatchEditViewModel : INotifyPropertyChanged
             {
                 OnPropertyChanged(nameof(MatchStatusIndex));
                 OnPropertyChanged(nameof(IsScoreVisible));
+                OnPropertyChanged(nameof(IsPeriodScoresVisible));
                 OnPropertyChanged(nameof(IsFinishedDetailsVisible));
             }
         }
@@ -210,13 +214,15 @@ public sealed class MatchEditViewModel : INotifyPropertyChanged
         IMatchRepository matchRepository,
         ITournamentRepository tournamentRepository,
         IStageTeamRepository stageTeamRepository,
-        StatsService statsService)
+        StatsService statsService,
+        IMatchUpdatesNotifier matchUpdatesNotifier)
     {
         _teamRepository = teamRepository;
         _matchRepository = matchRepository;
         _tournamentRepository = tournamentRepository;
         _stageTeamRepository = stageTeamRepository;
         _statsService = statsService;
+        _matchUpdatesNotifier = matchUpdatesNotifier;
     }
 
     private async Task RefreshAwayTeamOptionsAsync()
@@ -410,8 +416,28 @@ public sealed class MatchEditViewModel : INotifyPropertyChanged
 
         if (statusToSave == MatchStatus.InProgress)
         {
-            finalHomeGoals = HomeGoals;
-            finalAwayGoals = AwayGoals;
+            var hasDetailedPeriods =
+                P1Home != 0 || P1Away != 0 ||
+                P2Home != 0 || P2Away != 0 ||
+                P3Home != 0 || P3Away != 0 ||
+                (HasOvertime && (OTHome != 0 || OTAway != 0));
+
+            if (hasDetailedPeriods)
+            {
+                periodScores.Add(new PeriodScore { PeriodNumber = 1, PeriodType = PeriodType.Regular, HomeGoals = P1Home, AwayGoals = P1Away });
+                periodScores.Add(new PeriodScore { PeriodNumber = 2, PeriodType = PeriodType.Regular, HomeGoals = P2Home, AwayGoals = P2Away });
+                periodScores.Add(new PeriodScore { PeriodNumber = 3, PeriodType = PeriodType.Regular, HomeGoals = P3Home, AwayGoals = P3Away });
+                if (HasOvertime)
+                    periodScores.Add(new PeriodScore { PeriodNumber = 4, PeriodType = PeriodType.Overtime, HomeGoals = OTHome, AwayGoals = OTAway });
+
+                finalHomeGoals = P1Home + P2Home + P3Home + (HasOvertime ? OTHome : 0);
+                finalAwayGoals = P1Away + P2Away + P3Away + (HasOvertime ? OTAway : 0);
+            }
+            else
+            {
+                finalHomeGoals = HomeGoals;
+                finalAwayGoals = AwayGoals;
+            }
         }
         else if (statusToSave == MatchStatus.Finished)
         {
@@ -508,6 +534,11 @@ public sealed class MatchEditViewModel : INotifyPropertyChanged
         };
 
         await _matchRepository.SaveAsync(match);
+        _matchUpdatesNotifier.Publish(new MatchUpdatedMessage(
+            TournamentId,
+            match.Id,
+            StageId,
+            statusToSave));
         return true;
     }
 
