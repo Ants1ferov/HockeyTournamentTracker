@@ -16,8 +16,7 @@
                            HeightRequest="92"
                            CornerRadius="46"
                            HasShadow="False"
-                           BorderColor="#D1D5DB"
-                           BackgroundColor="#FFFFFF"
+                           Style="{StaticResource CardFrameStyle}"
                            Padding="0">
                         <Grid>
                             <Image Source="{Binding HomeTeam.IconPath, Converter={StaticResource PathToImageSource}}"
@@ -28,7 +27,7 @@
                                    IsVisible="{Binding HomeTeam, Converter={StaticResource NotNullToBool}, ConverterParameter=Invert}"
                                    HorizontalTextAlignment="Center"
                                    VerticalTextAlignment="Center"
-                                   TextColor="Gray"
+                                   TextColor="{AppThemeBinding Light={StaticResource SecondaryTextLight}, Dark={StaticResource SecondaryTextDark}}"
                                    FontSize="11" />
                         </Grid>
                     </Frame>
@@ -56,8 +55,7 @@
                            HeightRequest="92"
                            CornerRadius="46"
                            HasShadow="False"
-                           BorderColor="#D1D5DB"
-                           BackgroundColor="#FFFFFF"
+                           Style="{StaticResource CardFrameStyle}"
                            Padding="0">
                         <Grid>
                             <Image Source="{Binding AwayTeam.IconPath, Converter={StaticResource PathToImageSource}}"
@@ -68,7 +66,7 @@
                                    IsVisible="{Binding AwayTeam, Converter={StaticResource NotNullToBool}, ConverterParameter=Invert}"
                                    HorizontalTextAlignment="Center"
                                    VerticalTextAlignment="Center"
-                                   TextColor="Gray"
+                                   TextColor="{AppThemeBinding Light={StaticResource SecondaryTextLight}, Dark={StaticResource SecondaryTextDark}}"
                                    FontSize="11" />
                         </Grid>
                     </Frame>
@@ -168,8 +166,8 @@
             <Frame Margin="0,12,0,0"
                    Padding="12"
                    HasShadow="False"
-                   BackgroundColor="#F9FAFB"
-                   BorderColor="#E5E7EB"
+                   BackgroundColor="{AppThemeBinding Light={StaticResource CardSurfaceMutedLight}, Dark={StaticResource CardSurfaceMutedDark}}"
+                   BorderColor="{AppThemeBinding Light={StaticResource CardBorderLight}, Dark={StaticResource CardBorderDark}}"
                    IsVisible="{Binding HasHeadToHead}">
                 <VerticalStackLayout Spacing="4">
                     <Label Text="Статистика противостояния (стадия)"

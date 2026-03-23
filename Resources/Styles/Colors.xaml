@@ -32,6 +32,18 @@
     <Color x:Key="TableCellDark">#1F2937</Color>
     <Color x:Key="TableCellAltDark">#111827</Color>
     <Color x:Key="TableHeaderAltDark">#374151</Color>
+    <Color x:Key="CardSurfaceLight">#FFFFFF</Color>
+    <Color x:Key="CardSurfaceDark">#1F2937</Color>
+    <Color x:Key="CardSurfaceMutedLight">#F9FAFB</Color>
+    <Color x:Key="CardSurfaceMutedDark">#111827</Color>
+    <Color x:Key="CardBorderLight">#E5E7EB</Color>
+    <Color x:Key="CardBorderDark">#374151</Color>
+    <Color x:Key="SecondaryTextLight">#6E6E6E</Color>
+    <Color x:Key="SecondaryTextDark">#C8C8C8</Color>
+    <Color x:Key="SelectionSurfaceLight">#E5E7EB</Color>
+    <Color x:Key="SelectionSurfaceDark">#374151</Color>
+    <Color x:Key="SelectionBorderLight">#6B7280</Color>
+    <Color x:Key="SelectionBorderDark">#9CA3AF</Color>
 
     <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource Primary}"/>
     <SolidColorBrush x:Key="SecondaryBrush" Color="{StaticResource Secondary}"/>

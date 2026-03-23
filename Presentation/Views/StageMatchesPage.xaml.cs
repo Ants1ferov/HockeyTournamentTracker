@@ -24,6 +24,7 @@ public partial class StageMatchesPage : ContentPage, IQueryAttributable
     private const int PageSize = 50;
     private bool _hasMore;
     private bool _isLoading;
+    private bool _reloadRequested;
     private CancellationTokenSource? _searchDebounceCts;
 
     public StageMatchesPage(
@@ -191,8 +192,12 @@ public partial class StageMatchesPage : ContentPage, IQueryAttributable
             return;
 
         if (_isLoading)
+        {
+            _reloadRequested = true;
             return;
+        }
 
+        _reloadRequested = false;
         _currentOffset = 0;
         _hasMore = false;
         _filteredMatches.Clear();
@@ -224,6 +229,12 @@ public partial class StageMatchesPage : ContentPage, IQueryAttributable
         {
             _isLoading = false;
             SetLoadingUi(false);
+
+            if (_reloadRequested)
+            {
+                _reloadRequested = false;
+                await ReloadFromRepositoryAsync();
+            }
         }
     }
 

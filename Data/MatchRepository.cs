@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using HockeyTournamentTracker.Domain;
 using SQLite;
@@ -36,71 +37,50 @@ public sealed class MatchRepository : IMatchRepository
         var limit = query.Limit <= 0 ? 50 : query.Limit;
         var offset = query.Offset < 0 ? 0 : query.Offset;
 
-        if (string.IsNullOrWhiteSpace(query.TeamSearch))
+        var q = _connection.Table<MatchEntity>()
+            .Where(m => m.TournamentId == query.TournamentId && m.StageId == query.StageId);
+
+        if (query.SeriesId.HasValue)
+            q = q.Where(m => m.SeriesId == query.SeriesId.Value);
+        if (query.Status.HasValue)
+            q = q.Where(m => m.Status == (int)query.Status.Value);
+        if (query.DateFrom.HasValue)
+            q = q.Where(m => m.DateTime >= query.DateFrom.Value);
+        if (query.DateTo.HasValue)
+            q = q.Where(m => m.DateTime <= query.DateTo.Value);
+
+        q = query.SortDescending
+            ? q.OrderByDescending(m => m.DateTime)
+            : q.OrderBy(m => m.DateTime);
+
+        var teamSearch = query.TeamSearch?.Trim();
+        if (string.IsNullOrWhiteSpace(teamSearch))
         {
-            var q = _connection.Table<MatchEntity>()
-                .Where(m => m.TournamentId == query.TournamentId && m.StageId == query.StageId);
-
-            if (query.SeriesId.HasValue)
-                q = q.Where(m => m.SeriesId == query.SeriesId.Value);
-            if (query.Status.HasValue)
-                q = q.Where(m => m.Status == (int)query.Status.Value);
-            if (query.DateFrom.HasValue)
-                q = q.Where(m => m.DateTime >= query.DateFrom.Value);
-            if (query.DateTo.HasValue)
-                q = q.Where(m => m.DateTime <= query.DateTo.Value);
-
-            q = query.SortDescending
-                ? q.OrderByDescending(m => m.DateTime)
-                : q.OrderBy(m => m.DateTime);
-
             var pageEntities = await q.Skip(offset).Take(limit + 1).ToListAsync();
             var hasMore = pageEntities.Count > limit;
             var normalized = pageEntities.Take(limit).Select(MapToDomain).ToList();
             return new StageMatchPageResult(normalized, hasMore);
         }
 
-        var pattern = $"%{query.TeamSearch.Trim().ToLowerInvariant()}%";
-        var sql = """
-                  SELECT m.*
-                  FROM Matches m
-                  LEFT JOIN Teams ht ON ht.Id = m.HomeTeamId
-                  LEFT JOIN Teams at ON at.Id = m.AwayTeamId
-                  WHERE m.TournamentId = ?
-                    AND m.StageId = ?
-                    AND (LOWER(IFNULL(ht.Name, '')) LIKE ? OR LOWER(IFNULL(at.Name, '')) LIKE ?)
-                  """;
-        var args = new List<object> { query.TournamentId, query.StageId, pattern, pattern };
+        var teams = await _connection.Table<TeamEntity>()
+            .Where(t => t.TournamentId == query.TournamentId)
+            .ToListAsync();
 
-        if (query.SeriesId.HasValue)
-        {
-            sql += " AND m.SeriesId = ?";
-            args.Add(query.SeriesId.Value);
-        }
-        if (query.Status.HasValue)
-        {
-            sql += " AND m.Status = ?";
-            args.Add((int)query.Status.Value);
-        }
-        if (query.DateFrom.HasValue)
-        {
-            sql += " AND m.DateTime >= ?";
-            args.Add(query.DateFrom.Value);
-        }
-        if (query.DateTo.HasValue)
-        {
-            sql += " AND m.DateTime <= ?";
-            args.Add(query.DateTo.Value);
-        }
+        var matchingTeamIds = teams
+            .Where(t => ContainsSearchText(t.Name, teamSearch) || ContainsSearchText(t.ShortName, teamSearch))
+            .Select(t => t.Id)
+            .ToHashSet();
 
-        sql += query.SortDescending
-            ? " ORDER BY m.DateTime DESC, m.Id DESC"
-            : " ORDER BY m.DateTime ASC, m.Id ASC";
-        sql += " LIMIT ? OFFSET ?";
-        args.Add(limit + 1);
-        args.Add(offset);
+        if (matchingTeamIds.Count == 0)
+            return new StageMatchPageResult(new List<Match>(), false);
 
-        var searchedEntities = await _connection.QueryAsync<MatchEntity>(sql, args.ToArray());
+        var filteredByStage = await q.ToListAsync();
+        var searchedEntities = filteredByStage
+            .Where(m => matchingTeamIds.Contains(m.HomeTeamId) || matchingTeamIds.Contains(m.AwayTeamId))
+            .Skip(offset)
+            .Take(limit + 1)
+            .ToList();
+
         var searchedHasMore = searchedEntities.Count > limit;
         var searchedNormalized = searchedEntities.Take(limit).Select(MapToDomain).ToList();
         return new StageMatchPageResult(searchedNormalized, searchedHasMore);
@@ -130,6 +110,13 @@ public sealed class MatchRepository : IMatchRepository
     {
         return _connection.DeleteAsync<MatchEntity>(id);
     }
+
+    private static bool ContainsSearchText(string? source, string query) =>
+        !string.IsNullOrWhiteSpace(source) &&
+        CultureInfo.CurrentCulture.CompareInfo.IndexOf(
+            source,
+            query,
+            CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) >= 0;
 
     private static Match MapToDomain(MatchEntity entity)
     {

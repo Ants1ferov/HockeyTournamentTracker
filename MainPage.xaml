@@ -33,8 +33,9 @@
                         </SwipeView.RightItems>
                         <Frame Margin="12,6"
                                Padding="12"
-                               HasShadow="True"
+                               HasShadow="False"
                                CornerRadius="8"
+                               Style="{StaticResource CardFrameStyle}"
                                MinimumHeightRequest="56">
                             <Frame.GestureRecognizers>
                                 <TapGestureRecognizer Tapped="OnTournamentTapped" />
@@ -50,14 +51,14 @@
                                        Grid.Column="1"
                                        Text="{Binding Status, Converter={StaticResource TournamentStatusToString}}"
                                        FontSize="12"
-                                       TextColor="Gray"
+                                       TextColor="{AppThemeBinding Light={StaticResource SecondaryTextLight}, Dark={StaticResource SecondaryTextDark}}"
                                        VerticalOptions="Center" />
 
                                 <Label Grid.Row="1"
                                        Grid.Column="0"
                                        Grid.ColumnSpan="2"
                                        FontSize="12"
-                                       TextColor="Gray">
+                                       TextColor="{AppThemeBinding Light={StaticResource SecondaryTextLight}, Dark={StaticResource SecondaryTextDark}}">
                                     <Label.Text>
                                         <MultiBinding StringFormat="{}{0:d} — {1:d}">
                                             <Binding Path="StartDate" />

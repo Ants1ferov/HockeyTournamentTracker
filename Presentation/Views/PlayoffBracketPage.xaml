@@ -13,8 +13,9 @@
                    FontSize="20" />
 
             <Frame Padding="12"
-                   HasShadow="True"
-                   CornerRadius="8">
+                   HasShadow="False"
+                   CornerRadius="8"
+                   Style="{StaticResource CardFrameStyle}">
                 <VerticalStackLayout Spacing="8">
                     <Label Text="Настройки стадии"
                            FontAttributes="Bold"
@@ -49,16 +50,16 @@
                             <Frame Padding="10,6"
                                    HasShadow="False"
                                    CornerRadius="16"
-                                   BorderColor="#D1D5DB"
-                                   BackgroundColor="White">
+                                   BorderColor="{AppThemeBinding Light={StaticResource CardBorderLight}, Dark={StaticResource CardBorderDark}}"
+                                   BackgroundColor="{AppThemeBinding Light={StaticResource CardSurfaceLight}, Dark={StaticResource CardSurfaceDark}}">
                                 <Frame.Triggers>
                                     <DataTrigger TargetType="Frame"
                                                  Binding="{Binding IsSelected}"
                                                  Value="True">
                                         <Setter Property="BackgroundColor"
-                                                Value="#FEE2E2" />
+                                                Value="{AppThemeBinding Light={StaticResource SelectionSurfaceLight}, Dark={StaticResource SelectionSurfaceDark}}" />
                                         <Setter Property="BorderColor"
-                                                Value="#DC2626" />
+                                                Value="{AppThemeBinding Light={StaticResource SelectionBorderLight}, Dark={StaticResource SelectionBorderDark}}" />
                                     </DataTrigger>
                                 </Frame.Triggers>
                                 <Frame.GestureRecognizers>
@@ -101,7 +102,8 @@
                     <DataTemplate>
                         <Frame Margin="0,4"
                                Padding="10"
-                               BackgroundColor="#F3F4F6"
+                               BackgroundColor="{AppThemeBinding Light={StaticResource CardSurfaceMutedLight}, Dark={StaticResource CardSurfaceMutedDark}}"
+                               BorderColor="{AppThemeBinding Light={StaticResource CardBorderLight}, Dark={StaticResource CardBorderDark}}"
                                HasShadow="False"
                                CornerRadius="8">
                             <Frame.GestureRecognizers>
@@ -120,14 +122,14 @@
                                     <Label Grid.Column="1"
                                            Text="{Binding EffectiveBestOf, StringFormat='Bo{0}'}"
                                            FontSize="11"
-                                           TextColor="#991B1B" />
+                                           TextColor="{AppThemeBinding Light=#991B1B, Dark=#FCA5A5}" />
                                 </Grid>
                                 <Label Text="{Binding ScoreText}"
                                        FontSize="12"
-                                       TextColor="Gray" />
+                                       TextColor="{AppThemeBinding Light={StaticResource SecondaryTextLight}, Dark={StaticResource SecondaryTextDark}}" />
                                 <Label Text="{Binding WinnerText}"
                                        FontSize="12"
-                                       TextColor="#166534"
+                                       TextColor="{AppThemeBinding Light=#166534, Dark=#86EFAC}"
                                        IsVisible="{Binding WinnerText, Converter={StaticResource GroupNameToVisibility}}" />
                                 <Grid ColumnDefinitions="*,*"
                                       RowDefinitions="Auto,Auto"
@@ -162,7 +164,7 @@
                    Margin="0,8,0,0" />
             <Label Text="{x:Static res:AppResources.PlayoffReseedingHint}"
                    FontSize="11"
-                   TextColor="Gray"
+                   TextColor="{AppThemeBinding Light={StaticResource SecondaryTextLight}, Dark={StaticResource SecondaryTextDark}}"
                    IsVisible="{Binding UseReseeding}" />
             <ScrollView Orientation="Horizontal"
                         HorizontalScrollBarVisibility="Default">
@@ -175,8 +177,8 @@
                                 <Label Text="{Binding Name}"
                                        FontAttributes="Bold"
                                        FontSize="12"
-                                       BackgroundColor="#FEE2E2"
-                                       TextColor="#7F1D1D"
+                                       BackgroundColor="{AppThemeBinding Light={StaticResource SelectionSurfaceLight}, Dark={StaticResource SelectionSurfaceDark}}"
+                                       TextColor="{AppThemeBinding Light=#7F1D1D, Dark=#FCA5A5}"
                                        Padding="6,2"
                                        Margin="0,0,0,6"
                                        HorizontalOptions="Start"
@@ -188,7 +190,7 @@
                                                 BindableLayout.ItemsSource="{Binding ConnectorSegments}">
                                     <BindableLayout.ItemTemplate>
                                         <DataTemplate>
-                                            <BoxView Color="#D1D5DB"
+                                            <BoxView Color="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray500}}"
                                                      AbsoluteLayout.LayoutBounds="{Binding Bounds}"
                                                      AbsoluteLayout.LayoutFlags="None" />
                                         </DataTemplate>
@@ -203,8 +205,8 @@
                                             <Frame Padding="8"
                                                    CornerRadius="8"
                                                    HasShadow="False"
-                                                   BorderColor="#D1D5DB"
-                                                   BackgroundColor="White"
+                                                   BorderColor="{AppThemeBinding Light={StaticResource CardBorderLight}, Dark={StaticResource CardBorderDark}}"
+                                                   BackgroundColor="{AppThemeBinding Light={StaticResource CardSurfaceLight}, Dark={StaticResource CardSurfaceDark}}"
                                                    AbsoluteLayout.LayoutBounds="{Binding BracketBounds}"
                                                    AbsoluteLayout.LayoutFlags="None">
                                                 <VerticalStackLayout Spacing="2">
@@ -220,7 +222,7 @@
                                                            FontSize="10"
                                                            MaxLines="1"
                                                            LineBreakMode="TailTruncation"
-                                                           TextColor="Gray" />
+                                                           TextColor="{AppThemeBinding Light={StaticResource SecondaryTextLight}, Dark={StaticResource SecondaryTextDark}}" />
                                                 </VerticalStackLayout>
                                             </Frame>
                                         </DataTemplate>

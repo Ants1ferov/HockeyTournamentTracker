@@ -29,7 +29,7 @@
                                     Clicked="OnRenameGroupClicked" />
                             <Button Grid.Column="2"
                                     Text="{x:Static res:AppResources.Delete}"
-                                    BackgroundColor="Transparent"
+                                    Style="{StaticResource GhostButtonStyle}"
                                     Clicked="OnDeleteGroupClicked" />
                         </Grid>
                     </DataTemplate>
@@ -54,17 +54,17 @@
                     <DataTemplate>
                         <Frame Margin="0,6"
                                Padding="12"
-                               HasShadow="True"
+                               HasShadow="False"
                                CornerRadius="8"
-                               BorderColor="Transparent">
+                               Style="{StaticResource CardFrameStyle}">
                             <Frame.Triggers>
                                 <DataTrigger TargetType="Frame"
                                              Binding="{Binding IsSelectedForAdd}"
                                              Value="True">
                                     <Setter Property="BackgroundColor"
-                                            Value="#E5E7EB" />
+                                            Value="{AppThemeBinding Light={StaticResource SelectionSurfaceLight}, Dark={StaticResource SelectionSurfaceDark}}" />
                                     <Setter Property="BorderColor"
-                                            Value="#6B7280" />
+                                            Value="{AppThemeBinding Light={StaticResource SelectionBorderLight}, Dark={StaticResource SelectionBorderDark}}" />
                                 </DataTrigger>
                             </Frame.Triggers>
 
@@ -119,17 +119,17 @@
                                     <CollectionView.ItemTemplate>
                                         <DataTemplate>
                                             <Frame Padding="8"
-                                                   HasShadow="True"
+                                                   HasShadow="False"
                                                    CornerRadius="8"
-                                                   BorderColor="Transparent">
+                                                   Style="{StaticResource CardFrameStyle}">
                                                 <Frame.Triggers>
                                                     <DataTrigger TargetType="Frame"
                                                                  Binding="{Binding IsSelectedForMove}"
                                                                  Value="True">
                                                         <Setter Property="BackgroundColor"
-                                                                Value="#E5E7EB" />
+                                                                Value="{AppThemeBinding Light={StaticResource SelectionSurfaceLight}, Dark={StaticResource SelectionSurfaceDark}}" />
                                                         <Setter Property="BorderColor"
-                                                                Value="#6B7280" />
+                                                                Value="{AppThemeBinding Light={StaticResource SelectionBorderLight}, Dark={StaticResource SelectionBorderDark}}" />
                                                     </DataTrigger>
                                                 </Frame.Triggers>
                                                 <Frame.GestureRecognizers>
