@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:res="clr-namespace:HockeyTournamentTracker.Resources"
+             x:Class="HockeyTournamentTracker.Presentation.Views.TournamentStatisticsPage"
+             Title="{x:Static res:AppResources.TabStatistics}">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="20">
+            <Label Text="{Binding PageTitle}"
+                   FontAttributes="Bold"
+                   FontSize="20" />
+
+            <Label Text="{x:Static res:AppResources.StatsPeriod1Title}"
+                   FontAttributes="Bold"
+                   FontSize="16" />
+            <Grid ColumnDefinitions="40,*,50,50,50"
+                  ColumnSpacing="4"
+                  Padding="0,4">
+                <Label Grid.Column="0" Text="#" FontSize="11" FontAttributes="Bold" />
+                <Label Grid.Column="1" Text="{x:Static res:AppResources.StandingsColTeam}" FontSize="11" FontAttributes="Bold" />
+                <Label Grid.Column="2" Text="В" FontSize="11" FontAttributes="Bold" HorizontalTextAlignment="Center" />
+                <Label Grid.Column="3" Text="Н" FontSize="11" FontAttributes="Bold" HorizontalTextAlignment="Center" />
+                <Label Grid.Column="4" Text="П" FontSize="11" FontAttributes="Bold" HorizontalTextAlignment="Center" />
+            </Grid>
+            <CollectionView ItemsSource="{Binding Period1Rows}">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Grid ColumnDefinitions="40,*,50,50,50" Padding="0,6" ColumnSpacing="4">
+                            <Label Grid.Column="0" Text="{Binding Rank}" FontSize="12" />
+                            <Label Grid.Column="1" Text="{Binding TeamName}" FontSize="12" LineBreakMode="TailTruncation" />
+                            <Label Grid.Column="2" Text="{Binding Wins}" FontSize="12" HorizontalTextAlignment="Center" />
+                            <Label Grid.Column="3" Text="{Binding Draws}" FontSize="12" HorizontalTextAlignment="Center" />
+                            <Label Grid.Column="4" Text="{Binding Losses}" FontSize="12" HorizontalTextAlignment="Center" />
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <Label Text="{x:Static res:AppResources.StatsPeriod2Title}"
+                   FontAttributes="Bold"
+                   FontSize="16" />
+            <CollectionView ItemsSource="{Binding Period2Rows}">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Grid ColumnDefinitions="40,*,50,50,50" Padding="0,6" ColumnSpacing="4">
+                            <Label Grid.Column="0" Text="{Binding Rank}" FontSize="12" />
+                            <Label Grid.Column="1" Text="{Binding TeamName}" FontSize="12" LineBreakMode="TailTruncation" />
+                            <Label Grid.Column="2" Text="{Binding Wins}" FontSize="12" HorizontalTextAlignment="Center" />
+                            <Label Grid.Column="3" Text="{Binding Draws}" FontSize="12" HorizontalTextAlignment="Center" />
+                            <Label Grid.Column="4" Text="{Binding Losses}" FontSize="12" HorizontalTextAlignment="Center" />
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <Label Text="{x:Static res:AppResources.StatsPeriod3Title}"
+                   FontAttributes="Bold"
+                   FontSize="16" />
+            <CollectionView ItemsSource="{Binding Period3Rows}">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Grid ColumnDefinitions="40,*,50,50,50" Padding="0,6" ColumnSpacing="4">
+                            <Label Grid.Column="0" Text="{Binding Rank}" FontSize="12" />
+                            <Label Grid.Column="1" Text="{Binding TeamName}" FontSize="12" LineBreakMode="TailTruncation" />
+                            <Label Grid.Column="2" Text="{Binding Wins}" FontSize="12" HorizontalTextAlignment="Center" />
+                            <Label Grid.Column="3" Text="{Binding Draws}" FontSize="12" HorizontalTextAlignment="Center" />
+                            <Label Grid.Column="4" Text="{Binding Losses}" FontSize="12" HorizontalTextAlignment="Center" />
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <Label Text="{x:Static res:AppResources.StatsGoalsForTitle}"
+                   FontAttributes="Bold"
+                   FontSize="16" />
+            <CollectionView ItemsSource="{Binding GoalsForRows}">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Grid ColumnDefinitions="40,*,60" Padding="0,6" ColumnSpacing="4">
+                            <Label Grid.Column="0" Text="{Binding Rank}" FontSize="12" />
+                            <Label Grid.Column="1" Text="{Binding TeamName}" FontSize="12" LineBreakMode="TailTruncation" />
+                            <Label Grid.Column="2" Text="{Binding Goals}" FontSize="12" HorizontalTextAlignment="End" />
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <Label Text="{x:Static res:AppResources.StatsGoalsAgainstTitle}"
+                   FontAttributes="Bold"
+                   FontSize="16" />
+            <CollectionView ItemsSource="{Binding GoalsAgainstRows}">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Grid ColumnDefinitions="40,*,60" Padding="0,6" ColumnSpacing="4">
+                            <Label Grid.Column="0" Text="{Binding Rank}" FontSize="12" />
+                            <Label Grid.Column="1" Text="{Binding TeamName}" FontSize="12" LineBreakMode="TailTruncation" />
+                            <Label Grid.Column="2" Text="{Binding Goals}" FontSize="12" HorizontalTextAlignment="End" />
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <Label Text="{x:Static res:AppResources.StatsDashboardTitle}"
+                   FontAttributes="Bold"
+                   FontSize="16" />
+            <Picker Title="{x:Static res:AppResources.StatsSwissStagePicker}"
+                    ItemsSource="{Binding SwissStages}"
+                    ItemDisplayBinding="{Binding Name}"
+                    SelectedItem="{Binding SelectedSwissStage}" />
+            <Picker Title="{x:Static res:AppResources.StatsTeamPicker}"
+                    ItemsSource="{Binding DashboardTeams}"
+                    ItemDisplayBinding="{Binding Name}"
+                    SelectedItem="{Binding SelectedDashboardTeam}" />
+
+            <CollectionView ItemsSource="{Binding MonthlyRows}">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Grid ColumnDefinitions="*,60" Padding="0,6" ColumnSpacing="8">
+                            <Label Grid.Column="0"
+                                   Text="{Binding MonthLabelText}"
+                                   FontSize="12" />
+                            <Label Grid.Column="1"
+                                   Text="{Binding PlaceDisplay}"
+                                   FontSize="12"
+                                   HorizontalTextAlignment="End" />
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

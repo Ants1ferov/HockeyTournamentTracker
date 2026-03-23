@@ -340,6 +340,57 @@
   <data name="TabParticipants" xml:space="preserve">
     <value>Участники</value>
   </data>
+  <data name="TabStatistics" xml:space="preserve">
+    <value>Статистика</value>
+  </data>
+  <data name="StatisticsTabHint" xml:space="preserve">
+    <value>Откройте полный экран: таблицы по периодам и голам, динамика места по месяцам для швейцарской стадии.</value>
+  </data>
+  <data name="OpenStatistics" xml:space="preserve">
+    <value>Открыть статистику</value>
+  </data>
+  <data name="GroupZonesTitle" xml:space="preserve">
+    <value>Групповые зоны</value>
+  </data>
+  <data name="ZoneUnusedWarning" xml:space="preserve">
+    <value>Зона пока не назначена ни одной строке таблицы. Выберите зону в таблице для команды.</value>
+  </data>
+  <data name="ChangeColor" xml:space="preserve">
+    <value>Сменить цвет</value>
+  </data>
+  <data name="StatsPeriod1Title" xml:space="preserve">
+    <value>Статистика 1 периодов</value>
+  </data>
+  <data name="StatsPeriod2Title" xml:space="preserve">
+    <value>Статистика 2 периодов</value>
+  </data>
+  <data name="StatsPeriod3Title" xml:space="preserve">
+    <value>Статистика 3 периодов</value>
+  </data>
+  <data name="StatsGoalsForTitle" xml:space="preserve">
+    <value>Забитые голы</value>
+  </data>
+  <data name="StatsGoalsAgainstTitle" xml:space="preserve">
+    <value>Пропущенные голы</value>
+  </data>
+  <data name="StatsDashboardTitle" xml:space="preserve">
+    <value>Место в таблице по месяцам</value>
+  </data>
+  <data name="StatsSwissStagePicker" xml:space="preserve">
+    <value>Стадия (швейцарская)</value>
+  </data>
+  <data name="StatsTeamPicker" xml:space="preserve">
+    <value>Команда</value>
+  </data>
+  <data name="StandingZoneColumn" xml:space="preserve">
+    <value>Зона</value>
+  </data>
+  <data name="LegendTitle" xml:space="preserve">
+    <value>Легенда</value>
+  </data>
+  <data name="DeleteColorZoneConfirm" xml:space="preserve">
+    <value>Удалить эту групповую зону? Назначения команд будут сброшены.</value>
+  </data>
   <data name="LastPlayedMatches" xml:space="preserve">
     <value>Последние матчи</value>
   </data>
