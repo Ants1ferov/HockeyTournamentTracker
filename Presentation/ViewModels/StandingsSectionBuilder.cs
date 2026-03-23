@@ -11,10 +11,7 @@ internal static class StandingsSectionBuilder
         IReadOnlyList<Team> teams,
         IReadOnlyDictionary<Guid, Guid?> teamGroupIdsInStage,
         IReadOnlyList<GroupInfo> stageGroups,
-        List<Match> matches,
-        IReadOnlyDictionary<Guid, Guid?>? teamZoneIds,
-        IReadOnlyDictionary<Guid, string>? zoneColorByZoneId,
-        int zoneBarColumnWidth = 0)
+        List<Match> matches)
     {
         var result = new List<StandingGroup>();
         var standings = statsService.CalculateStandings(tournament, teams, matches);
@@ -32,26 +29,13 @@ internal static class StandingsSectionBuilder
 
         StandingRow CreateRow(Standing s, Team team, int place, string groupName, IReadOnlyList<int> last5)
         {
-            Guid? zid = null;
-            string? zoneHex = null;
-            if (teamZoneIds is not null && teamZoneIds.TryGetValue(team.Id, out var z) && z.HasValue)
-            {
-                zid = z;
-                if (zoneColorByZoneId is not null && zoneColorByZoneId.TryGetValue(z.Value, out var hx))
-                    zoneHex = hx;
-            }
-
             return new StandingRow
             {
                 TeamId = team.Id,
-                ZoneId = zid,
-                ZoneBarColumnWidth = zoneBarColumnWidth,
-                ShowZoneBarStripe = zoneBarColumnWidth > 0 && !string.IsNullOrWhiteSpace(zoneHex),
                 Place = place,
                 GroupName = groupName,
                 TeamName = string.IsNullOrWhiteSpace(team.Name) ? "—" : team.Name,
                 TeamIconPath = team.IconPath,
-                ZoneBarColorHex = zoneHex,
                 Games = s.Games,
                 WinsReg = s.WinsRegulation,
                 WinsOt = s.WinsOvertime,

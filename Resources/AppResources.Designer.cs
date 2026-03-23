@@ -125,6 +125,19 @@ public static class AppResources
     public static string StageTypeSwiss => GetString(nameof(StageTypeSwiss));
     public static string StageTypePlayOff => GetString(nameof(StageTypePlayOff));
     public static string DeleteStageConfirm => GetString(nameof(DeleteStageConfirm));
+    public static string PlayoffReseedingLabel => GetString(nameof(PlayoffReseedingLabel));
+    public static string PlayoffReseedingHint => GetString(nameof(PlayoffReseedingHint));
+    public static string PlayoffAddRound => GetString(nameof(PlayoffAddRound));
+    public static string PlayoffAddSeries => GetString(nameof(PlayoffAddSeries));
+    public static string PlayoffBestOfButton => GetString(nameof(PlayoffBestOfButton));
+    public static string PlayoffRenameRound => GetString(nameof(PlayoffRenameRound));
+    public static string PlayoffBestOfPrompt => GetString(nameof(PlayoffBestOfPrompt));
+    public static string PlayoffBestOfRoundTitle => GetString(nameof(PlayoffBestOfRoundTitle));
+    public static string PlayoffBestOfSeriesTitle => GetString(nameof(PlayoffBestOfSeriesTitle));
+    public static string Theme => GetString(nameof(Theme));
+    public static string ThemeSystem => GetString(nameof(ThemeSystem));
+    public static string ThemeLight => GetString(nameof(ThemeLight));
+    public static string ThemeDark => GetString(nameof(ThemeDark));
 
     public static string GetString(string key) =>
         ResourceManager.GetString(key) ?? key;

@@ -176,17 +176,28 @@ public static class TournamentStatisticsCalculator
         if (matchDates.Count > 0)
             firstMatchMonth = new DateTime(matchDates.Min().Year, matchDates.Min().Month, 1);
 
-        var start = tournament.StartDate is { } sd
-            ? new DateTime(sd.Year, sd.Month, 1)
-            : firstMatchMonth ?? new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+        var startCandidates = new List<DateTime>();
+        if (tournament.StartDate is { } sd)
+            startCandidates.Add(new DateTime(sd.Year, sd.Month, 1));
+        if (firstMatchMonth.HasValue)
+            startCandidates.Add(firstMatchMonth.Value);
 
-        var endMonth = DateTime.Today;
+        var start = startCandidates.Count > 0
+            ? startCandidates.Min()
+            : new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+
+        var endMonth = DateTime.Today.Date;
         if (tournament.EndDate is { } te && te.Date < endMonth)
             endMonth = te.Date;
 
+        var startMonth = new DateTime(start.Year, start.Month, 1);
+        var endMonthStart = new DateTime(endMonth.Year, endMonth.Month, 1);
+        if (startMonth > endMonthStart)
+            startMonth = endMonthStart;
+
         var months = new List<DateTime>();
-        var cursor = new DateTime(start.Year, start.Month, 1);
-        var last = new DateTime(endMonth.Year, endMonth.Month, 1);
+        var cursor = startMonth;
+        var last = endMonthStart;
         while (cursor <= last)
         {
             months.Add(cursor);

@@ -16,6 +16,7 @@ public sealed class PlayoffBracketViewModel : INotifyPropertyChanged
     private readonly ITeamRepository _teamRepository;
     private readonly IMatchRepository _matchRepository;
     private readonly IStageTeamRepository _stageTeamRepository;
+    private readonly IStageGroupRepository _stageGroupRepository;
     private readonly IPlayoffRepository _playoffRepository;
     private readonly StatsService _statsService;
 
@@ -84,6 +85,7 @@ public sealed class PlayoffBracketViewModel : INotifyPropertyChanged
         ITeamRepository teamRepository,
         IMatchRepository matchRepository,
         IStageTeamRepository stageTeamRepository,
+        IStageGroupRepository stageGroupRepository,
         IPlayoffRepository playoffRepository,
         StatsService statsService)
     {
@@ -92,6 +94,7 @@ public sealed class PlayoffBracketViewModel : INotifyPropertyChanged
         _teamRepository = teamRepository;
         _matchRepository = matchRepository;
         _stageTeamRepository = stageTeamRepository;
+        _stageGroupRepository = stageGroupRepository;
         _playoffRepository = playoffRepository;
         _statsService = statsService;
     }
@@ -312,27 +315,66 @@ public sealed class PlayoffBracketViewModel : INotifyPropertyChanged
         if (series.Count == 0)
             return false;
 
-        var seededTeams = await BuildSeededTeamsFromStageAsync(sourceStageId);
-        var required = Math.Min(series.Count * 2, seededTeams.Count);
-        if (required < 2)
+        var seededGroups = await BuildSeededGroupsFromStageAsync(sourceStageId);
+        var totalSeeded = seededGroups.Sum(g => g.Count);
+        if (totalSeeded < 2)
             return false;
 
-        for (var i = 0; i < series.Count; i++)
+        var seriesIndex = 0;
+        var assignedTeamIds = new HashSet<Guid>();
+
+        foreach (var group in seededGroups)
         {
-            var homeIdx = i;
-            var awayIdx = required - 1 - i;
-            if (homeIdx >= required || awayIdx < 0 || homeIdx >= awayIdx)
+            if (seriesIndex >= series.Count)
                 break;
+            if (group.Count < 2)
+                continue;
 
-            var home = seededTeams[homeIdx];
-            var away = seededTeams[awayIdx];
+            var pairableTeamCount = Math.Min(group.Count, (series.Count - seriesIndex) * 2);
+            var pairsInGroup = pairableTeamCount / 2;
+            for (var i = 0; i < pairsInGroup && seriesIndex < series.Count; i++)
+            {
+                var home = group[i];
+                var away = group[pairableTeamCount - 1 - i];
+                if (home.TeamId == away.TeamId)
+                    continue;
 
-            series[i].HomeTeamId = home.TeamId;
-            series[i].AwayTeamId = away.TeamId;
-            series[i].HomeSeed = home.Seed;
-            series[i].AwaySeed = away.Seed;
-            series[i].WinnerTeamId = null;
-            await _playoffRepository.SaveSeriesAsync(series[i]);
+                assignedTeamIds.Add(home.TeamId);
+                assignedTeamIds.Add(away.TeamId);
+
+                series[seriesIndex].HomeTeamId = home.TeamId;
+                series[seriesIndex].AwayTeamId = away.TeamId;
+                series[seriesIndex].HomeSeed = home.Seed;
+                series[seriesIndex].AwaySeed = away.Seed;
+                series[seriesIndex].WinnerTeamId = null;
+                await _playoffRepository.SaveSeriesAsync(series[seriesIndex]);
+                seriesIndex++;
+            }
+        }
+
+        if (seriesIndex < series.Count)
+        {
+            var remaining = seededGroups
+                .SelectMany(g => g)
+                .Where(s => !assignedTeamIds.Contains(s.TeamId))
+                .ToList();
+
+            var required = Math.Min((series.Count - seriesIndex) * 2, remaining.Count);
+            for (var i = 0; i < required / 2 && seriesIndex < series.Count; i++)
+            {
+                var home = remaining[i];
+                var away = remaining[required - 1 - i];
+                if (home.TeamId == away.TeamId)
+                    continue;
+
+                series[seriesIndex].HomeTeamId = home.TeamId;
+                series[seriesIndex].AwayTeamId = away.TeamId;
+                series[seriesIndex].HomeSeed = home.Seed;
+                series[seriesIndex].AwaySeed = away.Seed;
+                series[seriesIndex].WinnerTeamId = null;
+                await _playoffRepository.SaveSeriesAsync(series[seriesIndex]);
+                seriesIndex++;
+            }
         }
 
         await RecalculateWinnersAndAdvanceAsync();
@@ -340,10 +382,10 @@ public sealed class PlayoffBracketViewModel : INotifyPropertyChanged
         return true;
     }
 
-    private async Task<List<SeededTeam>> BuildSeededTeamsFromStageAsync(Guid sourceStageId)
+    private async Task<List<List<SeededTeam>>> BuildSeededGroupsFromStageAsync(Guid sourceStageId)
     {
         if (Tournament is null)
-            return new List<SeededTeam>();
+            return new List<List<SeededTeam>>();
 
         var allTeams = await _teamRepository.GetByTournamentAsync(Tournament.Id);
         var matches = await _matchRepository.GetByTournamentAsync(Tournament.Id);
@@ -357,14 +399,51 @@ public sealed class PlayoffBracketViewModel : INotifyPropertyChanged
         }
 
         var teamsInStage = allTeams.Where(t => stageTeamIds.Contains(t.Id)).ToList();
-        var standings = _statsService.CalculateStandings(Tournament, teamsInStage, sourceMatches);
-        var sorted = StatsService.SortByRules(standings, Tournament.Rules ?? new TournamentRules());
+        var stageGroupIds = await _stageTeamRepository.GetTeamGroupIdsByStageAsync(sourceStageId);
+        var stageGroups = await _stageGroupRepository.GetByStageAsync(sourceStageId);
+        var result = new List<List<SeededTeam>>();
+        var rules = Tournament.Rules ?? new TournamentRules();
 
-        var result = new List<SeededTeam>();
-        var seed = 1;
-        foreach (var row in sorted)
+        foreach (var group in stageGroups.OrderBy(g => g.Order).ThenBy(g => g.Name))
         {
-            result.Add(new SeededTeam(row.TeamId, seed++));
+            var groupTeams = teamsInStage
+                .Where(t => stageGroupIds.TryGetValue(t.Id, out var gid) && gid == group.Id)
+                .ToList();
+            if (groupTeams.Count == 0)
+                continue;
+
+            var groupStandings = _statsService.CalculateStandings(Tournament, groupTeams, sourceMatches);
+            var sortedGroup = StatsService.SortByRules(groupStandings, rules);
+            var seeded = new List<SeededTeam>();
+            var seed = 1;
+            foreach (var row in sortedGroup)
+                seeded.Add(new SeededTeam(row.TeamId, seed++));
+            result.Add(seeded);
+        }
+
+        var noGroupTeams = teamsInStage
+            .Where(t => !stageGroupIds.TryGetValue(t.Id, out var gid) || gid is null)
+            .ToList();
+        if (noGroupTeams.Count > 0)
+        {
+            var standings = _statsService.CalculateStandings(Tournament, noGroupTeams, sourceMatches);
+            var sorted = StatsService.SortByRules(standings, rules);
+            var seeded = new List<SeededTeam>();
+            var seed = 1;
+            foreach (var row in sorted)
+                seeded.Add(new SeededTeam(row.TeamId, seed++));
+            result.Add(seeded);
+        }
+
+        if (result.Count == 0)
+        {
+            var standings = _statsService.CalculateStandings(Tournament, teamsInStage, sourceMatches);
+            var sorted = StatsService.SortByRules(standings, rules);
+            var seeded = new List<SeededTeam>();
+            var seed = 1;
+            foreach (var row in sorted)
+                seeded.Add(new SeededTeam(row.TeamId, seed++));
+            result.Add(seeded);
         }
 
         return result;

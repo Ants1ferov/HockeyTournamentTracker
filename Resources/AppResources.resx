@@ -412,4 +412,43 @@
   <data name="DeleteStageConfirm" xml:space="preserve">
     <value>Удалить стадию?</value>
   </data>
+  <data name="PlayoffReseedingLabel" xml:space="preserve">
+    <value>Перепосев после раунда</value>
+  </data>
+  <data name="PlayoffReseedingHint" xml:space="preserve">
+    <value>При включённом перепосеве пары следующего раунда формируются заново по посеву после каждого раунда.</value>
+  </data>
+  <data name="PlayoffAddRound" xml:space="preserve">
+    <value>Добавить раунд</value>
+  </data>
+  <data name="PlayoffAddSeries" xml:space="preserve">
+    <value>Добавить серию</value>
+  </data>
+  <data name="PlayoffBestOfButton" xml:space="preserve">
+    <value>Best-of</value>
+  </data>
+  <data name="PlayoffRenameRound" xml:space="preserve">
+    <value>Переименовать</value>
+  </data>
+  <data name="PlayoffBestOfPrompt" xml:space="preserve">
+    <value>Best-of (нечётное число)</value>
+  </data>
+  <data name="PlayoffBestOfRoundTitle" xml:space="preserve">
+    <value>Best-of раунда</value>
+  </data>
+  <data name="PlayoffBestOfSeriesTitle" xml:space="preserve">
+    <value>Best-of серии</value>
+  </data>
+  <data name="Theme" xml:space="preserve">
+    <value>Тема</value>
+  </data>
+  <data name="ThemeSystem" xml:space="preserve">
+    <value>Системная</value>
+  </data>
+  <data name="ThemeLight" xml:space="preserve">
+    <value>Светлая</value>
+  </data>
+  <data name="ThemeDark" xml:space="preserve">
+    <value>Тёмная</value>
+  </data>
 </root>

@@ -4,8 +4,6 @@ using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using HockeyTournamentTracker.Data;
 using HockeyTournamentTracker.Domain;
-using System.Globalization;
-using System.Linq;
 
 namespace HockeyTournamentTracker.Presentation.ViewModels;
 
@@ -17,7 +15,6 @@ public sealed class StageDetailsViewModel : INotifyPropertyChanged
     private readonly IMatchRepository _matchRepository;
     private readonly IStageTeamRepository _stageTeamRepository;
     private readonly IStageGroupRepository _stageGroupRepository;
-    private readonly IStageColorZoneRepository _stageColorZoneRepository;
     private readonly StatsService _statsService;
 
     private Tournament? _tournament;
@@ -47,22 +44,12 @@ public sealed class StageDetailsViewModel : INotifyPropertyChanged
     public bool IsPlayoffStage => Stage?.StageType == StageType.PlayOff;
     public bool IsSwissStage => Stage is not null && Stage.StageType != StageType.PlayOff;
 
-    private bool _hasColorZonesForStandings;
-    public bool HasColorZonesForStandings
-    {
-        get => _hasColorZonesForStandings;
-        private set => SetField(ref _hasColorZonesForStandings, value);
-    }
-
     public ObservableCollection<MatchRow> StageMatches { get; } = new();
     public ObservableCollection<StandingGroup> StandingsByGroupForStage { get; } = new();
 
     public ObservableCollection<TeamForAddUi> AvailableTeams { get; } = new();
     public ObservableCollection<StageGroupColumn> StageGroupColumns { get; } = new();
     public ObservableCollection<GroupInfo> StageGroups { get; } = new();
-    public ObservableCollection<StageColorZoneListItem> ColorZones { get; } = new();
-    public ObservableCollection<StageZonePickerRow> StageZonePickerRows { get; } = new();
-    public ObservableCollection<TeamZoneAssignmentRow> TeamZoneAssignments { get; } = new();
 
     private readonly HashSet<Guid> _moveSelectedTeamIds = new();
     public int MoveSelectedCount => _moveSelectedTeamIds.Count;
@@ -76,7 +63,6 @@ public sealed class StageDetailsViewModel : INotifyPropertyChanged
         IMatchRepository matchRepository,
         IStageTeamRepository stageTeamRepository,
         IStageGroupRepository stageGroupRepository,
-        IStageColorZoneRepository stageColorZoneRepository,
         StatsService statsService)
     {
         _tournamentRepository = tournamentRepository;
@@ -85,7 +71,6 @@ public sealed class StageDetailsViewModel : INotifyPropertyChanged
         _matchRepository = matchRepository;
         _stageTeamRepository = stageTeamRepository;
         _stageGroupRepository = stageGroupRepository;
-        _stageColorZoneRepository = stageColorZoneRepository;
         _statsService = statsService;
 
         MoveSelectedTeamsToGroupCommand = new Command<Guid?>(async gid =>
@@ -159,79 +144,13 @@ public sealed class StageDetailsViewModel : INotifyPropertyChanged
             rows.Add(CreateMatchRow(m, homeTeam?.Name, awayTeam?.Name, m.Status == MatchStatus.InProgress));
         }
 
-        IReadOnlyList<StageColorZone>? swissZones = null;
-        IReadOnlyDictionary<Guid, Guid?>? teamZoneIds = null;
-        IReadOnlyDictionary<Guid, string>? zoneColorById = null;
-        if (Stage.StageType == StageType.Swiss)
-        {
-            swissZones = await _stageColorZoneRepository.GetZonesByStageAsync(stageId);
-            if (swissZones.Count > 0)
-            {
-                zoneColorById = swissZones.ToDictionary(z => z.Id, z => z.ColorHex);
-                var assign = await _stageColorZoneRepository.GetTeamZoneAssignmentsAsync(stageId);
-                teamZoneIds = assign.ToDictionary(kv => kv.Key, kv => (Guid?)kv.Value);
-            }
-        }
-
-        var barW = Stage.StageType == StageType.Swiss && swissZones is { Count: > 0 } ? 6 : 0;
         var stageStandingsGroups = StandingsSectionBuilder.Build(
             _statsService,
             Tournament,
             teamsInStage,
             teamGroupIdsInStage,
             stageGroups,
-            stageMatches,
-            teamZoneIds,
-            zoneColorById,
-            barW);
-
-        List<StageColorZoneListItem>? zoneItems = null;
-        if (Stage.StageType == StageType.Swiss && swissZones is not null)
-        {
-            var usedZoneIds = stageStandingsGroups
-                .SelectMany(g => g)
-                .Where(r => r.ZoneId.HasValue)
-                .Select(r => r.ZoneId!.Value)
-                .ToHashSet();
-            zoneItems = swissZones
-                .OrderBy(z => z.SortOrder)
-                .ThenBy(z => z.Name, StringComparer.Ordinal)
-                .Select(z => new StageColorZoneListItem(
-                    z.Id,
-                    z.Name,
-                    z.ColorHex,
-                    !usedZoneIds.Contains(z.Id)))
-                .ToList();
-        }
-
-        List<TeamZoneAssignmentRow>? assignmentRows = null;
-        if (Stage.StageType == StageType.Swiss && swissZones is { Count: > 0 } && teamZoneIds is not null)
-        {
-            var zoneOrder = swissZones
-                .OrderBy(z => z.SortOrder)
-                .ThenBy(z => z.Name, StringComparer.Ordinal)
-                .Select(z => z.Id)
-                .ToList();
-            assignmentRows = teamsInStage
-                .OrderBy(t => t.Name, StringComparer.Create(CultureInfo.CurrentCulture, ignoreCase: true))
-                .Select(t =>
-                {
-                    var idx = 0;
-                    if (teamZoneIds.TryGetValue(t.Id, out var zNullable) && zNullable is { } zid)
-                    {
-                        for (var i = 0; i < zoneOrder.Count; i++)
-                        {
-                            if (zoneOrder[i] == zid)
-                            {
-                                idx = i + 1;
-                                break;
-                            }
-                        }
-                    }
-                    return new TeamZoneAssignmentRow(t.Id, t.Name, t.IconPath, idx);
-                })
-                .ToList();
-        }
+            stageMatches);
 
         MainThread.BeginInvokeOnMainThread(() =>
         {
@@ -242,26 +161,6 @@ public sealed class StageDetailsViewModel : INotifyPropertyChanged
             StandingsByGroupForStage.Clear();
             foreach (var g in stageStandingsGroups)
                 StandingsByGroupForStage.Add(g);
-
-            ColorZones.Clear();
-            if (zoneItems is not null)
-                foreach (var z in zoneItems)
-                    ColorZones.Add(z);
-
-            StageZonePickerRows.Clear();
-            if (Stage.StageType == StageType.Swiss && swissZones is not null)
-            {
-                StageZonePickerRows.Add(new StageZonePickerRow { ZoneId = null, Title = "Без зоны" });
-                foreach (var z in swissZones.OrderBy(x => x.SortOrder).ThenBy(x => x.Name, StringComparer.Ordinal))
-                    StageZonePickerRows.Add(new StageZonePickerRow { ZoneId = z.Id, Title = z.Name });
-            }
-
-            TeamZoneAssignments.Clear();
-            if (assignmentRows is not null)
-                foreach (var r in assignmentRows)
-                    TeamZoneAssignments.Add(r);
-
-            HasColorZonesForStandings = Stage.StageType == StageType.Swiss && swissZones is { Count: > 0 };
 
             StageGroups.Clear();
             foreach (var g in stageGroups)
@@ -412,74 +311,6 @@ public sealed class StageDetailsViewModel : INotifyPropertyChanged
         await LoadAsync(Tournament.Id, Stage.Id);
     }
 
-    public async Task AddColorZoneAsync()
-    {
-        if (Tournament is null || Stage is null || Stage.StageType != StageType.Swiss)
-            return;
-
-        var existing = await _stageColorZoneRepository.GetZonesByStageAsync(Stage.Id);
-        var zone = new StageColorZone
-        {
-            Id = Guid.NewGuid(),
-            StageId = Stage.Id,
-            Name = $"Зона {existing.Count + 1}",
-            ColorHex = "#3B82F6",
-            SortOrder = existing.Count
-        };
-        await _stageColorZoneRepository.SaveZoneAsync(zone);
-        await LoadAsync(Tournament.Id, Stage.Id);
-    }
-
-    public async Task DeleteColorZoneAsync(Guid zoneId)
-    {
-        if (Tournament is null || Stage is null)
-            return;
-        await _stageColorZoneRepository.DeleteZoneAsync(zoneId);
-        await LoadAsync(Tournament.Id, Stage.Id);
-    }
-
-    public async Task UpdateZoneColorAsync(Guid zoneId, string colorHex)
-    {
-        if (Tournament is null || Stage is null)
-            return;
-        var z = await _stageColorZoneRepository.GetZoneByIdAsync(zoneId);
-        if (z is null)
-            return;
-        z.ColorHex = colorHex;
-        await _stageColorZoneRepository.SaveZoneAsync(z);
-        await LoadAsync(Tournament.Id, Stage.Id);
-    }
-
-    public async Task RenameZoneAsync(Guid zoneId, string newName)
-    {
-        if (Tournament is null || Stage is null || string.IsNullOrWhiteSpace(newName))
-            return;
-        var z = await _stageColorZoneRepository.GetZoneByIdAsync(zoneId);
-        if (z is null)
-            return;
-        z.Name = newName.Trim();
-        await _stageColorZoneRepository.SaveZoneAsync(z);
-        await LoadAsync(Tournament.Id, Stage.Id);
-    }
-
-    public async Task SetStandingRowZoneFromPickerAsync(Guid teamId, int pickerIndex)
-    {
-        if (Tournament is null || Stage is null || Stage.StageType != StageType.Swiss)
-            return;
-        Guid? zoneId = null;
-        if (pickerIndex > 0 && pickerIndex < StageZonePickerRows.Count)
-            zoneId = StageZonePickerRows[pickerIndex].ZoneId;
-        await SetStandingRowZoneAsync(teamId, zoneId);
-    }
-
-    public async Task SetStandingRowZoneAsync(Guid teamId, Guid? zoneId)
-    {
-        if (Tournament is null || Stage is null || Stage.StageType != StageType.Swiss)
-            return;
-        await _stageColorZoneRepository.SetTeamZoneAsync(Stage.Id, teamId, zoneId);
-        await LoadAsync(Tournament.Id, Stage.Id);
-    }
-
     private static MatchRow CreateMatchRow(Match m, string? homeName, string? awayName, bool isLive) =>
         new()
         {
@@ -540,39 +371,6 @@ public sealed class StageDetailsViewModel : INotifyPropertyChanged
         field = value;
         OnPropertyChanged(propertyName);
         return true;
-    }
-}
-
-public sealed class TeamZoneAssignmentRow
-{
-    public Guid TeamId { get; }
-    public string TeamName { get; }
-    public string? IconPath { get; }
-    public int ZonePickerIndex { get; set; }
-
-    public TeamZoneAssignmentRow(Guid teamId, string teamName, string? iconPath, int zonePickerIndex)
-    {
-        TeamId = teamId;
-        TeamName = teamName;
-        IconPath = iconPath;
-        ZonePickerIndex = zonePickerIndex;
-    }
-}
-
-public sealed class StageColorZoneListItem
-{
-    public Guid ZoneId { get; }
-    public string Name { get; }
-    public string ColorHex { get; }
-    /// <summary>True — зона не назначена ни одной строке таблицы.</summary>
-    public bool ShowUnusedWarning { get; }
-
-    public StageColorZoneListItem(Guid zoneId, string name, string colorHex, bool showUnusedWarning)
-    {
-        ZoneId = zoneId;
-        Name = name;
-        ColorHex = colorHex;
-        ShowUnusedWarning = showUnusedWarning;
     }
 }
 

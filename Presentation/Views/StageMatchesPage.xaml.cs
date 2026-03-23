@@ -13,11 +13,13 @@ public partial class StageMatchesPage : ContentPage, IQueryAttributable
     private readonly StageDetailsViewModel _viewModel;
     private readonly IMatchRepository _matchRepository;
     private readonly ITeamRepository _teamRepository;
+    private readonly ITournamentRepository _tournamentRepository;
     private readonly ObservableCollection<MatchRow> _filteredMatches = new();
     private readonly Dictionary<Guid, string> _teamNameById = new();
     private Guid _tournamentId;
     private Guid _stageId;
     private Guid? _seriesId;
+    private Tournament? _tournament;
     private int _currentOffset;
     private const int PageSize = 50;
     private bool _hasMore;
@@ -27,11 +29,13 @@ public partial class StageMatchesPage : ContentPage, IQueryAttributable
     public StageMatchesPage(
         StageDetailsViewModel viewModel,
         IMatchRepository matchRepository,
-        ITeamRepository teamRepository)
+        ITeamRepository teamRepository,
+        ITournamentRepository tournamentRepository)
     {
         _viewModel = viewModel;
         _matchRepository = matchRepository;
         _teamRepository = teamRepository;
+        _tournamentRepository = tournamentRepository;
         BindingContext = _viewModel;
         InitializeComponent();
         MatchesCollection.ItemsSource = _filteredMatches;
@@ -58,6 +62,7 @@ public partial class StageMatchesPage : ContentPage, IQueryAttributable
                 _seriesId = seriesId;
             else
                 _seriesId = null;
+            _tournament = await _tournamentRepository.GetByIdAsync(_tournamentId);
             await EnsureTeamNamesLoadedAsync();
             await ReloadFromRepositoryAsync();
         }
@@ -234,21 +239,30 @@ public partial class StageMatchesPage : ContentPage, IQueryAttributable
         };
 
         var now = DateTime.Now;
+        var baselineDate = _tournament?.StartDate?.Date;
+        var baseline = baselineDate.HasValue && baselineDate.Value <= now.Date
+            ? baselineDate.Value
+            : now.Date;
         DateTime? from = null;
         DateTime? to = null;
         switch (PeriodFilterPicker.SelectedIndex)
         {
             case 1:
-                var dayOffset = ((int)now.DayOfWeek + 6) % 7;
-                from = now.Date.AddDays(-dayOffset);
+                var daysSinceBaseline = (now.Date - baseline).Days;
+                var weekStart = baseline.AddDays((daysSinceBaseline / 7) * 7);
+                from = weekStart;
                 to = from.Value.AddDays(7).AddTicks(-1);
                 break;
             case 2:
-                from = new DateTime(now.Year, now.Month, 1);
+                from = new DateTime(baseline.Year, baseline.Month, 1);
+                while (from.Value.AddMonths(1) <= now)
+                    from = from.Value.AddMonths(1);
                 to = from.Value.AddMonths(1).AddTicks(-1);
                 break;
             case 3:
-                from = new DateTime(now.Year, 1, 1);
+                from = new DateTime(baseline.Year, 1, 1);
+                while (from.Value.AddYears(1) <= now)
+                    from = from.Value.AddYears(1);
                 to = from.Value.AddYears(1).AddTicks(-1);
                 break;
             case 4:

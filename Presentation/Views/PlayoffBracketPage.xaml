@@ -21,7 +21,7 @@
                            FontSize="16" />
                     <Grid ColumnDefinitions="*,Auto"
                           ColumnSpacing="8">
-                        <Label Text="Re-seeding после раунда"
+                        <Label Text="{x:Static res:AppResources.PlayoffReseedingLabel}"
                                VerticalTextAlignment="Center" />
                         <Switch Grid.Column="1"
                                 IsToggled="{Binding UseReseeding}" />
@@ -87,28 +87,25 @@
                 </HorizontalStackLayout>
             </ScrollView>
 
-            <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,Auto"
-                  ColumnSpacing="8">
-                <Button Grid.Column="0"
-                        Text="Добавить раунд"
+            <ScrollView Orientation="Horizontal"
+                        HorizontalScrollBarVisibility="Never">
+                <HorizontalStackLayout Spacing="8">
+                <Button Text="{x:Static res:AppResources.PlayoffAddRound}"
                         Clicked="OnAddRoundClicked" />
-                <Button Grid.Column="1"
-                        Text="Добавить серию"
+                <Button Text="{x:Static res:AppResources.PlayoffAddSeries}"
                         Clicked="OnAddSeriesInSelectedRoundClicked"
                         IsEnabled="{Binding HasSelectedRound}" />
-                <Button Grid.Column="2"
-                        Text="Bo"
+                <Button Text="{x:Static res:AppResources.PlayoffBestOfButton}"
                         Clicked="OnEditSelectedRoundBestOfClicked"
                         IsEnabled="{Binding HasSelectedRound}" />
-                <Button Grid.Column="3"
-                        Text="Переименовать"
+                <Button Text="{x:Static res:AppResources.PlayoffRenameRound}"
                         Clicked="OnRenameSelectedRoundClicked"
                         IsEnabled="{Binding HasSelectedRound}" />
-                <Button Grid.Column="4"
-                        Text="{x:Static res:AppResources.Delete}"
+                <Button Text="{x:Static res:AppResources.Delete}"
                         Clicked="OnDeleteSelectedRoundClicked"
                         IsEnabled="{Binding HasSelectedRound}" />
-            </Grid>
+                </HorizontalStackLayout>
+            </ScrollView>
 
             <Label Text="{Binding SelectedRoundTitle}"
                    FontAttributes="Bold"
@@ -162,7 +159,7 @@
                    FontAttributes="Bold"
                    FontSize="16"
                    Margin="0,8,0,0" />
-            <Label Text="При включенном re-seeding связи между раундами динамические и могут меняться после каждого раунда."
+            <Label Text="{x:Static res:AppResources.PlayoffReseedingHint}"
                    FontSize="11"
                    TextColor="Gray"
                    IsVisible="{Binding UseReseeding}" />
