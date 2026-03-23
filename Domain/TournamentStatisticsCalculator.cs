@@ -168,7 +168,18 @@ public static class TournamentStatisticsCalculator
         IReadOnlyList<Match> stageMatches,
         Guid teamId)
     {
-        var start = tournament.StartDate?.Date ?? DateTime.Today.Date;
+        DateTime? firstMatchMonth = null;
+        var matchDates = stageMatches
+            .Where(m => m.DateTime.HasValue)
+            .Select(m => m.DateTime!.Value.Date)
+            .ToList();
+        if (matchDates.Count > 0)
+            firstMatchMonth = new DateTime(matchDates.Min().Year, matchDates.Min().Month, 1);
+
+        var start = tournament.StartDate is { } sd
+            ? new DateTime(sd.Year, sd.Month, 1)
+            : firstMatchMonth ?? new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+
         var endMonth = DateTime.Today;
         if (tournament.EndDate is { } te && te.Date < endMonth)
             endMonth = te.Date;

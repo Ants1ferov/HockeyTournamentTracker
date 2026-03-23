@@ -64,12 +64,6 @@ public partial class TournamentDetailsPage : ContentPage, IQueryAttributable
         await Shell.Current.GoToAsync($"{nameof(TournamentStatisticsPage)}?TournamentId={_viewModel.Tournament.Id}");
     }
 
-    private async void OnStandingZonePickerChanged(object? sender, EventArgs e)
-    {
-        if (sender is not Picker p || p.BindingContext is not StandingRow row)
-            return;
-        await _viewModel.SetStageStandingZoneAsync(row.TeamId, p.SelectedIndex);
-    }
 
     private async void OnAddStageClicked(object? sender, EventArgs e)
     {

@@ -81,7 +81,6 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
     public ObservableCollection<MatchRow> StageMatches { get; } = new();
     public ObservableCollection<StandingGroup> StandingsByGroupForStage { get; } = new();
     public ObservableCollection<Team> ParticipantTeams { get; } = new();
-    public ObservableCollection<StageZonePickerRow> StageZonePickerRows { get; } = new();
     public ObservableCollection<StageZoneLegendItem> StageZoneLegend { get; } = new();
 
     public int SelectedTabIndex
@@ -114,6 +113,13 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
     public string StagesTabIcon => IsStagesTabSelected ? "tourstageclicked" : "tourstagenonclicked";
     public string ParticipantsTabIcon => IsParticipantsTabSelected ? "tourplayerclicked" : "tourplayernonclicked";
     public bool IsSelectedStageSwiss => SelectedStage?.StageType == StageType.Swiss;
+
+    private bool _showStageZoneLegend;
+    public bool ShowStageZoneLegend
+    {
+        get => _showStageZoneLegend;
+        private set => SetField(ref _showStageZoneLegend, value);
+    }
 
     public Stage? SelectedStage
     {
@@ -379,8 +385,8 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
                 {
                     StageMatches.Clear();
                     StandingsByGroupForStage.Clear();
-                    StageZonePickerRows.Clear();
                     StageZoneLegend.Clear();
+                    ShowStageZoneLegend = false;
                 });
                 return;
             }
@@ -391,8 +397,8 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
             {
                 StageMatches.Clear();
                 StandingsByGroupForStage.Clear();
-                StageZonePickerRows.Clear();
                 StageZoneLegend.Clear();
+                ShowStageZoneLegend = false;
             });
 
             var stageId = SelectedStage.Id;
@@ -445,23 +451,20 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
 
             IReadOnlyDictionary<Guid, Guid?>? teamZoneIds = null;
             IReadOnlyDictionary<Guid, string>? zoneColorById = null;
-            IReadOnlyList<Guid>? zonePickerOrder = null;
-            IReadOnlyList<StageColorZone>? swissZonesForPicker = null;
+            IReadOnlyList<StageColorZone>? swissZonesForLegend = null;
             if (SelectedStage is { StageType: StageType.Swiss })
             {
                 var zones = await _stageColorZoneRepository.GetZonesByStageAsync(stageId);
-                swissZonesForPicker = zones;
-                zoneColorById = zones.ToDictionary(z => z.Id, z => z.ColorHex);
-                zonePickerOrder = zones
-                    .OrderBy(z => z.SortOrder)
-                    .ThenBy(z => z.Name, StringComparer.Ordinal)
-                    .Select(z => z.Id)
-                    .ToList();
-                var assign = await _stageColorZoneRepository.GetTeamZoneAssignmentsAsync(stageId);
-                teamZoneIds = assign.ToDictionary(kv => kv.Key, kv => (Guid?)kv.Value);
+                swissZonesForLegend = zones;
+                if (zones.Count > 0)
+                {
+                    zoneColorById = zones.ToDictionary(z => z.Id, z => z.ColorHex);
+                    var assign = await _stageColorZoneRepository.GetTeamZoneAssignmentsAsync(stageId);
+                    teamZoneIds = assign.ToDictionary(kv => kv.Key, kv => (Guid?)kv.Value);
+                }
             }
 
-            var barW = SelectedStage is { StageType: StageType.Swiss } ? 6 : 0;
+            var barW = SelectedStage is { StageType: StageType.Swiss } && swissZonesForLegend is { Count: > 0 } ? 6 : 0;
             var stageStandingsGroups = StandingsSectionBuilder.Build(
                 _statsService,
                 Tournament,
@@ -471,7 +474,6 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
                 stageMatches,
                 teamZoneIds,
                 zoneColorById,
-                zonePickerOrder,
                 barW);
 
             if (myVersion != _stageSelectionVersion)
@@ -486,19 +488,15 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
                 foreach (var g in stageStandingsGroups)
                     StandingsByGroupForStage.Add(g);
 
-                StageZonePickerRows.Clear();
                 StageZoneLegend.Clear();
-                if (swissZonesForPicker is not null)
+                if (swissZonesForLegend is not null)
                 {
-                    StageZonePickerRows.Add(new StageZonePickerRow { ZoneId = null, Title = "Без зоны" });
-                    foreach (var z in swissZonesForPicker
+                    foreach (var z in swissZonesForLegend
                                  .OrderBy(x => x.SortOrder)
                                  .ThenBy(x => x.Name, StringComparer.Ordinal))
-                    {
-                        StageZonePickerRows.Add(new StageZonePickerRow { ZoneId = z.Id, Title = z.Name });
                         StageZoneLegend.Add(new StageZoneLegendItem(z.Name, z.ColorHex));
-                    }
                 }
+                ShowStageZoneLegend = swissZonesForLegend is { Count: > 0 };
             });
         }
         catch
@@ -510,24 +508,10 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged
             {
                 StageMatches.Clear();
                 StandingsByGroupForStage.Clear();
-                StageZonePickerRows.Clear();
                 StageZoneLegend.Clear();
+                ShowStageZoneLegend = false;
             });
         }
-    }
-
-    public async Task SetStageStandingZoneAsync(Guid teamId, int pickerIndex)
-    {
-        if (Tournament is null || SelectedStage is null || SelectedStage.StageType != StageType.Swiss)
-            return;
-
-        var stageId = SelectedStage.Id;
-        Guid? zoneId = null;
-        if (pickerIndex > 0 && pickerIndex < StageZonePickerRows.Count)
-            zoneId = StageZonePickerRows[pickerIndex].ZoneId;
-
-        await _stageColorZoneRepository.SetTeamZoneAsync(stageId, teamId, zoneId);
-        await LoadAsync(Tournament.Id);
     }
 
     private static MatchRow CreateMatchRow(Match m, string? homeName, string? awayName, bool isLive) =>
@@ -692,8 +676,6 @@ public sealed class StandingRow
     public Guid TeamId { get; set; }
     /// <summary>Назначенная цветовая зона для строки стадии; null — без зоны.</summary>
     public Guid? ZoneId { get; set; }
-    /// <summary>Индекс в Picker зон: 0 — без зоны, 1..n — зоны по порядку pickerZoneOrder.</summary>
-    public int ZonePickerIndex { get; set; }
     public int Place { get; set; }
     public string GroupName { get; set; } = string.Empty;
     public string TeamName { get; set; } = string.Empty;
@@ -702,7 +684,8 @@ public sealed class StandingRow
     public string? ZoneBarColorHex { get; set; }
     /// <summary>Ширина колонки полосы (0 — не показывать колонку).</summary>
     public int ZoneBarColumnWidth { get; set; }
-    public bool ShowZoneUi => ZoneBarColumnWidth > 0;
+    /// <summary>Полоса только если есть хотя бы одна зона и у команды назначен цвет.</summary>
+    public bool ShowZoneBarStripe { get; set; }
     public int Games { get; set; }
     public int WinsReg { get; set; }
     public int WinsOt { get; set; }
