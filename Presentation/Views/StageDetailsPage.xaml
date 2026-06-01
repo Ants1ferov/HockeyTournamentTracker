@@ -6,6 +6,15 @@
              x:Name="ThisPage"
              Title="{Binding PageTitle}">
 
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Редактировать стадию"
+                     Order="Secondary"
+                     Clicked="OnEditStageClicked" />
+        <ToolbarItem Text="Управление составом стадии"
+                     Order="Secondary"
+                     Clicked="OnManageRosterClicked" />
+    </ContentPage.ToolbarItems>
+
     <ScrollView>
         <VerticalStackLayout Padding="16" Spacing="16">
             <VerticalStackLayout Spacing="4">
@@ -17,27 +26,9 @@
                        TextColor="Gray" />
             </VerticalStackLayout>
 
-            <HorizontalStackLayout Spacing="12"
-                                   IsVisible="{Binding Stage, Converter={StaticResource NotNullToBool}}">
-                <Button Text="Редактировать стадию"
-                        Clicked="OnEditStageClicked" />
-            </HorizontalStackLayout>
-
-            <VerticalStackLayout Spacing="8"
-                                 IsVisible="{Binding Stage, Converter={StaticResource NotNullToBool}}">
-                <Label Text="Состав и группы"
-                       FontAttributes="Bold"
-                       FontSize="16" />
-                <Button Text="Управление составом стадии"
-                        Clicked="OnManageRosterClicked" />
-                <Button Text="Настроить зоны"
-                        IsVisible="{Binding IsSwissStage}"
-                        Style="{StaticResource GhostButtonStyle}"
-                        Clicked="OnConfigureZonesClicked" />
-                <Button Text="Сетка плей-офф"
-                        IsVisible="{Binding IsPlayoffStage}"
-                        Clicked="OnOpenPlayoffClicked" />
-            </VerticalStackLayout>
+            <Button Text="Сетка плей-офф"
+                    IsVisible="{Binding IsPlayoffStage}"
+                    Clicked="OnOpenPlayoffClicked" />
 
             <Label Text="{x:Static res:AppResources.StandingsTable}"
                    FontAttributes="Bold"

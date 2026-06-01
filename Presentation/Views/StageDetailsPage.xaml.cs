@@ -9,6 +9,7 @@ public partial class StageDetailsPage : ContentPage, IQueryAttributable
     private readonly StageDetailsViewModel _viewModel;
     private bool _isLoading;
     private bool _hasAppeared;
+    private ToolbarItem? _zonesToolbarItem;
 
     public StageDetailsPage(StageDetailsViewModel viewModel)
     {
@@ -35,6 +36,32 @@ public partial class StageDetailsPage : ContentPage, IQueryAttributable
         try { await _viewModel.LoadAsync(t.Id, s.Id); }
         catch { /* keep page alive */ }
         finally { _isLoading = false; }
+
+        UpdateZonesToolbarItem();
+    }
+
+    /// <summary>Пункт «Настроить зоны» в меню — только для швейцарских стадий.</summary>
+    private void UpdateZonesToolbarItem()
+    {
+        if (_viewModel.IsSwissStage)
+        {
+            if (_zonesToolbarItem is null)
+            {
+                _zonesToolbarItem = new ToolbarItem
+                {
+                    Text = "Настроить зоны",
+                    Order = ToolbarItemOrder.Secondary
+                };
+                _zonesToolbarItem.Clicked += OnConfigureZonesClicked;
+                ToolbarItems.Add(_zonesToolbarItem);
+            }
+        }
+        else if (_zonesToolbarItem is not null)
+        {
+            _zonesToolbarItem.Clicked -= OnConfigureZonesClicked;
+            ToolbarItems.Remove(_zonesToolbarItem);
+            _zonesToolbarItem = null;
+        }
     }
 
     public async void ApplyQueryAttributes(IDictionary<string, object> query)
@@ -61,6 +88,8 @@ public partial class StageDetailsPage : ContentPage, IQueryAttributable
             {
                 _isLoading = false;
             }
+
+            UpdateZonesToolbarItem();
         }
     }
 

@@ -4,26 +4,56 @@
              xmlns:res="clr-namespace:HockeyTournamentTracker.Resources"
              x:Class="HockeyTournamentTracker.Presentation.Views.TournamentRulesEditPage"
              x:Name="ThisPage"
-             Title="{x:Static res:AppResources.RulesScoringTitle}">
+             Title="{x:Static res:AppResources.RulesTournamentTitle}">
+
+    <ContentPage.Resources>
+        <Style x:Key="RuleDivider" TargetType="BoxView">
+            <Setter Property="HeightRequest" Value="1" />
+            <Setter Property="Color" Value="{AppThemeBinding Light={StaticResource CardBorderLight}, Dark={StaticResource CardBorderDark}}" />
+        </Style>
+    </ContentPage.Resources>
 
     <ScrollView>
         <VerticalStackLayout Padding="16" Spacing="12">
-            <Label Text="{x:Static res:AppResources.PointsWinReg}" />
-            <Entry Text="{Binding PointsRegWin}" Keyboard="Numeric" />
-            <Label Text="{x:Static res:AppResources.PointsWinOt}" />
-            <Entry Text="{Binding PointsOtWin}" Keyboard="Numeric" />
-            <Label Text="{x:Static res:AppResources.PointsWinSo}" />
-            <Entry Text="{Binding PointsSoWin}" Keyboard="Numeric" />
-            <Label Text="{x:Static res:AppResources.PointsLossReg}" />
-            <Entry Text="{Binding PointsRegLoss}" Keyboard="Numeric" />
-            <Label Text="{x:Static res:AppResources.PointsLossOt}" />
-            <Entry Text="{Binding PointsOtLoss}" Keyboard="Numeric" />
-            <Label Text="{x:Static res:AppResources.PointsLossSo}" />
-            <Entry Text="{Binding PointsSoLoss}" Keyboard="Numeric" />
+            <Label Text="{x:Static res:AppResources.RulesScoringTitle}"
+                   FontAttributes="Bold"
+                   FontSize="16" />
+
+            <VerticalStackLayout Spacing="0">
+                <Grid ColumnDefinitions="*,Auto" Padding="0,8" ColumnSpacing="12">
+                    <Label Grid.Column="0" Text="{x:Static res:AppResources.PointsWinReg}" VerticalOptions="Center" />
+                    <Entry Grid.Column="1" Text="{Binding PointsRegWin}" Keyboard="Numeric" WidthRequest="72" HorizontalTextAlignment="End" />
+                </Grid>
+                <BoxView Style="{StaticResource RuleDivider}" />
+                <Grid ColumnDefinitions="*,Auto" Padding="0,8" ColumnSpacing="12">
+                    <Label Grid.Column="0" Text="{x:Static res:AppResources.PointsWinOt}" VerticalOptions="Center" />
+                    <Entry Grid.Column="1" Text="{Binding PointsOtWin}" Keyboard="Numeric" WidthRequest="72" HorizontalTextAlignment="End" />
+                </Grid>
+                <BoxView Style="{StaticResource RuleDivider}" />
+                <Grid ColumnDefinitions="*,Auto" Padding="0,8" ColumnSpacing="12">
+                    <Label Grid.Column="0" Text="{x:Static res:AppResources.PointsWinSo}" VerticalOptions="Center" />
+                    <Entry Grid.Column="1" Text="{Binding PointsSoWin}" Keyboard="Numeric" WidthRequest="72" HorizontalTextAlignment="End" />
+                </Grid>
+                <BoxView Style="{StaticResource RuleDivider}" />
+                <Grid ColumnDefinitions="*,Auto" Padding="0,8" ColumnSpacing="12">
+                    <Label Grid.Column="0" Text="{x:Static res:AppResources.PointsLossReg}" VerticalOptions="Center" />
+                    <Entry Grid.Column="1" Text="{Binding PointsRegLoss}" Keyboard="Numeric" WidthRequest="72" HorizontalTextAlignment="End" />
+                </Grid>
+                <BoxView Style="{StaticResource RuleDivider}" />
+                <Grid ColumnDefinitions="*,Auto" Padding="0,8" ColumnSpacing="12">
+                    <Label Grid.Column="0" Text="{x:Static res:AppResources.PointsLossOt}" VerticalOptions="Center" />
+                    <Entry Grid.Column="1" Text="{Binding PointsOtLoss}" Keyboard="Numeric" WidthRequest="72" HorizontalTextAlignment="End" />
+                </Grid>
+                <BoxView Style="{StaticResource RuleDivider}" />
+                <Grid ColumnDefinitions="*,Auto" Padding="0,8" ColumnSpacing="12">
+                    <Label Grid.Column="0" Text="{x:Static res:AppResources.PointsLossSo}" VerticalOptions="Center" />
+                    <Entry Grid.Column="1" Text="{Binding PointsSoLoss}" Keyboard="Numeric" WidthRequest="72" HorizontalTextAlignment="End" />
+                </Grid>
+            </VerticalStackLayout>
 
             <Label Text="{x:Static res:AppResources.SortOrderTitle}"
                    FontAttributes="Bold"
-                   FontSize="14"
+                   FontSize="16"
                    Margin="0,12,0,0" />
             <CollectionView ItemsSource="{Binding SortOrderList}" Margin="0,4,0,0">
                 <CollectionView.ItemTemplate>
