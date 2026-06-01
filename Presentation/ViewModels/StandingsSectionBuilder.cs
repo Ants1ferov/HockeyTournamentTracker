@@ -12,7 +12,8 @@ internal static class StandingsSectionBuilder
         IReadOnlyDictionary<Guid, Guid?> teamGroupIdsInStage,
         IReadOnlyList<GroupInfo> stageGroups,
         List<Match> matches,
-        bool includeInProgress = false)
+        bool includeInProgress = false,
+        IReadOnlyDictionary<Guid, string>? teamZoneColors = null)
     {
         var result = new List<StandingGroup>();
         var standings = statsService.CalculateStandings(tournament, teams, matches, includeInProgress);
@@ -30,6 +31,8 @@ internal static class StandingsSectionBuilder
 
         StandingRow CreateRow(Standing s, Team team, int place, string groupName, IReadOnlyList<int> last5)
         {
+            string? zoneHex = null;
+            teamZoneColors?.TryGetValue(team.Id, out zoneHex);
             return new StandingRow
             {
                 TeamId = team.Id,
@@ -49,7 +52,8 @@ internal static class StandingsSectionBuilder
                 GoalDiff = s.GoalDifference,
                 Last5Results = last5,
                 PointsPct = FormatPointsPercentage(s.Points, s.Games, maxPointsPerGame),
-                Points = s.Points
+                Points = s.Points,
+                ZoneColorHex = string.IsNullOrWhiteSpace(zoneHex) ? "#C8C8C8" : zoneHex
             };
         }
 

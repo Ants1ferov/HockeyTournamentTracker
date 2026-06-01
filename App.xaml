@@ -24,6 +24,10 @@
             <converters:BoolToDoubleConverter x:Key="BoolToDouble" />
             <converters:TournamentStatusToBadgeColorConverter x:Key="StatusToBadgeColor" />
             <converters:TournamentStatusToBadgeTextColorConverter x:Key="StatusToBadgeTextColor" />
+            <converters:MatchStatusToBadgeColorConverter x:Key="MatchStatusBadgeColor" />
+            <converters:MatchStatusToBadgeTextColorConverter x:Key="MatchStatusBadgeTextColor" />
+            <converters:MatchStatusToTextConverter x:Key="MatchStatusToText" />
+            <converters:MatchStatusBadgeVisibleConverter x:Key="MatchStatusBadgeVisible" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

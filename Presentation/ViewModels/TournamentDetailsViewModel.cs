@@ -17,6 +17,7 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged, IMatchU
     private readonly IMatchRepository _matchRepository;
     private readonly IStageTeamRepository _stageTeamRepository;
     private readonly IStageGroupRepository _stageGroupRepository;
+    private readonly IStageColorZoneRepository _zoneRepository;
     private readonly StatsService _statsService;
     private readonly IMatchUpdatesNotifier _matchUpdatesNotifier;
     private readonly SemaphoreSlim _loadSemaphore = new(1, 1);
@@ -137,6 +138,7 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged, IMatchU
         IMatchRepository matchRepository,
         IStageTeamRepository stageTeamRepository,
         IStageGroupRepository stageGroupRepository,
+        IStageColorZoneRepository zoneRepository,
         StatsService statsService,
         IMatchUpdatesNotifier matchUpdatesNotifier)
     {
@@ -146,6 +148,7 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged, IMatchU
         _matchRepository = matchRepository;
         _stageTeamRepository = stageTeamRepository;
         _stageGroupRepository = stageGroupRepository;
+        _zoneRepository = zoneRepository;
         _statsService = statsService;
         _matchUpdatesNotifier = matchUpdatesNotifier;
         _matchUpdatesNotifier.Subscribe(this);
@@ -439,6 +442,7 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged, IMatchU
                 rows.Add(CreateMatchRow(m, homeTeam?.Name, awayTeam?.Name, m.Status == MatchStatus.InProgress));
             }
 
+            var teamZoneColors = await BuildTeamZoneColorsAsync(stageId);
             var stageStandingsGroups = StandingsSectionBuilder.Build(
                 _statsService,
                 Tournament,
@@ -446,7 +450,8 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged, IMatchU
                 teamGroupIdsInStage,
                 stageGroups,
                 stageMatches,
-                includeInProgress: true);
+                includeInProgress: true,
+                teamZoneColors: teamZoneColors);
 
             if (myVersion != _stageSelectionVersion)
                 return;
@@ -486,6 +491,21 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged, IMatchU
             IsLive = isLive,
             Status = m.Status
         };
+
+    private async Task<IReadOnlyDictionary<Guid, string>?> BuildTeamZoneColorsAsync(Guid stageId)
+    {
+        var assignments = await _zoneRepository.GetTeamZoneAssignmentsAsync(stageId);
+        if (assignments.Count == 0) return null;
+        var zones = await _zoneRepository.GetZonesByStageAsync(stageId);
+        var zoneColorById = zones.ToDictionary(z => z.Id, z => z.ColorHex);
+        var result = new Dictionary<Guid, string>(assignments.Count);
+        foreach (var (teamId, zoneId) in assignments)
+        {
+            if (zoneColorById.TryGetValue(zoneId, out var hex))
+                result[teamId] = hex;
+        }
+        return result.Count > 0 ? result : null;
+    }
 
     public async Task SetMatchStatusAsync(Guid matchId, MatchStatus status)
     {
@@ -669,6 +689,8 @@ public sealed class StandingRow
     public IReadOnlyList<int> Last5Results { get; set; } = Array.Empty<int>();
     public string PointsPct { get; set; } = "0";
     public int Points { get; set; }
+    /// <summary>Hex color of the zone strip (#C8C8C8 = neutral when not assigned).</summary>
+    public string ZoneColorHex { get; set; } = "#C8C8C8";
 }
 
 public sealed class MatchRow
