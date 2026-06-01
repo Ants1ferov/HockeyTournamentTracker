@@ -96,25 +96,25 @@ public sealed class MatchEditViewModel : INotifyPropertyChanged
     public DateTime Date
     {
         get => _date;
-        set => SetField(ref _date, value);
+        set { if (SetField(ref _date, value)) OnPropertyChanged(nameof(HeaderDateText)); }
     }
 
     public TimeSpan Time
     {
         get => _time;
-        set => SetField(ref _time, value);
+        set { if (SetField(ref _time, value)) OnPropertyChanged(nameof(HeaderDateText)); }
     }
 
     public int HomeGoals
     {
         get => _homeGoals;
-        set => SetField(ref _homeGoals, value);
+        set { if (SetField(ref _homeGoals, value)) RaiseScoreboardProps(); }
     }
 
     public int AwayGoals
     {
         get => _awayGoals;
-        set => SetField(ref _awayGoals, value);
+        set { if (SetField(ref _awayGoals, value)) RaiseScoreboardProps(); }
     }
 
     public OutcomeType OutcomeType
@@ -126,6 +126,7 @@ public sealed class MatchEditViewModel : INotifyPropertyChanged
             {
                 OnPropertyChanged(nameof(OutcomeIndex));
                 OnPropertyChanged(nameof(IsShootoutVisible));
+                RaiseScoreboardProps();
             }
         }
     }
@@ -133,13 +134,13 @@ public sealed class MatchEditViewModel : INotifyPropertyChanged
     public int ShootoutHome
     {
         get => _shootoutHome;
-        set => SetField(ref _shootoutHome, value);
+        set { if (SetField(ref _shootoutHome, value)) RaiseScoreboardProps(); }
     }
 
     public int ShootoutAway
     {
         get => _shootoutAway;
-        set => SetField(ref _shootoutAway, value);
+        set { if (SetField(ref _shootoutAway, value)) RaiseScoreboardProps(); }
     }
 
     public int OutcomeIndex
@@ -149,7 +150,10 @@ public sealed class MatchEditViewModel : INotifyPropertyChanged
         {
             var newVal = (OutcomeType)Math.Clamp(value, 0, 2);
             if (SetField(ref _outcomeType, newVal))
+            {
                 OnPropertyChanged(nameof(IsShootoutVisible));
+                RaiseScoreboardProps();
+            }
         }
     }
 
@@ -169,6 +173,7 @@ public sealed class MatchEditViewModel : INotifyPropertyChanged
                 OnPropertyChanged(nameof(IsScoreVisible));
                 OnPropertyChanged(nameof(IsPeriodScoresVisible));
                 OnPropertyChanged(nameof(IsFinishedDetailsVisible));
+                RaiseScoreboardProps();
             }
         }
     }
@@ -208,6 +213,49 @@ public sealed class MatchEditViewModel : INotifyPropertyChanged
         private set => SetField(ref _headToHead, value);
     }
     public bool HasHeadToHead => HeadToHead.Matches > 0;
+
+    // --- Производные свойства «табло» (шапка страницы матча) ---
+
+    /// <summary>Название турнира для подзаголовка табло.</summary>
+    public string CompetitionTitle => _tournament?.Name ?? string.Empty;
+
+    /// <summary>Дата+время матча для подзаголовка табло.</summary>
+    public string HeaderDateText => (Date.Date + Time).ToString("dd.MM.yyyy · HH:mm");
+
+    /// <summary>Матч завершён (есть итоговый результат).</summary>
+    public bool HasResult => SelectedMatchStatus == MatchStatus.Finished;
+
+    /// <summary>Маркер исхода под счётом табло: «ОТ»/«Б»/«».</summary>
+    public string ScoreSuffix => HasResult
+        ? OutcomeType switch { OutcomeType.Overtime => "ОТ", OutcomeType.Shootout => "Б", _ => string.Empty }
+        : string.Empty;
+
+    public bool HomeIsWinner => ComputeWinner(home: true);
+    public bool AwayIsWinner => ComputeWinner(home: false);
+    public string HomeResultLabel => !HasResult ? string.Empty : HomeIsWinner ? "победа" : "проиграл";
+    public string AwayResultLabel => !HasResult ? string.Empty : AwayIsWinner ? "победа" : "проиграл";
+
+    private bool ComputeWinner(bool home)
+    {
+        if (!HasResult) return false;
+        if (HomeGoals != AwayGoals)
+            return home ? HomeGoals > AwayGoals : AwayGoals > HomeGoals;
+        if (OutcomeType == OutcomeType.Shootout)
+            return home ? ShootoutHome > ShootoutAway : ShootoutAway > ShootoutHome;
+        return false;
+    }
+
+    private void RaiseScoreboardProps()
+    {
+        OnPropertyChanged(nameof(ScoreSuffix));
+        OnPropertyChanged(nameof(HasResult));
+        OnPropertyChanged(nameof(HomeIsWinner));
+        OnPropertyChanged(nameof(AwayIsWinner));
+        OnPropertyChanged(nameof(HomeResultLabel));
+        OnPropertyChanged(nameof(AwayResultLabel));
+        OnPropertyChanged(nameof(HeaderDateText));
+        OnPropertyChanged(nameof(CompetitionTitle));
+    }
 
     public MatchEditViewModel(
         ITeamRepository teamRepository,
@@ -254,6 +302,7 @@ public sealed class MatchEditViewModel : INotifyPropertyChanged
         if (TournamentId == Guid.Empty) return;
 
         _tournament = await _tournamentRepository.GetByIdAsync(TournamentId);
+        OnPropertyChanged(nameof(CompetitionTitle));
         var allTeams = await _teamRepository.GetByTournamentAsync(TournamentId);
 
         if (StageId is { } stageId && stageId != Guid.Empty)

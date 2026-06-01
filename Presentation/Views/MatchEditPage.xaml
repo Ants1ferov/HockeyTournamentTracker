@@ -7,79 +7,176 @@
 
     <ScrollView>
         <VerticalStackLayout Padding="16" Spacing="12">
-            <Grid ColumnDefinitions="*,Auto,*"
-                  ColumnSpacing="12">
-                <VerticalStackLayout Grid.Column="0"
-                                     Spacing="6"
-                                     HorizontalOptions="Center">
-                    <Frame WidthRequest="92"
-                           HeightRequest="92"
-                           CornerRadius="46"
-                           HasShadow="False"
-                           Style="{StaticResource CardFrameStyle}"
-                           Padding="0">
-                        <Grid>
-                            <Image Source="{Binding HomeTeam.IconPath, Converter={StaticResource PathToImageSource}}"
-                                   Aspect="AspectFill"
-                                   WidthRequest="92"
-                                   HeightRequest="92" />
-                            <Label Text="Выбор"
-                                   IsVisible="{Binding HomeTeam, Converter={StaticResource NotNullToBool}, ConverterParameter=Invert}"
-                                   HorizontalTextAlignment="Center"
-                                   VerticalTextAlignment="Center"
-                                   TextColor="{AppThemeBinding Light={StaticResource SecondaryTextLight}, Dark={StaticResource SecondaryTextDark}}"
-                                   FontSize="11" />
-                        </Grid>
-                    </Frame>
-                    <Button Text="{x:Static res:AppResources.HomeTeam}"
-                            FontSize="12"
-                            Clicked="OnSelectHomeTeamClicked" />
-                    <Label Text="{Binding HomeTeam.Name}"
-                           HorizontalTextAlignment="Center"
-                           FontSize="12"
-                           LineBreakMode="TailTruncation"
-                           WidthRequest="120" />
-                </VerticalStackLayout>
 
-                <Label Grid.Column="1"
-                       Text="VS"
-                       FontAttributes="Bold"
-                       FontSize="18"
-                       VerticalTextAlignment="Center"
-                       HorizontalTextAlignment="Center" />
+            <!-- Табло матча -->
+            <Border Padding="16,14" Style="{StaticResource CardElevatedStyle}">
+                <VerticalStackLayout Spacing="12">
+                    <!-- Подзаголовок: дата · турнир -->
+                    <VerticalStackLayout Spacing="2" HorizontalOptions="Center">
+                        <Label Text="{Binding HeaderDateText}"
+                               FontSize="13"
+                               FontAttributes="Bold"
+                               HorizontalTextAlignment="Center" />
+                        <Label Text="{Binding CompetitionTitle}"
+                               FontSize="12"
+                               HorizontalTextAlignment="Center"
+                               TextColor="{AppThemeBinding Light={StaticResource SecondaryTextLight}, Dark={StaticResource SecondaryTextDark}}" />
+                    </VerticalStackLayout>
 
-                <VerticalStackLayout Grid.Column="2"
-                                     Spacing="6"
-                                     HorizontalOptions="Center">
-                    <Frame WidthRequest="92"
-                           HeightRequest="92"
-                           CornerRadius="46"
-                           HasShadow="False"
-                           Style="{StaticResource CardFrameStyle}"
-                           Padding="0">
-                        <Grid>
-                            <Image Source="{Binding AwayTeam.IconPath, Converter={StaticResource PathToImageSource}}"
-                                   Aspect="AspectFill"
-                                   WidthRequest="92"
-                                   HeightRequest="92" />
-                            <Label Text="Выбор"
-                                   IsVisible="{Binding AwayTeam, Converter={StaticResource NotNullToBool}, ConverterParameter=Invert}"
+                    <!-- Центр: команды и счёт -->
+                    <Grid ColumnDefinitions="*,Auto,*" ColumnSpacing="10">
+                        <!-- Хозяева -->
+                        <VerticalStackLayout Grid.Column="0" Spacing="6" HorizontalOptions="Center">
+                            <Border WidthRequest="72" HeightRequest="72"
+                                    StrokeThickness="0"
+                                    StrokeShape="RoundRectangle 36"
+                                    HorizontalOptions="Center"
+                                    BackgroundColor="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}">
+                                <Grid>
+                                    <Image Aspect="AspectFill"
+                                           Source="{Binding HomeTeam.IconPath, Converter={StaticResource PathToImageSource}}" />
+                                    <Label Text="Выбор"
+                                           IsVisible="{Binding HomeTeam, Converter={StaticResource NotNullToBool}, ConverterParameter=Invert}"
+                                           HorizontalTextAlignment="Center"
+                                           VerticalTextAlignment="Center"
+                                           TextColor="{AppThemeBinding Light={StaticResource SecondaryTextLight}, Dark={StaticResource SecondaryTextDark}}"
+                                           FontSize="11" />
+                                </Grid>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnSelectHomeTeamClicked" />
+                                </Border.GestureRecognizers>
+                            </Border>
+                            <Label Text="{Binding HomeTeam.Name}"
                                    HorizontalTextAlignment="Center"
-                                   VerticalTextAlignment="Center"
-                                   TextColor="{AppThemeBinding Light={StaticResource SecondaryTextLight}, Dark={StaticResource SecondaryTextDark}}"
-                                   FontSize="11" />
-                        </Grid>
-                    </Frame>
-                    <Button Text="{x:Static res:AppResources.AwayTeam}"
-                            FontSize="12"
-                            Clicked="OnSelectAwayTeamClicked" />
-                    <Label Text="{Binding AwayTeam.Name}"
-                           HorizontalTextAlignment="Center"
-                           FontSize="12"
-                           LineBreakMode="TailTruncation"
-                           WidthRequest="120" />
+                                   FontAttributes="Bold"
+                                   FontSize="13"
+                                   LineBreakMode="TailTruncation" />
+                            <Label Text="{Binding HomeResultLabel}"
+                                   HorizontalTextAlignment="Center"
+                                   FontSize="11"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource ZoneOut}">
+                                <Label.Triggers>
+                                    <DataTrigger TargetType="Label" Binding="{Binding HomeIsWinner}" Value="True">
+                                        <Setter Property="TextColor" Value="{StaticResource StatusLive}" />
+                                    </DataTrigger>
+                                </Label.Triggers>
+                            </Label>
+                        </VerticalStackLayout>
+
+                        <!-- Счёт -->
+                        <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
+                            <Label HorizontalTextAlignment="Center"
+                                   FontSize="34"
+                                   FontAttributes="Bold">
+                                <Label.Text>
+                                    <MultiBinding StringFormat="{}{0} : {1}">
+                                        <Binding Path="HomeGoals" />
+                                        <Binding Path="AwayGoals" />
+                                    </MultiBinding>
+                                </Label.Text>
+                            </Label>
+                            <Label Text="{Binding ScoreSuffix}"
+                                   HorizontalTextAlignment="Center"
+                                   FontSize="13"
+                                   FontAttributes="Bold"
+                                   TextColor="{AppThemeBinding Light={StaticResource Brand}, Dark={StaticResource BrandDark}}"
+                                   IsVisible="{Binding ScoreSuffix, Converter={StaticResource GroupNameToVisibility}}" />
+                        </VerticalStackLayout>
+
+                        <!-- Гости -->
+                        <VerticalStackLayout Grid.Column="2" Spacing="6" HorizontalOptions="Center">
+                            <Border WidthRequest="72" HeightRequest="72"
+                                    StrokeThickness="0"
+                                    StrokeShape="RoundRectangle 36"
+                                    HorizontalOptions="Center"
+                                    BackgroundColor="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}">
+                                <Grid>
+                                    <Image Aspect="AspectFill"
+                                           Source="{Binding AwayTeam.IconPath, Converter={StaticResource PathToImageSource}}" />
+                                    <Label Text="Выбор"
+                                           IsVisible="{Binding AwayTeam, Converter={StaticResource NotNullToBool}, ConverterParameter=Invert}"
+                                           HorizontalTextAlignment="Center"
+                                           VerticalTextAlignment="Center"
+                                           TextColor="{AppThemeBinding Light={StaticResource SecondaryTextLight}, Dark={StaticResource SecondaryTextDark}}"
+                                           FontSize="11" />
+                                </Grid>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnSelectAwayTeamClicked" />
+                                </Border.GestureRecognizers>
+                            </Border>
+                            <Label Text="{Binding AwayTeam.Name}"
+                                   HorizontalTextAlignment="Center"
+                                   FontAttributes="Bold"
+                                   FontSize="13"
+                                   LineBreakMode="TailTruncation" />
+                            <Label Text="{Binding AwayResultLabel}"
+                                   HorizontalTextAlignment="Center"
+                                   FontSize="11"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource ZoneOut}">
+                                <Label.Triggers>
+                                    <DataTrigger TargetType="Label" Binding="{Binding AwayIsWinner}" Value="True">
+                                        <Setter Property="TextColor" Value="{StaticResource StatusLive}" />
+                                    </DataTrigger>
+                                </Label.Triggers>
+                            </Label>
+                        </VerticalStackLayout>
+                    </Grid>
+
+                    <!-- Чипы периодов -->
+                    <HorizontalStackLayout Spacing="6"
+                                           HorizontalOptions="Center"
+                                           IsVisible="{Binding IsPeriodScoresVisible}">
+                        <Border Style="{StaticResource StatusBadgeStyle}"
+                                BackgroundColor="{AppThemeBinding Light={StaticResource CardSurfaceMutedLight}, Dark={StaticResource CardSurfaceMutedDark}}">
+                            <Label FontSize="12">
+                                <Label.Text>
+                                    <MultiBinding StringFormat="{}П1 {0}:{1}">
+                                        <Binding Path="P1Home" />
+                                        <Binding Path="P1Away" />
+                                    </MultiBinding>
+                                </Label.Text>
+                            </Label>
+                        </Border>
+                        <Border Style="{StaticResource StatusBadgeStyle}"
+                                BackgroundColor="{AppThemeBinding Light={StaticResource CardSurfaceMutedLight}, Dark={StaticResource CardSurfaceMutedDark}}">
+                            <Label FontSize="12">
+                                <Label.Text>
+                                    <MultiBinding StringFormat="{}П2 {0}:{1}">
+                                        <Binding Path="P2Home" />
+                                        <Binding Path="P2Away" />
+                                    </MultiBinding>
+                                </Label.Text>
+                            </Label>
+                        </Border>
+                        <Border Style="{StaticResource StatusBadgeStyle}"
+                                BackgroundColor="{AppThemeBinding Light={StaticResource CardSurfaceMutedLight}, Dark={StaticResource CardSurfaceMutedDark}}">
+                            <Label FontSize="12">
+                                <Label.Text>
+                                    <MultiBinding StringFormat="{}П3 {0}:{1}">
+                                        <Binding Path="P3Home" />
+                                        <Binding Path="P3Away" />
+                                    </MultiBinding>
+                                </Label.Text>
+                            </Label>
+                        </Border>
+                        <Border Style="{StaticResource StatusBadgeStyle}"
+                                IsVisible="{Binding HasOvertime}"
+                                BackgroundColor="{AppThemeBinding Light={StaticResource BrandSurface}, Dark={StaticResource BrandSurfaceDark}}">
+                            <Label FontSize="12"
+                                   TextColor="{AppThemeBinding Light={StaticResource Brand}, Dark={StaticResource BrandDark}}">
+                                <Label.Text>
+                                    <MultiBinding StringFormat="{}ОТ {0}:{1}">
+                                        <Binding Path="OTHome" />
+                                        <Binding Path="OTAway" />
+                                    </MultiBinding>
+                                </Label.Text>
+                            </Label>
+                        </Border>
+                    </HorizontalStackLayout>
                 </VerticalStackLayout>
-            </Grid>
+            </Border>
 
             <Grid ColumnDefinitions="*,*"
                   ColumnSpacing="12">
@@ -163,12 +260,10 @@
                     Margin="0,16,0,0"
                     Clicked="OnSaveClicked" />
 
-            <Frame Margin="0,12,0,0"
-                   Padding="12"
-                   HasShadow="False"
-                   BackgroundColor="{AppThemeBinding Light={StaticResource CardSurfaceMutedLight}, Dark={StaticResource CardSurfaceMutedDark}}"
-                   BorderColor="{AppThemeBinding Light={StaticResource CardBorderLight}, Dark={StaticResource CardBorderDark}}"
-                   IsVisible="{Binding HasHeadToHead}">
+            <Border Margin="0,12,0,0"
+                    Padding="12"
+                    Style="{StaticResource CardElevatedStyle}"
+                    IsVisible="{Binding HasHeadToHead}">
                 <VerticalStackLayout Spacing="4">
                     <Label Text="Статистика противостояния (стадия)"
                            FontAttributes="Bold"
@@ -215,7 +310,7 @@
                         </Label>
                     </Grid>
                 </VerticalStackLayout>
-            </Frame>
+            </Border>
         </VerticalStackLayout>
     </ScrollView>
 

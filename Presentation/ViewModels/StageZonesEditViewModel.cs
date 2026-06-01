@@ -106,30 +106,48 @@ public sealed class StageZonesEditViewModel : INotifyPropertyChanged
 
     private void AddZone()
     {
-        var preset = ColorPresets[Zones.Count % ColorPresets.Length];
+        var index = Zones.Count % ColorPresets.Length;
+        var name = ColorPresets[index].Name.Split(' ')[0];
         Zones.Add(new ZoneEditItem
         {
             Id = Guid.NewGuid(),
-            Name = preset.Name.Split(' ')[0],
-            ColorIndex = Zones.Count % ColorPresets.Length
+            Name = name,
+            ColorIndex = index
         });
-        RebuildZoneNames();
+        // Важно: НЕ пересобираем весь список (Clear() сбросил бы выбор пикеров
+        // у команд). Дописываем имя новой зоны в конец — индексы прежних зон
+        // не меняются, выбранные значения сохраняются.
+        ZoneNames.Add(string.IsNullOrWhiteSpace(name) ? "(без имени)" : name);
     }
 
     private void DeleteZone(ZoneEditItem? zone)
     {
         if (zone is null) return;
-        var removedIndex = Zones.IndexOf(zone);
+
+        // Снимок выбранной зоны по Guid ДО изменения списка (индексы поедут).
+        var selectedZoneIdByTeam = new Dictionary<Guid, Guid?>();
+        foreach (var t in Teams)
+        {
+            Guid? zid = t.SelectedZoneIndex > 0 && t.SelectedZoneIndex <= Zones.Count
+                ? Zones[t.SelectedZoneIndex - 1].Id
+                : null;
+            selectedZoneIdByTeam[t.TeamId] = zid;
+        }
+
         Zones.Remove(zone);
         RebuildZoneNames();
 
-        // Сдвинуть/сбросить выбор команд, ссылавшихся на удалённую/последующие зоны.
+        // Восстановить выбор по Guid: удалённая зона → «нет», иначе новый индекс.
         foreach (var t in Teams)
         {
-            if (t.SelectedZoneIndex == removedIndex + 1)
-                t.SelectedZoneIndex = 0;
-            else if (t.SelectedZoneIndex > removedIndex + 1)
-                t.SelectedZoneIndex -= 1;
+            var zid = selectedZoneIdByTeam.TryGetValue(t.TeamId, out var z) ? z : null;
+            var newIndex = 0;
+            if (zid is { } id)
+            {
+                var pos = Zones.ToList().FindIndex(zz => zz.Id == id);
+                newIndex = pos >= 0 ? pos + 1 : 0;
+            }
+            t.SelectedZoneIndex = newIndex;
         }
     }
 

@@ -12,9 +12,37 @@
             <VerticalStackLayout x:Name="MainContent" Padding="16" Spacing="16" VerticalOptions="Start">
                 <!-- Вкладка Главная: видима при SelectedTabIndex == 0 -->
                 <VerticalStackLayout x:Name="HomeTabContent" IsVisible="{Binding SelectedTabIndex, Converter={StaticResource IndexEqualsToBool}, ConverterParameter=0}" Spacing="16">
-                    <Label Text="{Binding PageTitle}"
-                           FontAttributes="Bold"
-                           FontSize="22" />
+                    <!-- Hero-карточка турнира -->
+                    <Border StrokeThickness="0"
+                            StrokeShape="RoundRectangle 16"
+                            BackgroundColor="{AppThemeBinding Light={StaticResource Brand}, Dark={StaticResource BrandDark}}"
+                            Padding="16,14">
+                        <Grid RowDefinitions="Auto,Auto" RowSpacing="6">
+                            <Grid Grid.Row="0" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                <Label Grid.Column="0"
+                                       Text="{Binding PageTitle}"
+                                       TextColor="{StaticResource OnBrand}"
+                                       FontAttributes="Bold"
+                                       FontSize="24"
+                                       VerticalOptions="Center"
+                                       LineBreakMode="TailTruncation" />
+                                <Border Grid.Column="1"
+                                        Style="{StaticResource StatusBadgeStyle}"
+                                        VerticalOptions="Center"
+                                        BackgroundColor="{Binding HeaderStatus, Converter={StaticResource StatusToBadgeColor}}">
+                                    <Label Text="{Binding HeaderStatus, Converter={StaticResource TournamentStatusToString}}"
+                                           TextColor="{Binding HeaderStatus, Converter={StaticResource StatusToBadgeTextColor}}"
+                                           FontSize="11"
+                                           FontAttributes="Bold" />
+                                </Border>
+                            </Grid>
+                            <Label Grid.Row="1"
+                                   Text="{Binding HeaderMeta}"
+                                   TextColor="{StaticResource OnBrand}"
+                                   Opacity="0.85"
+                                   FontSize="13" />
+                        </Grid>
+                    </Border>
                     <Label Text="{x:Static res:AppResources.Status}" FontAttributes="Bold" FontSize="14" />
                     <Picker Title="{x:Static res:AppResources.Status}"
                             SelectedIndex="{Binding StatusIndex}">
@@ -168,11 +196,11 @@
                     <Label Text="{x:Static res:AppResources.StandingsTable}"
                            FontAttributes="Bold"
                            FontSize="18"
-                           IsVisible="{Binding SelectedStage, Converter={StaticResource NotNullToBool}}"
+                           IsVisible="{Binding IsSelectedStageSwiss}"
                            Margin="0,12,0,0" />
                     <!-- Переключатель Компактно / Подробно -->
                     <HorizontalStackLayout Spacing="8"
-                                           IsVisible="{Binding SelectedStage, Converter={StaticResource NotNullToBool}}">
+                                           IsVisible="{Binding IsSelectedStageSwiss}">
                         <Label Text="Компактно" FontSize="13" VerticalOptions="Center" />
                         <Switch IsToggled="{Binding ShowFullStandings}" />
                         <Label Text="Подробно" FontSize="13" VerticalOptions="Center" />
@@ -181,7 +209,7 @@
                     <CollectionView ItemsSource="{Binding StandingsByGroupForStage}"
                                     IsGrouped="True"
                                     VerticalOptions="Start"
-                                    IsVisible="{Binding IsCompactStandings}">
+                                    IsVisible="{Binding ShowCompactStandings}">
                         <CollectionView.GroupHeaderTemplate>
                             <DataTemplate>
                                 <VerticalStackLayout Margin="0,12,0,4" Spacing="4">
@@ -234,7 +262,7 @@
                     <!-- Полная таблица: все колонки, горизонтальный скролл -->
                     <ScrollView Orientation="Horizontal"
                                 HorizontalScrollBarVisibility="Default"
-                                IsVisible="{Binding ShowFullStandings}">
+                                IsVisible="{Binding ShowFullStandingsTable}">
                         <CollectionView ItemsSource="{Binding StandingsByGroupForStage}"
                                         IsGrouped="True"
                                         VerticalOptions="Start"

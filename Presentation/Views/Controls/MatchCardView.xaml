@@ -69,6 +69,14 @@
                 </Border>
             </Grid>
 
+            <!-- Маркер исхода: ОТ / Б -->
+            <Label Text="{Binding ScoreSuffix}"
+                   FontSize="12"
+                   FontAttributes="Bold"
+                   HorizontalTextAlignment="Center"
+                   TextColor="{AppThemeBinding Light={StaticResource Brand}, Dark={StaticResource BrandDark}}"
+                   IsVisible="{Binding ScoreSuffix, Converter={StaticResource GroupNameToVisibility}}" />
+
             <!-- Низ: разбивка по периодам -->
             <Label Text="{Binding Periods}"
                    FontSize="12"
