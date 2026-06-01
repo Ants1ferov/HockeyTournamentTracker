@@ -54,6 +54,10 @@ public sealed class LocalDatabase
         try { await _connection.ExecuteAsync("ALTER TABLE Tournaments ADD COLUMN LeagueId TEXT"); }
         catch { /* колонка уже есть */ }
 
+        // Миграция: добавить колонку Sport в Leagues
+        try { await _connection.ExecuteAsync("ALTER TABLE Leagues ADD COLUMN Sport TEXT"); }
+        catch { /* колонка уже есть */ }
+
         await _connection.ExecuteAsync("CREATE INDEX IF NOT EXISTS IX_Tournaments_LeagueId ON Tournaments(LeagueId)");
 
         // Индексы для быстрых фильтров списка матчей по стадии/дате/серии.

@@ -53,7 +53,8 @@ public sealed class LeagueRepository : ILeagueRepository
         Name = e.Name,
         Description = e.Description,
         IconPath = e.IconPath,
-        Order = e.Order
+        Order = e.Order,
+        Sport = e.Sport
     };
 
     private static LeagueEntity MapToEntity(League l) => new()
@@ -62,6 +63,7 @@ public sealed class LeagueRepository : ILeagueRepository
         Name = l.Name,
         Description = l.Description,
         IconPath = l.IconPath,
-        Order = l.Order
+        Order = l.Order,
+        Sport = l.Sport
     };
 }

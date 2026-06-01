@@ -14,6 +14,7 @@ public class LeagueEntity
     public string? Description { get; set; }
     public string? IconPath { get; set; }
     public int Order { get; set; }
+    public string? Sport { get; set; }
 }
 
 [Table("Tournaments")]

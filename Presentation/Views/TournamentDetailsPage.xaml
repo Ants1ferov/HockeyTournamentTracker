@@ -2,6 +2,7 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:res="clr-namespace:HockeyTournamentTracker.Resources"
+             xmlns:controls="clr-namespace:HockeyTournamentTracker.Presentation.Views.Controls"
              x:Class="HockeyTournamentTracker.Presentation.Views.TournamentDetailsPage"
              x:Name="ThisPage"
              Title="{Binding PageTitle}">
@@ -105,48 +106,7 @@
                     <CollectionView ItemsSource="{Binding LastPlayedMatches}">
                         <CollectionView.ItemTemplate>
                             <DataTemplate>
-                                <Border Margin="0,4"
-                                        Padding="12"
-                                        Style="{StaticResource CardElevatedStyle}">
-                                    <VerticalStackLayout Spacing="6">
-                                        <Grid ColumnDefinitions="*,Auto">
-                                            <Label Grid.Column="0"
-                                                   FontSize="12"
-                                                   Text="{Binding DateTime, StringFormat='{}{0:dd.MM HH:mm}'}"
-                                                   TextColor="{AppThemeBinding Light={StaticResource SecondaryTextLight}, Dark={StaticResource SecondaryTextDark}}"
-                                                   VerticalTextAlignment="Center" />
-                                            <Border Grid.Column="1"
-                                                    Style="{StaticResource StatusBadgeStyle}"
-                                                    BackgroundColor="{Binding Status, Converter={StaticResource MatchStatusBadgeColor}}"
-                                                    IsVisible="{Binding Status, Converter={StaticResource MatchStatusBadgeVisible}}">
-                                                <Label Text="{Binding Status, Converter={StaticResource MatchStatusToText}}"
-                                                       FontSize="11"
-                                                       FontAttributes="Bold"
-                                                       TextColor="{Binding Status, Converter={StaticResource MatchStatusBadgeTextColor}}" />
-                                            </Border>
-                                        </Grid>
-                                        <Grid ColumnDefinitions="*,Auto,*" ColumnSpacing="8">
-                                            <Label Grid.Column="0"
-                                                   Text="{Binding HomeTeamName}"
-                                                   FontSize="14"
-                                                   FontAttributes="Bold"
-                                                   HorizontalTextAlignment="End"
-                                                   VerticalTextAlignment="Center" />
-                                            <Label Grid.Column="1"
-                                                   Text="{Binding DisplayScore}"
-                                                   FontSize="20"
-                                                   FontAttributes="Bold"
-                                                   HorizontalTextAlignment="Center"
-                                                   VerticalTextAlignment="Center" />
-                                            <Label Grid.Column="2"
-                                                   Text="{Binding AwayTeamName}"
-                                                   FontSize="14"
-                                                   FontAttributes="Bold"
-                                                   HorizontalTextAlignment="Start"
-                                                   VerticalTextAlignment="Center" />
-                                        </Grid>
-                                    </VerticalStackLayout>
-                                </Border>
+                                <controls:MatchCardView Margin="0,4" />
                             </DataTemplate>
                         </CollectionView.ItemTemplate>
                     </CollectionView>
@@ -157,50 +117,11 @@
                     <CollectionView ItemsSource="{Binding UpcomingMatches}">
                         <CollectionView.ItemTemplate>
                             <DataTemplate>
-                                <Border Margin="0,4"
-                                        Padding="12"
-                                        Style="{StaticResource CardElevatedStyle}">
-                                    <VerticalStackLayout Spacing="8">
-                                        <Grid ColumnDefinitions="*,Auto">
-                                            <Label Grid.Column="0"
-                                                   FontSize="12"
-                                                   Text="{Binding DateTime, StringFormat='{}{0:dd.MM HH:mm}'}"
-                                                   TextColor="{AppThemeBinding Light={StaticResource SecondaryTextLight}, Dark={StaticResource SecondaryTextDark}}"
-                                                   VerticalTextAlignment="Center" />
-                                            <Border Grid.Column="1"
-                                                    Style="{StaticResource StatusBadgeStyle}"
-                                                    BackgroundColor="{Binding Status, Converter={StaticResource MatchStatusBadgeColor}}"
-                                                    IsVisible="{Binding Status, Converter={StaticResource MatchStatusBadgeVisible}}">
-                                                <Label Text="{Binding Status, Converter={StaticResource MatchStatusToText}}"
-                                                       FontSize="11"
-                                                       FontAttributes="Bold"
-                                                       TextColor="{Binding Status, Converter={StaticResource MatchStatusBadgeTextColor}}" />
-                                            </Border>
-                                        </Grid>
-                                        <Grid ColumnDefinitions="*,Auto,*" ColumnSpacing="8">
-                                            <Label Grid.Column="0"
-                                                   Text="{Binding HomeTeamName}"
-                                                   FontSize="14"
-                                                   FontAttributes="Bold"
-                                                   HorizontalTextAlignment="End"
-                                                   VerticalTextAlignment="Center" />
-                                            <Label Grid.Column="1"
-                                                   Text="{Binding DisplayScore}"
-                                                   FontSize="20"
-                                                   FontAttributes="Bold"
-                                                   HorizontalTextAlignment="Center"
-                                                   VerticalTextAlignment="Center" />
-                                            <Label Grid.Column="2"
-                                                   Text="{Binding AwayTeamName}"
-                                                   FontSize="14"
-                                                   FontAttributes="Bold"
-                                                   HorizontalTextAlignment="Start"
-                                                   VerticalTextAlignment="Center" />
-                                        </Grid>
-                                        <Button Text="Редактировать матч"
-                                                Clicked="OnFinishMatchClicked" />
-                                    </VerticalStackLayout>
-                                </Border>
+                                <VerticalStackLayout Margin="0,4" Spacing="6">
+                                    <controls:MatchCardView />
+                                    <Button Text="Редактировать матч"
+                                            Clicked="OnFinishMatchClicked" />
+                                </VerticalStackLayout>
                             </DataTemplate>
                         </CollectionView.ItemTemplate>
                     </CollectionView>
@@ -249,9 +170,71 @@
                            FontSize="18"
                            IsVisible="{Binding SelectedStage, Converter={StaticResource NotNullToBool}}"
                            Margin="0,12,0,0" />
+                    <!-- Переключатель Компактно / Подробно -->
+                    <HorizontalStackLayout Spacing="8"
+                                           IsVisible="{Binding SelectedStage, Converter={StaticResource NotNullToBool}}">
+                        <Label Text="Компактно" FontSize="13" VerticalOptions="Center" />
+                        <Switch IsToggled="{Binding ShowFullStandings}" />
+                        <Label Text="Подробно" FontSize="13" VerticalOptions="Center" />
+                    </HorizontalStackLayout>
+                    <!-- Компактная таблица (как в мокапе): зебра + полоса зоны -->
+                    <CollectionView ItemsSource="{Binding StandingsByGroupForStage}"
+                                    IsGrouped="True"
+                                    VerticalOptions="Start"
+                                    IsVisible="{Binding IsCompactStandings}">
+                        <CollectionView.GroupHeaderTemplate>
+                            <DataTemplate>
+                                <VerticalStackLayout Margin="0,12,0,4" Spacing="4">
+                                    <Label Text="{Binding GroupName}"
+                                           FontAttributes="Bold"
+                                           FontSize="14"
+                                           IsVisible="{Binding GroupName, Converter={StaticResource GroupNameToVisibility}}" />
+                                    <Grid ColumnDefinitions="4,*">
+                                        <Grid Grid.Column="1"
+                                              ColumnDefinitions="34,*,44,44,64"
+                                              Padding="6,6"
+                                              ColumnSpacing="6"
+                                              BackgroundColor="{AppThemeBinding Light={StaticResource TableHeaderAltLight}, Dark={StaticResource TableHeaderAltDark}}">
+                                            <Label Grid.Column="0" Text="{x:Static res:AppResources.StandingsColPlace}" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="Center" />
+                                            <Label Grid.Column="1" Text="{x:Static res:AppResources.StandingsColTeam}" FontSize="12" FontAttributes="Bold" />
+                                            <Label Grid.Column="2" Text="{x:Static res:AppResources.StandingsColGames}" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="Center" />
+                                            <Label Grid.Column="3" Text="{x:Static res:AppResources.StandingsColPoints}" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="Center" />
+                                            <Label Grid.Column="4" Text="В-П" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="Center" />
+                                        </Grid>
+                                    </Grid>
+                                </VerticalStackLayout>
+                            </DataTemplate>
+                        </CollectionView.GroupHeaderTemplate>
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid ColumnDefinitions="4,*" ColumnSpacing="0">
+                                    <BoxView Grid.Column="0"
+                                             BackgroundColor="{Binding ZoneColorHex, Converter={StaticResource HexColorToColor}}"
+                                             VerticalOptions="Fill" />
+                                    <Grid Grid.Column="1"
+                                          ColumnDefinitions="34,*,44,44,64"
+                                          Padding="6,8"
+                                          ColumnSpacing="6"
+                                          BackgroundColor="{Binding IsAltRow, Converter={StaticResource BoolToZebraColor}}">
+                                        <Label Grid.Column="0" Text="{Binding Place}" FontSize="13" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+                                        <HorizontalStackLayout Grid.Column="1" Spacing="6" VerticalOptions="Center">
+                                            <Image WidthRequest="20" HeightRequest="20"
+                                                   Source="{Binding TeamIconPath, Converter={StaticResource PathToImageSource}}"
+                                                   Aspect="AspectFill" />
+                                            <Label Text="{Binding TeamName}" FontSize="13" LineBreakMode="TailTruncation" VerticalTextAlignment="Center" />
+                                        </HorizontalStackLayout>
+                                        <Label Grid.Column="2" Text="{Binding Games}" FontSize="13" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+                                        <Label Grid.Column="3" Text="{Binding Points}" FontSize="13" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+                                        <Label Grid.Column="4" Text="{Binding RecordSummary}" FontSize="13" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+                                    </Grid>
+                                </Grid>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                    <!-- Полная таблица: все колонки, горизонтальный скролл -->
                     <ScrollView Orientation="Horizontal"
                                 HorizontalScrollBarVisibility="Default"
-                                IsVisible="{Binding SelectedStage, Converter={StaticResource NotNullToBool}}">
+                                IsVisible="{Binding ShowFullStandings}">
                         <CollectionView ItemsSource="{Binding StandingsByGroupForStage}"
                                         IsGrouped="True"
                                         VerticalOptions="Start"
@@ -345,50 +328,11 @@
                                     IsVisible="{Binding SelectedStage, Converter={StaticResource NotNullToBool}}">
                         <CollectionView.ItemTemplate>
                             <DataTemplate>
-                                <Border Margin="0,4"
-                                        Padding="12"
-                                        Style="{StaticResource CardElevatedStyle}">
-                                    <VerticalStackLayout Spacing="8">
-                                        <Grid ColumnDefinitions="*,Auto">
-                                            <Label Grid.Column="0"
-                                                   FontSize="12"
-                                                   Text="{Binding DateTime, StringFormat='{}{0:dd.MM HH:mm}'}"
-                                                   TextColor="{AppThemeBinding Light={StaticResource SecondaryTextLight}, Dark={StaticResource SecondaryTextDark}}"
-                                                   VerticalTextAlignment="Center" />
-                                            <Border Grid.Column="1"
-                                                    Style="{StaticResource StatusBadgeStyle}"
-                                                    BackgroundColor="{Binding Status, Converter={StaticResource MatchStatusBadgeColor}}"
-                                                    IsVisible="{Binding Status, Converter={StaticResource MatchStatusBadgeVisible}}">
-                                                <Label Text="{Binding Status, Converter={StaticResource MatchStatusToText}}"
-                                                       FontSize="11"
-                                                       FontAttributes="Bold"
-                                                       TextColor="{Binding Status, Converter={StaticResource MatchStatusBadgeTextColor}}" />
-                                            </Border>
-                                        </Grid>
-                                        <Grid ColumnDefinitions="*,Auto,*" ColumnSpacing="8">
-                                            <Label Grid.Column="0"
-                                                   Text="{Binding HomeTeamName}"
-                                                   FontSize="14"
-                                                   FontAttributes="Bold"
-                                                   HorizontalTextAlignment="End"
-                                                   VerticalTextAlignment="Center" />
-                                            <Label Grid.Column="1"
-                                                   Text="{Binding DisplayScore}"
-                                                   FontSize="20"
-                                                   FontAttributes="Bold"
-                                                   HorizontalTextAlignment="Center"
-                                                   VerticalTextAlignment="Center" />
-                                            <Label Grid.Column="2"
-                                                   Text="{Binding AwayTeamName}"
-                                                   FontSize="14"
-                                                   FontAttributes="Bold"
-                                                   HorizontalTextAlignment="Start"
-                                                   VerticalTextAlignment="Center" />
-                                        </Grid>
-                                        <Button Text="Редактировать матч"
-                                                Clicked="OnFinishMatchClicked" />
-                                    </VerticalStackLayout>
-                                </Border>
+                                <VerticalStackLayout Margin="0,4" Spacing="6">
+                                    <controls:MatchCardView />
+                                    <Button Text="Редактировать матч"
+                                            Clicked="OnFinishMatchClicked" />
+                                </VerticalStackLayout>
                             </DataTemplate>
                         </CollectionView.ItemTemplate>
                     </CollectionView>

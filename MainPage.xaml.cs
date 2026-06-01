@@ -47,37 +47,33 @@ public partial class MainPage : ContentPage
 
     private async void OnTournamentTapped(object? sender, TappedEventArgs e)
     {
-        var tournament = (sender as BindableObject)?.BindingContext as Domain.Tournament
-            ?? (sender as TapGestureRecognizer)?.Parent?.BindingContext as Domain.Tournament;
-        if (tournament is null) return;
-        await Shell.Current.GoToAsync($"{nameof(TournamentDetailsPage)}?TournamentId={tournament.Id}");
+        if ((sender as BindableObject)?.BindingContext is not TournamentCardVm card) return;
+        await Shell.Current.GoToAsync($"{nameof(TournamentDetailsPage)}?TournamentId={card.Id}");
     }
 
-    private async void OnLeagueTapped(object? sender, TappedEventArgs e)
+    private void OnLeagueTapped(object? sender, TappedEventArgs e)
     {
-        var league = (sender as BindableObject)?.BindingContext as LeagueCardVm
-            ?? (sender as TapGestureRecognizer)?.Parent?.BindingContext as LeagueCardVm;
-        if (league is null) return;
-        await Shell.Current.GoToAsync($"{nameof(LeagueDetailsPage)}?LeagueId={league.Id}");
+        if ((sender as BindableObject)?.BindingContext is not LeagueCardVm league) return;
+        league.IsExpanded = !league.IsExpanded;
+    }
+
+    private async void OnEditLeagueInvoked(object? sender, EventArgs e)
+    {
+        if ((sender as BindableObject)?.BindingContext is not LeagueCardVm league) return;
+        await Shell.Current.GoToAsync($"{nameof(LeagueEditPage)}?LeagueId={league.Id}");
     }
 
     private async void OnDeleteTournamentInvoked(object? sender, EventArgs e)
     {
-        var tournament = (sender as SwipeItem)?.Parent?.Parent is BindableObject bo
-            ? bo.BindingContext as Domain.Tournament
-            : null;
-        if (tournament is null) return;
+        if ((sender as BindableObject)?.BindingContext is not TournamentCardVm card) return;
         var confirm = await DisplayAlert(AppResources.Delete, AppResources.DeleteTournamentConfirm, AppResources.Delete, AppResources.Cancel);
         if (!confirm) return;
-        await _viewModel.DeleteTournamentAsync(tournament);
+        await _viewModel.DeleteTournamentAsync(card.Id);
     }
 
     private async void OnDeleteLeagueInvoked(object? sender, EventArgs e)
     {
-        var league = (sender as SwipeItem)?.Parent?.Parent is BindableObject bo
-            ? bo.BindingContext as LeagueCardVm
-            : null;
-        if (league is null) return;
+        if ((sender as BindableObject)?.BindingContext is not LeagueCardVm league) return;
         var confirm = await DisplayAlert("Удалить лигу", "Лига будет удалена. Турниры останутся.", "Удалить", AppResources.Cancel);
         if (!confirm) return;
         await _viewModel.DeleteLeagueAsync(league);

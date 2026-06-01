@@ -73,6 +73,19 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged, IMatchU
         }
     }
 
+    private bool _showFullStandings;
+    /// <summary>true — полная таблица (все колонки), false — компактный вид как в мокапе.</summary>
+    public bool ShowFullStandings
+    {
+        get => _showFullStandings;
+        set
+        {
+            if (SetField(ref _showFullStandings, value))
+                OnPropertyChanged(nameof(IsCompactStandings));
+        }
+    }
+    public bool IsCompactStandings => !_showFullStandings;
+
     public ObservableCollection<StandingRow> Standings { get; } = new();
     public ObservableCollection<StandingGroup> StandingsByGroup { get; } = new();
     public ObservableCollection<MatchRow> LiveMatches { get; } = new();
@@ -215,7 +228,8 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged, IMatchU
                     GoalDiff = s.GoalDifference,
                     Last5Results = last5,
                     PointsPct = FormatPointsPercentage(s.Points, s.Games, maxPointsPerGame),
-                    Points = s.Points
+                    Points = s.Points,
+                    IsAltRow = place % 2 == 0
                 };
             }
 
@@ -311,14 +325,14 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged, IMatchU
             {
                 teamById.TryGetValue(m.HomeTeamId, out var homeTeam);
                 teamById.TryGetValue(m.AwayTeamId, out var awayTeam);
-                LiveMatches.Add(CreateMatchRow(m, homeTeam?.Name, awayTeam?.Name, isLive: true));
+                LiveMatches.Add(CreateMatchRow(m, homeTeam, awayTeam,isLive: true));
             }
 
             foreach (var m in ordered.Where(m => m.Status != MatchStatus.InProgress))
             {
                 teamById.TryGetValue(m.HomeTeamId, out var homeTeam);
                 teamById.TryGetValue(m.AwayTeamId, out var awayTeam);
-                Matches.Add(CreateMatchRow(m, homeTeam?.Name, awayTeam?.Name, isLive: false));
+                Matches.Add(CreateMatchRow(m, homeTeam, awayTeam,isLive: false));
             }
 
             LastPlayedMatches.Clear();
@@ -332,7 +346,7 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged, IMatchU
             {
                 teamById.TryGetValue(m.HomeTeamId, out var homeTeam);
                 teamById.TryGetValue(m.AwayTeamId, out var awayTeam);
-                LastPlayedMatches.Add(CreateMatchRow(m, homeTeam?.Name, awayTeam?.Name, isLive: false));
+                LastPlayedMatches.Add(CreateMatchRow(m, homeTeam, awayTeam,isLive: false));
             }
             var upcoming = matches
                 .Where(m => m.Status == MatchStatus.Scheduled || m.Status == MatchStatus.InProgress)
@@ -343,7 +357,7 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged, IMatchU
             {
                 teamById.TryGetValue(m.HomeTeamId, out var homeTeam);
                 teamById.TryGetValue(m.AwayTeamId, out var awayTeam);
-                UpcomingMatches.Add(CreateMatchRow(m, homeTeam?.Name, awayTeam?.Name, m.Status == MatchStatus.InProgress));
+                UpcomingMatches.Add(CreateMatchRow(m, homeTeam, awayTeam,m.Status == MatchStatus.InProgress));
             }
 
             Stages.Clear();
@@ -439,7 +453,7 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged, IMatchU
             {
                 teamById.TryGetValue(m.HomeTeamId, out var homeTeam);
                 teamById.TryGetValue(m.AwayTeamId, out var awayTeam);
-                rows.Add(CreateMatchRow(m, homeTeam?.Name, awayTeam?.Name, m.Status == MatchStatus.InProgress));
+                rows.Add(CreateMatchRow(m, homeTeam, awayTeam,m.Status == MatchStatus.InProgress));
             }
 
             var teamZoneColors = await BuildTeamZoneColorsAsync(stageId);
@@ -479,18 +493,8 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged, IMatchU
         }
     }
 
-    private static MatchRow CreateMatchRow(Match m, string? homeName, string? awayName, bool isLive) =>
-        new()
-        {
-            MatchId = m.Id,
-            SeriesId = m.SeriesId,
-            DateTime = m.DateTime,
-            HomeTeamName = homeName ?? string.Empty,
-            AwayTeamName = awayName ?? string.Empty,
-            DisplayScore = BuildScoreText(m),
-            IsLive = isLive,
-            Status = m.Status
-        };
+    private static MatchRow CreateMatchRow(Match m, Team? home, Team? away, bool isLive) =>
+        MatchRowFactory.Create(m, home, away, isLive);
 
     private async Task<IReadOnlyDictionary<Guid, string>?> BuildTeamZoneColorsAsync(Guid stageId)
     {
@@ -600,46 +604,6 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged, IMatchU
         return rounded.ToString("0.##", System.Globalization.CultureInfo.CurrentCulture);
     }
 
-    private static string BuildScoreText(Match match)
-    {
-        if (match.HomeGoals is null || match.AwayGoals is null)
-            return "— : —";
-
-        var finalHomeGoals = match.HomeGoals.Value;
-        var finalAwayGoals = match.AwayGoals.Value;
-        if (match.Status == MatchStatus.Finished && match.OutcomeType is not null)
-        {
-            var effectiveScore = MatchOutcomeResolver.GetEffectiveFinalScore(match);
-            finalHomeGoals = effectiveScore?.HomeGoals ?? finalHomeGoals;
-            finalAwayGoals = effectiveScore?.AwayGoals ?? finalAwayGoals;
-        }
-
-        var baseScore = $"{finalHomeGoals}:{finalAwayGoals}";
-        var periodPart = "";
-        if (match.PeriodScores is { Count: > 0 } periods)
-        {
-            var parts = periods.Select(p =>
-            {
-                var s = $"{p.HomeGoals}:{p.AwayGoals}";
-                return p.PeriodType == PeriodType.Overtime ? $"{s} ОТ" : p.PeriodType == PeriodType.Shootout ? $"{s} Б" : s;
-            });
-            periodPart = " (" + string.Join(", ", parts) + ")";
-        }
-
-        var hasOvertimePeriod = match.PeriodScores?.Any(p => p.PeriodType == PeriodType.Overtime) == true;
-        var hasShootoutPeriod = match.PeriodScores?.Any(p => p.PeriodType == PeriodType.Shootout) == true;
-
-        var outcomeSuffix = match.OutcomeType switch
-        {
-            OutcomeType.Overtime => hasOvertimePeriod ? "" : " ОТ",
-            OutcomeType.Shootout => hasShootoutPeriod ? "" : match.ShootoutScoreHome is { } sh && match.ShootoutScoreAway is { } sa
-                ? $" Б ({sh}:{sa})"
-                : " Б",
-            _ => ""
-        };
-        return $"{baseScore}{outcomeSuffix}{periodPart}";
-    }
-
     public void OnMatchUpdated(MatchUpdatedMessage message)
     {
         if (Tournament is null || message.TournamentId != Tournament.Id)
@@ -691,6 +655,11 @@ public sealed class StandingRow
     public int Points { get; set; }
     /// <summary>Hex color of the zone strip (#C8C8C8 = neutral when not assigned).</summary>
     public string ZoneColorHex { get; set; } = "#C8C8C8";
+    /// <summary>Чётная строка (для чередования фона — зебра).</summary>
+    public bool IsAltRow { get; set; }
+    /// <summary>Сводка В-П для компактного вида: «{всего побед}-{всего поражений}».</summary>
+    public string RecordSummary =>
+        $"{WinsReg + WinsOt + WinsSo}-{LossesReg + LossesOt + LossesSo}";
 }
 
 public sealed class MatchRow
@@ -700,7 +669,14 @@ public sealed class MatchRow
     public DateTime? DateTime { get; set; }
     public string HomeTeamName { get; set; } = string.Empty;
     public string AwayTeamName { get; set; } = string.Empty;
+    public string? HomeIconPath { get; set; }
+    public string? AwayIconPath { get; set; }
+    /// <summary>Полная строка счёта со скобками-периодами (для обратной совместимости).</summary>
     public string DisplayScore { get; set; } = string.Empty;
+    /// <summary>Крупный счёт для карточки, например «3 : 2» или «— : —».</summary>
+    public string ScoreBig { get; set; } = "— : —";
+    /// <summary>Разбивка по периодам, например «1:0 · 1:1 · 1:1 ОТ» (пусто, если нет).</summary>
+    public string Periods { get; set; } = string.Empty;
     public bool IsLive { get; set; }
     public MatchStatus Status { get; set; }
 }

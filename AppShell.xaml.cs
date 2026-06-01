@@ -20,6 +20,7 @@ public partial class AppShell : Shell
 		Routing.RegisterRoute(nameof(StageDetailsPage), typeof(StageDetailsPage));
 		Routing.RegisterRoute(nameof(StageRosterPage), typeof(StageRosterPage));
 		Routing.RegisterRoute(nameof(StageMatchesPage), typeof(StageMatchesPage));
+		Routing.RegisterRoute(nameof(StageZonesEditPage), typeof(StageZonesEditPage));
 		Routing.RegisterRoute(nameof(PlayoffBracketPage), typeof(PlayoffBracketPage));
 		Routing.RegisterRoute(nameof(TournamentStatisticsPage), typeof(TournamentStatisticsPage));
 	}

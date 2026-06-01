@@ -30,6 +30,10 @@
                        FontSize="16" />
                 <Button Text="Управление составом стадии"
                         Clicked="OnManageRosterClicked" />
+                <Button Text="Настроить зоны"
+                        IsVisible="{Binding IsSwissStage}"
+                        Style="{StaticResource GhostButtonStyle}"
+                        Clicked="OnConfigureZonesClicked" />
                 <Button Text="Сетка плей-офф"
                         IsVisible="{Binding IsPlayoffStage}"
                         Clicked="OnOpenPlayoffClicked" />
@@ -40,8 +44,69 @@
                    FontSize="18"
                    IsVisible="{Binding IsSwissStage}"
                    Margin="0,12,0,0" />
+            <!-- Переключатель Компактно / Подробно -->
+            <HorizontalStackLayout Spacing="8" IsVisible="{Binding IsSwissStage}">
+                <Label Text="Компактно" FontSize="13" VerticalOptions="Center" />
+                <Switch IsToggled="{Binding ShowFullStandings}" />
+                <Label Text="Подробно" FontSize="13" VerticalOptions="Center" />
+            </HorizontalStackLayout>
+            <!-- Компактная таблица (как в мокапе): зебра + полоса зоны -->
+            <CollectionView ItemsSource="{Binding StandingsByGroupForStage}"
+                            IsGrouped="True"
+                            VerticalOptions="Start"
+                            IsVisible="{Binding IsCompactStandings}">
+                <CollectionView.GroupHeaderTemplate>
+                    <DataTemplate>
+                        <VerticalStackLayout Margin="0,12,0,4" Spacing="4">
+                            <Label Text="{Binding GroupName}"
+                                   FontAttributes="Bold"
+                                   FontSize="14"
+                                   IsVisible="{Binding GroupName, Converter={StaticResource GroupNameToVisibility}}" />
+                            <Grid ColumnDefinitions="4,*">
+                                <Grid Grid.Column="1"
+                                      ColumnDefinitions="34,*,44,44,64"
+                                      Padding="6,6"
+                                      ColumnSpacing="6"
+                                      BackgroundColor="{AppThemeBinding Light={StaticResource TableHeaderAltLight}, Dark={StaticResource TableHeaderAltDark}}">
+                                    <Label Grid.Column="0" Text="{x:Static res:AppResources.StandingsColPlace}" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="Center" />
+                                    <Label Grid.Column="1" Text="{x:Static res:AppResources.StandingsColTeam}" FontSize="12" FontAttributes="Bold" />
+                                    <Label Grid.Column="2" Text="{x:Static res:AppResources.StandingsColGames}" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="Center" />
+                                    <Label Grid.Column="3" Text="{x:Static res:AppResources.StandingsColPoints}" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="Center" />
+                                    <Label Grid.Column="4" Text="В-П" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="Center" />
+                                </Grid>
+                            </Grid>
+                        </VerticalStackLayout>
+                    </DataTemplate>
+                </CollectionView.GroupHeaderTemplate>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Grid ColumnDefinitions="4,*" ColumnSpacing="0">
+                            <BoxView Grid.Column="0"
+                                     BackgroundColor="{Binding ZoneColorHex, Converter={StaticResource HexColorToColor}}"
+                                     VerticalOptions="Fill" />
+                            <Grid Grid.Column="1"
+                                  ColumnDefinitions="34,*,44,44,64"
+                                  Padding="6,8"
+                                  ColumnSpacing="6"
+                                  BackgroundColor="{Binding IsAltRow, Converter={StaticResource BoolToZebraColor}}">
+                                <Label Grid.Column="0" Text="{Binding Place}" FontSize="13" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+                                <HorizontalStackLayout Grid.Column="1" Spacing="6" VerticalOptions="Center">
+                                    <Image WidthRequest="20" HeightRequest="20"
+                                           Source="{Binding TeamIconPath, Converter={StaticResource PathToImageSource}}"
+                                           Aspect="AspectFill" />
+                                    <Label Text="{Binding TeamName}" FontSize="13" LineBreakMode="TailTruncation" VerticalTextAlignment="Center" />
+                                </HorizontalStackLayout>
+                                <Label Grid.Column="2" Text="{Binding Games}" FontSize="13" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+                                <Label Grid.Column="3" Text="{Binding Points}" FontSize="13" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+                                <Label Grid.Column="4" Text="{Binding RecordSummary}" FontSize="13" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+                            </Grid>
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+            <!-- Полная таблица: все колонки, горизонтальный скролл -->
             <ScrollView Orientation="Horizontal"
-                        IsVisible="{Binding IsSwissStage}"
+                        IsVisible="{Binding ShowFullStandings}"
                         HorizontalScrollBarVisibility="Default">
                 <VerticalStackLayout Spacing="4" MinimumWidthRequest="940">
                     <CollectionView ItemsSource="{Binding StandingsByGroupForStage}"

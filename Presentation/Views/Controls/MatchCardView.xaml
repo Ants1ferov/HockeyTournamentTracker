@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="HockeyTournamentTracker.Presentation.Views.Controls.MatchCardView">
+
+    <!-- Переиспользуемое визуальное ядро карточки матча. BindingContext = MatchRow.
+         Кнопки действий добавляются на страницах ПОД этим контролом. -->
+    <Border Padding="12"
+            Style="{StaticResource CardElevatedStyle}">
+        <VerticalStackLayout Spacing="8">
+
+            <!-- Верх: дата слева, статус-бейдж справа -->
+            <Grid ColumnDefinitions="*,Auto">
+                <Label Grid.Column="0"
+                       FontSize="12"
+                       Text="{Binding DateTime, StringFormat='🗓 {0:dd.MM · HH:mm}'}"
+                       TextColor="{AppThemeBinding Light={StaticResource SecondaryTextLight}, Dark={StaticResource SecondaryTextDark}}"
+                       VerticalTextAlignment="Center" />
+                <Border Grid.Column="1"
+                        Style="{StaticResource StatusBadgeStyle}"
+                        BackgroundColor="{Binding Status, Converter={StaticResource MatchStatusBadgeColor}}"
+                        IsVisible="{Binding Status, Converter={StaticResource MatchStatusBadgeVisible}}">
+                    <Label Text="{Binding Status, Converter={StaticResource MatchStatusToText}}"
+                           FontSize="11"
+                           FontAttributes="Bold"
+                           TextColor="{Binding Status, Converter={StaticResource MatchStatusBadgeTextColor}}" />
+                </Border>
+            </Grid>
+
+            <!-- Центр: аватар + хозяева | счёт | гости + аватар -->
+            <Grid ColumnDefinitions="Auto,*,Auto,*,Auto" ColumnSpacing="8">
+                <Border Grid.Column="0"
+                        WidthRequest="36" HeightRequest="36"
+                        StrokeThickness="0"
+                        StrokeShape="RoundRectangle 18"
+                        BackgroundColor="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
+                        VerticalOptions="Center">
+                    <Image Aspect="AspectFill"
+                           Source="{Binding HomeIconPath, Converter={StaticResource PathToImageSource}}" />
+                </Border>
+                <Label Grid.Column="1"
+                       Text="{Binding HomeTeamName}"
+                       FontSize="14"
+                       FontAttributes="Bold"
+                       LineBreakMode="TailTruncation"
+                       HorizontalTextAlignment="End"
+                       VerticalTextAlignment="Center" />
+                <Label Grid.Column="2"
+                       Text="{Binding ScoreBig}"
+                       FontSize="20"
+                       FontAttributes="Bold"
+                       HorizontalTextAlignment="Center"
+                       VerticalTextAlignment="Center" />
+                <Label Grid.Column="3"
+                       Text="{Binding AwayTeamName}"
+                       FontSize="14"
+                       FontAttributes="Bold"
+                       LineBreakMode="TailTruncation"
+                       HorizontalTextAlignment="Start"
+                       VerticalTextAlignment="Center" />
+                <Border Grid.Column="4"
+                        WidthRequest="36" HeightRequest="36"
+                        StrokeThickness="0"
+                        StrokeShape="RoundRectangle 18"
+                        BackgroundColor="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
+                        VerticalOptions="Center">
+                    <Image Aspect="AspectFill"
+                           Source="{Binding AwayIconPath, Converter={StaticResource PathToImageSource}}" />
+                </Border>
+            </Grid>
+
+            <!-- Низ: разбивка по периодам -->
+            <Label Text="{Binding Periods}"
+                   FontSize="12"
+                   HorizontalTextAlignment="Center"
+                   TextColor="{AppThemeBinding Light={StaticResource SecondaryTextLight}, Dark={StaticResource SecondaryTextDark}}"
+                   IsVisible="{Binding Periods, Converter={StaticResource GroupNameToVisibility}}" />
+
+        </VerticalStackLayout>
+    </Border>
+</ContentView>

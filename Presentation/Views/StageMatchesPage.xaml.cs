@@ -16,6 +16,7 @@ public partial class StageMatchesPage : ContentPage, IQueryAttributable
     private readonly ITournamentRepository _tournamentRepository;
     private readonly ObservableCollection<MatchRow> _filteredMatches = new();
     private readonly Dictionary<Guid, string> _teamNameById = new();
+    private readonly Dictionary<Guid, string?> _teamIconById = new();
     private Guid _tournamentId;
     private Guid _stageId;
     private Guid? _seriesId;
@@ -314,17 +315,11 @@ public partial class StageMatchesPage : ContentPage, IQueryAttributable
     {
         _teamNameById.TryGetValue(match.HomeTeamId, out var homeName);
         _teamNameById.TryGetValue(match.AwayTeamId, out var awayName);
-        return new MatchRow
-        {
-            MatchId = match.Id,
-            SeriesId = match.SeriesId,
-            DateTime = match.DateTime,
-            HomeTeamName = homeName ?? string.Empty,
-            AwayTeamName = awayName ?? string.Empty,
-            DisplayScore = BuildScoreText(match),
-            IsLive = match.Status == MatchStatus.InProgress,
-            Status = match.Status
-        };
+        _teamIconById.TryGetValue(match.HomeTeamId, out var homeIcon);
+        _teamIconById.TryGetValue(match.AwayTeamId, out var awayIcon);
+        return MatchRowFactory.Create(
+            match, homeName, awayName, homeIcon, awayIcon,
+            match.Status == MatchStatus.InProgress);
     }
 
     private async Task EnsureTeamNamesLoadedAsync()
@@ -336,8 +331,12 @@ public partial class StageMatchesPage : ContentPage, IQueryAttributable
 
         var teams = await _teamRepository.GetByTournamentAsync(_tournamentId);
         _teamNameById.Clear();
+        _teamIconById.Clear();
         foreach (var t in teams)
+        {
             _teamNameById[t.Id] = t.Name;
+            _teamIconById[t.Id] = t.IconPath;
+        }
     }
 
     private void SetLoadingUi(bool loading)
@@ -347,36 +346,4 @@ public partial class StageMatchesPage : ContentPage, IQueryAttributable
         LoadMoreButton.IsEnabled = !loading;
     }
 
-    private static string BuildScoreText(Match match)
-    {
-        if (match.HomeGoals is null || match.AwayGoals is null)
-            return "— : —";
-
-        var finalHomeGoals = match.HomeGoals.Value;
-        var finalAwayGoals = match.AwayGoals.Value;
-        if (match.Status == MatchStatus.Finished && match.OutcomeType is not null)
-        {
-            var effectiveScore = MatchOutcomeResolver.GetEffectiveFinalScore(match);
-            finalHomeGoals = effectiveScore?.HomeGoals ?? finalHomeGoals;
-            finalAwayGoals = effectiveScore?.AwayGoals ?? finalAwayGoals;
-        }
-
-        var baseScore = $"{finalHomeGoals}:{finalAwayGoals}";
-        var periodPart = "";
-        if (match.PeriodScores is { Count: > 0 } periods)
-            periodPart = " (" + string.Join(", ", periods.Select(p => $"{p.HomeGoals}:{p.AwayGoals}")) + ")";
-
-        var hasOvertimePeriod = match.PeriodScores?.Any(p => p.PeriodType == PeriodType.Overtime) == true;
-        var hasShootoutPeriod = match.PeriodScores?.Any(p => p.PeriodType == PeriodType.Shootout) == true;
-        var outcomeSuffix = match.OutcomeType switch
-        {
-            OutcomeType.Overtime => hasOvertimePeriod ? "" : " ОТ",
-            OutcomeType.Shootout => hasShootoutPeriod ? "" : (match.ShootoutScoreHome is { } sh && match.ShootoutScoreAway is { } sa
-                ? $" Б ({sh}:{sa})"
-                : " Б"),
-            _ => ""
-        };
-
-        return $"{baseScore}{outcomeSuffix}{periodPart}";
-    }
 }

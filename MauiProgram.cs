@@ -83,6 +83,8 @@ public static class MauiProgram
 		builder.Services.AddTransient<StageDetailsPage>();
 		builder.Services.AddTransient<StageRosterPage>();
 		builder.Services.AddTransient<StageMatchesPage>();
+		builder.Services.AddTransient<StageZonesEditViewModel>();
+		builder.Services.AddTransient<StageZonesEditPage>();
 		builder.Services.AddTransient<PlayoffBracketViewModel>();
 		builder.Services.AddTransient<PlayoffBracketPage>();
 
