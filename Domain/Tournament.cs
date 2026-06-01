@@ -13,5 +13,7 @@ public sealed class Tournament
     public TournamentStatus Status { get; set; } = TournamentStatus.Planned;
 
     public TournamentRules Rules { get; set; } = new();
+
+    public Guid? LeagueId { get; set; }
 }
 

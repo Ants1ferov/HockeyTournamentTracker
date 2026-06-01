@@ -8,8 +8,10 @@ public interface ITournamentRepository
 {
     Task<IReadOnlyList<Tournament>> GetAllAsync();
     Task<Tournament?> GetByIdAsync(Guid id);
+    Task<IReadOnlyList<Tournament>> GetByLeagueAsync(Guid leagueId);
     Task SaveAsync(Tournament tournament);
     Task DeleteAsync(Guid id);
+    Task SetLeagueAsync(Guid tournamentId, Guid? leagueId);
 }
 
 public sealed class TournamentRepository : ITournamentRepository
@@ -50,6 +52,23 @@ public sealed class TournamentRepository : ITournamentRepository
         }
     }
 
+    public async Task<IReadOnlyList<Tournament>> GetByLeagueAsync(Guid leagueId)
+    {
+        var leagueIdStr = leagueId.ToString();
+        var entities = await _connection.Table<TournamentEntity>()
+            .Where(t => t.LeagueId == leagueIdStr)
+            .ToListAsync();
+        return entities.Select(MapToDomain).ToList();
+    }
+
+    public async Task SetLeagueAsync(Guid tournamentId, Guid? leagueId)
+    {
+        var leagueIdStr = leagueId.HasValue ? leagueId.Value.ToString() : null;
+        await _connection.ExecuteAsync(
+            "UPDATE Tournaments SET LeagueId = ? WHERE Id = ?",
+            leagueIdStr, tournamentId.ToString());
+    }
+
     public async Task DeleteAsync(Guid id)
     {
         var matches = await _matchRepository.GetByTournamentAsync(id);
@@ -77,7 +96,8 @@ public sealed class TournamentRepository : ITournamentRepository
             StartDate = entity.StartDate,
             EndDate = entity.EndDate,
             Status = (TournamentStatus)entity.Status,
-            Rules = rules
+            Rules = rules,
+            LeagueId = entity.LeagueId is { Length: > 0 } s && Guid.TryParse(s, out var lid) ? lid : null
         };
     }
 
@@ -91,7 +111,8 @@ public sealed class TournamentRepository : ITournamentRepository
             StartDate = tournament.StartDate,
             EndDate = tournament.EndDate,
             Status = (int)tournament.Status,
-            RulesJson = JsonSerializer.Serialize(tournament.Rules)
+            RulesJson = JsonSerializer.Serialize(tournament.Rules),
+            LeagueId = tournament.LeagueId.HasValue ? tournament.LeagueId.Value.ToString() : null
         };
     }
 }

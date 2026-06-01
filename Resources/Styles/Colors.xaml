@@ -45,6 +45,35 @@
     <Color x:Key="SelectionBorderLight">#6B7280</Color>
     <Color x:Key="SelectionBorderDark">#9CA3AF</Color>
 
+    <!-- Бренд-красный -->
+    <Color x:Key="Brand">#E2231A</Color>
+    <Color x:Key="BrandPressed">#B71C15</Color>
+    <Color x:Key="BrandDark">#F0524B</Color>
+    <Color x:Key="BrandSurface">#FCE9E8</Color>
+    <Color x:Key="BrandSurfaceDark">#3A1413</Color>
+    <Color x:Key="OnBrand">#FFFFFF</Color>
+
+    <!-- Статусы матчей и турниров -->
+    <Color x:Key="StatusLive">#1D9E75</Color>
+    <Color x:Key="StatusLiveSurface">#E1F5EE</Color>
+    <Color x:Key="StatusLiveSurfaceDark">#0F3A2E</Color>
+    <Color x:Key="StatusFinished">#6E6E6E</Color>
+    <Color x:Key="StatusFinishedSurface">#EFEFEF</Color>
+    <Color x:Key="StatusFinishedSurfaceDark">#2A2A2A</Color>
+    <Color x:Key="StatusPlanned">#BA7517</Color>
+    <Color x:Key="StatusPlannedSurface">#FAEEDA</Color>
+    <Color x:Key="StatusPlannedSurfaceDark">#3D2A0C</Color>
+
+    <!-- Зоны турнирной таблицы -->
+    <Color x:Key="ZonePlayoff">#1D9E75</Color>
+    <Color x:Key="ZonePlayIn">#BA7517</Color>
+    <Color x:Key="ZoneOut">#E24B4A</Color>
+    <Color x:Key="ZoneNeutral">#C8C8C8</Color>
+
+    <SolidColorBrush x:Key="BrandBrush" Color="{StaticResource Brand}"/>
+    <SolidColorBrush x:Key="BrandPressedBrush" Color="{StaticResource BrandPressed}"/>
+    <SolidColorBrush x:Key="OnBrandBrush" Color="{StaticResource OnBrand}"/>
+
     <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource Primary}"/>
     <SolidColorBrush x:Key="SecondaryBrush" Color="{StaticResource Secondary}"/>
     <SolidColorBrush x:Key="TertiaryBrush" Color="{StaticResource Tertiary}"/>

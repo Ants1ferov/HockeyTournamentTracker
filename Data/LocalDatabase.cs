@@ -13,6 +13,7 @@ public sealed class LocalDatabase
 
     public async Task InitializeAsync()
     {
+        await _connection.CreateTableAsync<LeagueEntity>();
         await _connection.CreateTableAsync<TournamentEntity>();
         await _connection.CreateTableAsync<TeamEntity>();
         await _connection.CreateTableAsync<StageEntity>();
@@ -48,6 +49,12 @@ public sealed class LocalDatabase
         // Миграция: добавить колонку SeriesId в Matches
         try { await _connection.ExecuteAsync("ALTER TABLE Matches ADD COLUMN SeriesId TEXT"); }
         catch { /* колонка уже есть */ }
+
+        // Миграция: добавить колонку LeagueId в Tournaments
+        try { await _connection.ExecuteAsync("ALTER TABLE Tournaments ADD COLUMN LeagueId TEXT"); }
+        catch { /* колонка уже есть */ }
+
+        await _connection.ExecuteAsync("CREATE INDEX IF NOT EXISTS IX_Tournaments_LeagueId ON Tournaments(LeagueId)");
 
         // Индексы для быстрых фильтров списка матчей по стадии/дате/серии.
         await _connection.ExecuteAsync("CREATE INDEX IF NOT EXISTS IX_Matches_StageId ON Matches(StageId)");

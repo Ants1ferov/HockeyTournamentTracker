@@ -2,6 +2,20 @@ using SQLite;
 
 namespace HockeyTournamentTracker.Data;
 
+[Table("Leagues")]
+public class LeagueEntity
+{
+    [PrimaryKey]
+    public Guid Id { get; set; }
+
+    [NotNull]
+    public string Name { get; set; } = string.Empty;
+
+    public string? Description { get; set; }
+    public string? IconPath { get; set; }
+    public int Order { get; set; }
+}
+
 [Table("Tournaments")]
 public class TournamentEntity
 {
@@ -20,6 +34,8 @@ public class TournamentEntity
 
     // Храним правила в JSON, чтобы не усложнять схему
     public string? RulesJson { get; set; }
+
+    public string? LeagueId { get; set; }
 }
 
 [Table("Teams")]

@@ -22,6 +22,8 @@
             <converters:MauiImageAliasToImageSourceConverter x:Key="MauiImageAliasToImageSource" />
             <converters:HexColorToColorConverter x:Key="HexColorToColor" />
             <converters:BoolToDoubleConverter x:Key="BoolToDouble" />
+            <converters:TournamentStatusToBadgeColorConverter x:Key="StatusToBadgeColor" />
+            <converters:TournamentStatusToBadgeTextColorConverter x:Key="StatusToBadgeTextColor" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

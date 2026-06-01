@@ -35,6 +35,7 @@ public static class MauiProgram
 			return new LocalDatabase(dbPath);
 		});
 
+		builder.Services.AddSingleton<ILeagueRepository, LeagueRepository>();
 		builder.Services.AddSingleton<ITournamentRepository, TournamentRepository>();
 		builder.Services.AddSingleton<ITeamRepository, TeamRepository>();
 		builder.Services.AddSingleton<IStageRepository, StageRepository>();
@@ -84,6 +85,11 @@ public static class MauiProgram
 		builder.Services.AddTransient<StageMatchesPage>();
 		builder.Services.AddTransient<PlayoffBracketViewModel>();
 		builder.Services.AddTransient<PlayoffBracketPage>();
+
+		builder.Services.AddTransient<LeagueDetailsViewModel>();
+		builder.Services.AddTransient<LeagueDetailsPage>();
+		builder.Services.AddTransient<LeagueEditViewModel>();
+		builder.Services.AddTransient<LeagueEditPage>();
 
 		return builder.Build();
 	}
