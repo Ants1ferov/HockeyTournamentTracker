@@ -146,5 +146,29 @@ public partial class TournamentDetailsPage : ContentPage, IQueryAttributable
             return;
         await Shell.Current.GoToAsync($"{nameof(TournamentRulesEditPage)}?TournamentId={_viewModel.Tournament.Id}");
     }
+
+    private async void OnTournamentMenuClicked(object? sender, EventArgs e)
+    {
+        if (_viewModel.Tournament is null)
+            return;
+
+        const string changeStatus = "Изменить статус";
+        const string changeRules = "Изменить правила турнира";
+        var choice = await DisplayActionSheet("Меню", AppResources.Cancel, null, changeStatus, changeRules);
+
+        if (choice == changeStatus)
+            await PromptChangeStatusAsync();
+        else if (choice == changeRules)
+            OnEditRulesClicked(sender, e);
+    }
+
+    private async Task PromptChangeStatusAsync()
+    {
+        var statuses = new[] { "Запланирован", "В процессе", "Завершён", "В архиве" };
+        var choice = await DisplayActionSheet("Статус турнира", AppResources.Cancel, null, statuses);
+        var index = Array.IndexOf(statuses, choice);
+        if (index >= 0)
+            _viewModel.StatusIndex = index;
+    }
 }
 
