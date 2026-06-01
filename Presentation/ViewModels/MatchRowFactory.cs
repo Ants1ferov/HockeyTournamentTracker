@@ -25,10 +25,23 @@ internal static class MatchRowFactory
         AwayIconPath = awayIcon,
         DisplayScore = BuildScoreText(m),
         ScoreBig = BuildScoreBig(m),
+        ScoreSuffix = BuildScoreSuffix(m),
         Periods = BuildPeriods(m),
         IsLive = isLive,
         Status = m.Status
     };
+
+    /// <summary>Маркер исхода под счётом: «ОТ»/«Б»/«» (только для завершённых).</summary>
+    private static string BuildScoreSuffix(Match m)
+    {
+        if (m.Status != MatchStatus.Finished) return string.Empty;
+        return m.OutcomeType switch
+        {
+            OutcomeType.Overtime => "ОТ",
+            OutcomeType.Shootout => "Б",
+            _ => string.Empty
+        };
+    }
 
     public static MatchRow Create(Match m, Team? home, Team? away, bool isLive) =>
         Create(m, home?.Name, away?.Name, home?.IconPath, away?.IconPath, isLive);

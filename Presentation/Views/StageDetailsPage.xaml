@@ -54,7 +54,7 @@
             <CollectionView ItemsSource="{Binding StandingsByGroupForStage}"
                             IsGrouped="True"
                             VerticalOptions="Start"
-                            IsVisible="{Binding IsCompactStandings}">
+                            IsVisible="{Binding ShowCompactStandings}">
                 <CollectionView.GroupHeaderTemplate>
                     <DataTemplate>
                         <VerticalStackLayout Margin="0,12,0,4" Spacing="4">
@@ -106,7 +106,7 @@
             </CollectionView>
             <!-- Полная таблица: все колонки, горизонтальный скролл -->
             <ScrollView Orientation="Horizontal"
-                        IsVisible="{Binding ShowFullStandings}"
+                        IsVisible="{Binding ShowFullStandingsTable}"
                         HorizontalScrollBarVisibility="Default">
                 <VerticalStackLayout Spacing="4" MinimumWidthRequest="940">
                     <CollectionView ItemsSource="{Binding StandingsByGroupForStage}"

@@ -18,6 +18,7 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged, IMatchU
     private readonly IStageTeamRepository _stageTeamRepository;
     private readonly IStageGroupRepository _stageGroupRepository;
     private readonly IStageColorZoneRepository _zoneRepository;
+    private readonly ILeagueRepository _leagueRepository;
     private readonly StatsService _statsService;
     private readonly IMatchUpdatesNotifier _matchUpdatesNotifier;
     private readonly SemaphoreSlim _loadSemaphore = new(1, 1);
@@ -43,6 +44,7 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged, IMatchU
                 OnPropertyChanged(nameof(StatusIndex));
                 OnPropertyChanged(nameof(PageTitle));
                 OnPropertyChanged(nameof(TournamentDescription));
+                OnPropertyChanged(nameof(HeaderStatus));
                 UpdateRulesDisplay();
                 UpdateSortOrderDisplay();
             }
@@ -54,6 +56,13 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged, IMatchU
 
     /// <summary>Описание турнира для привязки (безопасно при null Tournament).</summary>
     public string TournamentDescription => Tournament?.Description ?? string.Empty;
+
+    private string _headerMeta = string.Empty;
+    /// <summary>Мета-строка hero-карточки: «{сезон} · {N} команд · {спорт}».</summary>
+    public string HeaderMeta { get => _headerMeta; private set => SetField(ref _headerMeta, value); }
+
+    /// <summary>Статус турнира для бейджа в шапке (безопасно при null).</summary>
+    public TournamentStatus HeaderStatus => Tournament?.Status ?? TournamentStatus.Planned;
 
     public string PointsRegWinText { get => _pointsRegWinText; private set => SetField(ref _pointsRegWinText, value); }
     public string PointsOtWinText { get => _pointsOtWinText; private set => SetField(ref _pointsOtWinText, value); }
@@ -69,6 +78,7 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged, IMatchU
             if (Tournament is null || value < 0 || value > 3) return;
             Tournament.Status = (TournamentStatus)value;
             OnPropertyChanged(nameof(StatusIndex));
+            OnPropertyChanged(nameof(HeaderStatus));
             _ = _tournamentRepository.SaveAsync(Tournament);
         }
     }
@@ -81,10 +91,17 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged, IMatchU
         set
         {
             if (SetField(ref _showFullStandings, value))
+            {
                 OnPropertyChanged(nameof(IsCompactStandings));
+                OnPropertyChanged(nameof(ShowCompactStandings));
+                OnPropertyChanged(nameof(ShowFullStandingsTable));
+            }
         }
     }
     public bool IsCompactStandings => !_showFullStandings;
+    /// <summary>Таблица стадии показывается только для швейцарских стадий (не плей-офф).</summary>
+    public bool ShowCompactStandings => IsSelectedStageSwiss && IsCompactStandings;
+    public bool ShowFullStandingsTable => IsSelectedStageSwiss && _showFullStandings;
 
     public ObservableCollection<StandingRow> Standings { get; } = new();
     public ObservableCollection<StandingGroup> StandingsByGroup { get; } = new();
@@ -136,6 +153,8 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged, IMatchU
             if (SetField(ref _selectedStage, value))
             {
                 OnPropertyChanged(nameof(IsSelectedStageSwiss));
+                OnPropertyChanged(nameof(ShowCompactStandings));
+                OnPropertyChanged(nameof(ShowFullStandingsTable));
                 RefreshStageMatches();
             }
         }
@@ -152,6 +171,7 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged, IMatchU
         IStageTeamRepository stageTeamRepository,
         IStageGroupRepository stageGroupRepository,
         IStageColorZoneRepository zoneRepository,
+        ILeagueRepository leagueRepository,
         StatsService statsService,
         IMatchUpdatesNotifier matchUpdatesNotifier)
     {
@@ -162,6 +182,7 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged, IMatchU
         _stageTeamRepository = stageTeamRepository;
         _stageGroupRepository = stageGroupRepository;
         _zoneRepository = zoneRepository;
+        _leagueRepository = leagueRepository;
         _statsService = statsService;
         _matchUpdatesNotifier = matchUpdatesNotifier;
         _matchUpdatesNotifier.Subscribe(this);
@@ -373,11 +394,36 @@ public sealed class TournamentDetailsViewModel : INotifyPropertyChanged, IMatchU
                 .ToList();
             foreach (var t in sortedParticipants)
                 ParticipantTeams.Add(t);
+
+            // Мета-строка hero-карточки: сезон · N команд · спорт (из лиги).
+            string? sport = null;
+            if (Tournament.LeagueId is { } leagueId)
+                sport = (await _leagueRepository.GetByIdAsync(leagueId))?.Sport;
+            HeaderMeta = BuildHeaderMeta(Tournament, teams.Count, sport);
         }
         finally
         {
             _loadSemaphore.Release();
         }
+    }
+
+    private static string BuildHeaderMeta(Tournament t, int teamCount, string? sport)
+    {
+        var parts = new List<string>();
+        var season = BuildSeasonLabel(t.StartDate, t.EndDate);
+        if (!string.IsNullOrEmpty(season)) parts.Add(season);
+        parts.Add($"{teamCount} команд");
+        if (!string.IsNullOrWhiteSpace(sport)) parts.Add(sport);
+        return string.Join(" · ", parts);
+    }
+
+    private static string BuildSeasonLabel(DateTime? start, DateTime? end)
+    {
+        if (start is null) return string.Empty;
+        var s = start.Value.Year % 100;
+        if (end is { } e && e.Year != start.Value.Year)
+            return $"{s:00}/{e.Year % 100:00}";
+        return $"{s:00}";
     }
 
     private void RefreshStageMatches()
@@ -675,6 +721,8 @@ public sealed class MatchRow
     public string DisplayScore { get; set; } = string.Empty;
     /// <summary>Крупный счёт для карточки, например «3 : 2» или «— : —».</summary>
     public string ScoreBig { get; set; } = "— : —";
+    /// <summary>Маркер исхода под счётом: «ОТ» / «Б» / «» (основное время).</summary>
+    public string ScoreSuffix { get; set; } = string.Empty;
     /// <summary>Разбивка по периодам, например «1:0 · 1:1 · 1:1 ОТ» (пусто, если нет).</summary>
     public string Periods { get; set; } = string.Empty;
     public bool IsLive { get; set; }

@@ -39,6 +39,8 @@ public sealed class StageDetailsViewModel : INotifyPropertyChanged, IMatchUpdate
                 OnPropertyChanged(nameof(PageTitle));
                 OnPropertyChanged(nameof(IsPlayoffStage));
                 OnPropertyChanged(nameof(IsSwissStage));
+                OnPropertyChanged(nameof(ShowCompactStandings));
+                OnPropertyChanged(nameof(ShowFullStandingsTable));
             }
         }
     }
@@ -55,10 +57,17 @@ public sealed class StageDetailsViewModel : INotifyPropertyChanged, IMatchUpdate
         set
         {
             if (SetField(ref _showFullStandings, value))
+            {
                 OnPropertyChanged(nameof(IsCompactStandings));
+                OnPropertyChanged(nameof(ShowCompactStandings));
+                OnPropertyChanged(nameof(ShowFullStandingsTable));
+            }
         }
     }
     public bool IsCompactStandings => !_showFullStandings;
+    /// <summary>Таблица показывается только для швейцарских стадий (не плей-офф).</summary>
+    public bool ShowCompactStandings => IsSwissStage && IsCompactStandings;
+    public bool ShowFullStandingsTable => IsSwissStage && _showFullStandings;
 
     public ObservableCollection<MatchRow> StageMatches { get; } = new();
     public ObservableCollection<StandingGroup> StandingsByGroupForStage { get; } = new();
