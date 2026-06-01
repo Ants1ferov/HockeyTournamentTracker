@@ -16,6 +16,7 @@ public sealed class StageDetailsViewModel : INotifyPropertyChanged, IMatchUpdate
     private readonly IMatchRepository _matchRepository;
     private readonly IStageTeamRepository _stageTeamRepository;
     private readonly IStageGroupRepository _stageGroupRepository;
+    private readonly IStageColorZoneRepository _zoneRepository;
     private readonly StatsService _statsService;
     private readonly IMatchUpdatesNotifier _matchUpdatesNotifier;
 
@@ -65,6 +66,7 @@ public sealed class StageDetailsViewModel : INotifyPropertyChanged, IMatchUpdate
         IMatchRepository matchRepository,
         IStageTeamRepository stageTeamRepository,
         IStageGroupRepository stageGroupRepository,
+        IStageColorZoneRepository zoneRepository,
         StatsService statsService,
         IMatchUpdatesNotifier matchUpdatesNotifier)
     {
@@ -74,6 +76,7 @@ public sealed class StageDetailsViewModel : INotifyPropertyChanged, IMatchUpdate
         _matchRepository = matchRepository;
         _stageTeamRepository = stageTeamRepository;
         _stageGroupRepository = stageGroupRepository;
+        _zoneRepository = zoneRepository;
         _statsService = statsService;
         _matchUpdatesNotifier = matchUpdatesNotifier;
         _matchUpdatesNotifier.Subscribe(this);
@@ -149,6 +152,7 @@ public sealed class StageDetailsViewModel : INotifyPropertyChanged, IMatchUpdate
             rows.Add(CreateMatchRow(m, homeTeam?.Name, awayTeam?.Name, m.Status == MatchStatus.InProgress));
         }
 
+        var teamZoneColors = await BuildTeamZoneColorsAsync(stageId);
         var stageStandingsGroups = StandingsSectionBuilder.Build(
             _statsService,
             Tournament,
@@ -156,7 +160,8 @@ public sealed class StageDetailsViewModel : INotifyPropertyChanged, IMatchUpdate
             teamGroupIdsInStage,
             stageGroups,
             stageMatches,
-            includeInProgress: true);
+            includeInProgress: true,
+            teamZoneColors: teamZoneColors);
 
         MainThread.BeginInvokeOnMainThread(() =>
         {
@@ -383,6 +388,21 @@ public sealed class StageDetailsViewModel : INotifyPropertyChanged, IMatchUpdate
             return;
 
         _ = LoadAsync(Tournament.Id, Stage.Id);
+    }
+
+    private async Task<IReadOnlyDictionary<Guid, string>?> BuildTeamZoneColorsAsync(Guid stageId)
+    {
+        var assignments = await _zoneRepository.GetTeamZoneAssignmentsAsync(stageId);
+        if (assignments.Count == 0) return null;
+        var zones = await _zoneRepository.GetZonesByStageAsync(stageId);
+        var zoneColorById = zones.ToDictionary(z => z.Id, z => z.ColorHex);
+        var result = new Dictionary<Guid, string>(assignments.Count);
+        foreach (var (teamId, zoneId) in assignments)
+        {
+            if (zoneColorById.TryGetValue(zoneId, out var hex))
+                result[teamId] = hex;
+        }
+        return result.Count > 0 ? result : null;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
