@@ -47,6 +47,19 @@ public sealed class StageDetailsViewModel : INotifyPropertyChanged, IMatchUpdate
     public bool IsPlayoffStage => Stage?.StageType == StageType.PlayOff;
     public bool IsSwissStage => Stage is not null && Stage.StageType != StageType.PlayOff;
 
+    private bool _showFullStandings;
+    /// <summary>true — полная таблица (все колонки), false — компактный вид как в мокапе.</summary>
+    public bool ShowFullStandings
+    {
+        get => _showFullStandings;
+        set
+        {
+            if (SetField(ref _showFullStandings, value))
+                OnPropertyChanged(nameof(IsCompactStandings));
+        }
+    }
+    public bool IsCompactStandings => !_showFullStandings;
+
     public ObservableCollection<MatchRow> StageMatches { get; } = new();
     public ObservableCollection<StandingGroup> StandingsByGroupForStage { get; } = new();
 
@@ -149,7 +162,7 @@ public sealed class StageDetailsViewModel : INotifyPropertyChanged, IMatchUpdate
         {
             teamById.TryGetValue(m.HomeTeamId, out var homeTeam);
             teamById.TryGetValue(m.AwayTeamId, out var awayTeam);
-            rows.Add(CreateMatchRow(m, homeTeam?.Name, awayTeam?.Name, m.Status == MatchStatus.InProgress));
+            rows.Add(CreateMatchRow(m, homeTeam, awayTeam, m.Status == MatchStatus.InProgress));
         }
 
         var teamZoneColors = await BuildTeamZoneColorsAsync(stageId);
@@ -327,58 +340,8 @@ public sealed class StageDetailsViewModel : INotifyPropertyChanged, IMatchUpdate
         await LoadAsync(Tournament.Id, Stage.Id);
     }
 
-    private static MatchRow CreateMatchRow(Match m, string? homeName, string? awayName, bool isLive) =>
-        new()
-        {
-            MatchId = m.Id,
-            SeriesId = m.SeriesId,
-            DateTime = m.DateTime,
-            HomeTeamName = homeName ?? string.Empty,
-            AwayTeamName = awayName ?? string.Empty,
-            DisplayScore = BuildScoreText(m),
-            IsLive = isLive,
-            Status = m.Status
-        };
-
-    private static string BuildScoreText(Match match)
-    {
-        if (match.HomeGoals is null || match.AwayGoals is null)
-            return "— : —";
-
-        var finalHomeGoals = match.HomeGoals.Value;
-        var finalAwayGoals = match.AwayGoals.Value;
-        if (match.Status == MatchStatus.Finished && match.OutcomeType is not null)
-        {
-            var effectiveScore = MatchOutcomeResolver.GetEffectiveFinalScore(match);
-            finalHomeGoals = effectiveScore?.HomeGoals ?? finalHomeGoals;
-            finalAwayGoals = effectiveScore?.AwayGoals ?? finalAwayGoals;
-        }
-
-        var baseScore = $"{finalHomeGoals}:{finalAwayGoals}";
-        var periodPart = "";
-        if (match.PeriodScores is { Count: > 0 } periods)
-        {
-            var parts = periods.Select(p =>
-            {
-                var s = $"{p.HomeGoals}:{p.AwayGoals}";
-                return p.PeriodType == PeriodType.Overtime ? $"{s} ОТ" : p.PeriodType == PeriodType.Shootout ? $"{s} Б" : s;
-            });
-            periodPart = " (" + string.Join(", ", parts) + ")";
-        }
-
-        var hasOvertimePeriod = match.PeriodScores?.Any(p => p.PeriodType == PeriodType.Overtime) == true;
-        var hasShootoutPeriod = match.PeriodScores?.Any(p => p.PeriodType == PeriodType.Shootout) == true;
-
-        var outcomeSuffix = match.OutcomeType switch
-        {
-            OutcomeType.Overtime => hasOvertimePeriod ? "" : " ОТ",
-            OutcomeType.Shootout => hasShootoutPeriod ? "" : (match.ShootoutScoreHome is { } sh && match.ShootoutScoreAway is { } sa
-                ? $" Б ({sh}:{sa})"
-                : " Б"),
-            _ => ""
-        };
-        return $"{baseScore}{outcomeSuffix}{periodPart}";
-    }
+    private static MatchRow CreateMatchRow(Match m, Team? home, Team? away, bool isLive) =>
+        MatchRowFactory.Create(m, home, away, isLive);
 
     public void OnMatchUpdated(MatchUpdatedMessage message)
     {

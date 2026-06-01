@@ -53,7 +53,8 @@ internal static class StandingsSectionBuilder
                 Last5Results = last5,
                 PointsPct = FormatPointsPercentage(s.Points, s.Games, maxPointsPerGame),
                 Points = s.Points,
-                ZoneColorHex = string.IsNullOrWhiteSpace(zoneHex) ? "#C8C8C8" : zoneHex
+                ZoneColorHex = string.IsNullOrWhiteSpace(zoneHex) ? "#C8C8C8" : zoneHex,
+                IsAltRow = place % 2 == 0
             };
         }
 

@@ -8,12 +8,33 @@ public partial class StageDetailsPage : ContentPage, IQueryAttributable
 {
     private readonly StageDetailsViewModel _viewModel;
     private bool _isLoading;
+    private bool _hasAppeared;
 
     public StageDetailsPage(StageDetailsViewModel viewModel)
     {
         _viewModel = viewModel;
         BindingContext = _viewModel;
         InitializeComponent();
+    }
+
+    protected override async void OnAppearing()
+    {
+        base.OnAppearing();
+
+        // Первое появление обрабатывает ApplyQueryAttributes; при возврате
+        // (например, из настройки зон) — перечитываем данные, чтобы обновить таблицу.
+        if (!_hasAppeared)
+        {
+            _hasAppeared = true;
+            return;
+        }
+        if (_isLoading || _viewModel.Tournament is not { } t || _viewModel.Stage is not { } s)
+            return;
+
+        _isLoading = true;
+        try { await _viewModel.LoadAsync(t.Id, s.Id); }
+        catch { /* keep page alive */ }
+        finally { _isLoading = false; }
     }
 
     public async void ApplyQueryAttributes(IDictionary<string, object> query)
@@ -77,6 +98,15 @@ public partial class StageDetailsPage : ContentPage, IQueryAttributable
 
         await Shell.Current.GoToAsync(
             $"{nameof(PlayoffBracketPage)}?TournamentId={_viewModel.Stage.TournamentId}&StageId={_viewModel.Stage.Id}");
+    }
+
+    private async void OnConfigureZonesClicked(object? sender, EventArgs e)
+    {
+        if (_viewModel.Stage is null)
+            return;
+
+        await Shell.Current.GoToAsync(
+            $"{nameof(StageZonesEditPage)}?TournamentId={_viewModel.Stage.TournamentId}&StageId={_viewModel.Stage.Id}");
     }
 
 }

@@ -28,6 +28,7 @@
             <converters:MatchStatusToBadgeTextColorConverter x:Key="MatchStatusBadgeTextColor" />
             <converters:MatchStatusToTextConverter x:Key="MatchStatusToText" />
             <converters:MatchStatusBadgeVisibleConverter x:Key="MatchStatusBadgeVisible" />
+            <converters:BoolToZebraColorConverter x:Key="BoolToZebraColor" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

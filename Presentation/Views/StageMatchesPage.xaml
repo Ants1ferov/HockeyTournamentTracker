@@ -2,6 +2,7 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:res="clr-namespace:HockeyTournamentTracker.Resources"
+             xmlns:controls="clr-namespace:HockeyTournamentTracker.Presentation.Views.Controls"
              x:Class="HockeyTournamentTracker.Presentation.Views.StageMatchesPage"
              Title="{x:Static res:AppResources.Matches}">
 
@@ -106,60 +107,19 @@
             </CollectionView.Footer>
             <CollectionView.ItemTemplate>
                 <DataTemplate>
-                    <Border Margin="0,4"
-                            Padding="12"
-                            Style="{StaticResource CardElevatedStyle}">
-                        <VerticalStackLayout Spacing="8">
-                            <!-- Верхняя строка: дата + статус-бейдж -->
-                            <Grid ColumnDefinitions="*,Auto">
-                                <Label Grid.Column="0"
-                                       FontSize="12"
-                                       Text="{Binding DateTime, StringFormat='{}{0:dd.MM HH:mm}'}"
-                                       TextColor="{AppThemeBinding Light={StaticResource SecondaryTextLight}, Dark={StaticResource SecondaryTextDark}}"
-                                       VerticalTextAlignment="Center" />
-                                <Border Grid.Column="1"
-                                        Style="{StaticResource StatusBadgeStyle}"
-                                        BackgroundColor="{Binding Status, Converter={StaticResource MatchStatusBadgeColor}}"
-                                        IsVisible="{Binding Status, Converter={StaticResource MatchStatusBadgeVisible}}">
-                                    <Label Text="{Binding Status, Converter={StaticResource MatchStatusToText}}"
-                                           FontSize="11"
-                                           FontAttributes="Bold"
-                                           TextColor="{Binding Status, Converter={StaticResource MatchStatusBadgeTextColor}}" />
-                                </Border>
-                            </Grid>
-                            <!-- Центр: хозяева | счёт | гости -->
-                            <Grid ColumnDefinitions="*,Auto,*" ColumnSpacing="8">
-                                <Label Grid.Column="0"
-                                       Text="{Binding HomeTeamName}"
-                                       FontSize="14"
-                                       FontAttributes="Bold"
-                                       HorizontalTextAlignment="End"
-                                       VerticalTextAlignment="Center" />
-                                <Label Grid.Column="1"
-                                       Text="{Binding DisplayScore}"
-                                       FontSize="20"
-                                       FontAttributes="Bold"
-                                       HorizontalTextAlignment="Center"
-                                       VerticalTextAlignment="Center" />
-                                <Label Grid.Column="2"
-                                       Text="{Binding AwayTeamName}"
-                                       FontSize="14"
-                                       FontAttributes="Bold"
-                                       HorizontalTextAlignment="Start"
-                                       VerticalTextAlignment="Center" />
-                            </Grid>
-                            <!-- Кнопки действий -->
-                            <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
-                                <Button Grid.Column="0"
-                                        Text="Редактировать"
-                                        Clicked="OnEditMatchClicked" />
-                                <Button Grid.Column="1"
-                                        Style="{StaticResource DangerButton}"
-                                        Text="{x:Static res:AppResources.Delete}"
-                                        Clicked="OnDeleteMatchClicked" />
-                            </Grid>
-                        </VerticalStackLayout>
-                    </Border>
+                    <VerticalStackLayout Margin="0,4" Spacing="6">
+                        <controls:MatchCardView />
+                        <!-- Кнопки действий -->
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                            <Button Grid.Column="0"
+                                    Text="Редактировать"
+                                    Clicked="OnEditMatchClicked" />
+                            <Button Grid.Column="1"
+                                    Style="{StaticResource DangerButton}"
+                                    Text="{x:Static res:AppResources.Delete}"
+                                    Clicked="OnDeleteMatchClicked" />
+                        </Grid>
+                    </VerticalStackLayout>
                 </DataTemplate>
             </CollectionView.ItemTemplate>
         </CollectionView>

@@ -12,6 +12,10 @@
             <Entry Text="{Binding Name}"
                    Placeholder="Название лиги" />
 
+            <Label Text="Вид спорта" FontAttributes="Bold" />
+            <Entry Text="{Binding Sport}"
+                   Placeholder="Например: хоккей" />
+
             <Label Text="Описание" FontAttributes="Bold" />
             <Editor Text="{Binding Description}"
                     Placeholder="Описание (необязательно)"

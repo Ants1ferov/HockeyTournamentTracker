@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="HockeyTournamentTracker.Presentation.Views.StageZonesEditPage"
+             x:Name="ZonesPage"
+             Title="Цветовые зоны">
+
+    <ScrollView>
+        <StackLayout Padding="16" Spacing="12">
+
+            <Label Text="Зоны"
+                   FontAttributes="Bold"
+                   FontSize="18" />
+            <Label Text="Зоны задают цветную полосу слева в турнирной таблице."
+                   FontSize="12"
+                   TextColor="{AppThemeBinding Light={StaticResource SecondaryTextLight}, Dark={StaticResource SecondaryTextDark}}" />
+
+            <CollectionView ItemsSource="{Binding Zones}"
+                            SelectionMode="None">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Padding="0,4"
+                              ColumnDefinitions="Auto,*,Auto,Auto"
+                              ColumnSpacing="8">
+                            <Border Grid.Column="0"
+                                    WidthRequest="24" HeightRequest="24"
+                                    StrokeThickness="0"
+                                    StrokeShape="RoundRectangle 6"
+                                    VerticalOptions="Center"
+                                    BackgroundColor="{Binding ColorHex, Converter={StaticResource HexColorToColor}}" />
+                            <Entry Grid.Column="1"
+                                   Text="{Binding Name}"
+                                   Placeholder="Название зоны"
+                                   VerticalOptions="Center" />
+                            <Picker Grid.Column="2"
+                                    WidthRequest="180"
+                                    VerticalOptions="Center"
+                                    ItemsSource="{Binding Source={x:Reference ZonesPage}, Path=BindingContext.ColorPresetNames}"
+                                    SelectedIndex="{Binding ColorIndex}" />
+                            <Button Grid.Column="3"
+                                    Text="✕"
+                                    WidthRequest="44"
+                                    Style="{StaticResource DangerButton}"
+                                    Command="{Binding Source={x:Reference ZonesPage}, Path=BindingContext.DeleteZoneCommand}"
+                                    CommandParameter="{Binding .}" />
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <Button Text="+ Добавить зону"
+                    Style="{StaticResource GhostButtonStyle}"
+                    Command="{Binding AddZoneCommand}" />
+
+            <Label Text="Команды"
+                   FontAttributes="Bold"
+                   FontSize="18"
+                   Margin="0,8,0,0" />
+
+            <CollectionView ItemsSource="{Binding Teams}"
+                            SelectionMode="None">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Padding="0,4"
+                              ColumnDefinitions="Auto,*,Auto"
+                              ColumnSpacing="8">
+                            <Image Grid.Column="0"
+                                   WidthRequest="28" HeightRequest="28"
+                                   VerticalOptions="Center"
+                                   Aspect="AspectFill"
+                                   Source="{Binding IconPath, Converter={StaticResource PathToImageSource}}" />
+                            <Label Grid.Column="1"
+                                   Text="{Binding Name}"
+                                   FontSize="15"
+                                   VerticalOptions="Center" />
+                            <Picker Grid.Column="2"
+                                    WidthRequest="160"
+                                    VerticalOptions="Center"
+                                    ItemsSource="{Binding Source={x:Reference ZonesPage}, Path=BindingContext.ZoneNames}"
+                                    SelectedIndex="{Binding SelectedZoneIndex}" />
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <Button Text="Сохранить"
+                    Clicked="OnSaveClicked"
+                    Margin="0,16,0,0" />
+
+        </StackLayout>
+    </ScrollView>
+
+</ContentPage>

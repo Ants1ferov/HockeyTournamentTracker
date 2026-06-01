@@ -5,6 +5,54 @@
              x:Class="HockeyTournamentTracker.MainPage"
              Title="{x:Static res:AppResources.TabTournaments}">
 
+    <ContentPage.Resources>
+        <!-- Переиспользуемая строка турнира (внутри лиги и в секции «без лиги») -->
+        <DataTemplate x:Key="TournamentRowTemplate">
+            <Border Style="{StaticResource CardElevatedStyle}"
+                    Margin="12,4">
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnTournamentTapped" />
+                </Border.GestureRecognizers>
+                <Grid Padding="12,10"
+                      ColumnDefinitions="Auto,*,Auto"
+                      ColumnSpacing="10">
+                    <!-- Квадрат сезона -->
+                    <Border Grid.Column="0"
+                            WidthRequest="40" HeightRequest="40"
+                            StrokeThickness="0"
+                            StrokeShape="RoundRectangle 8"
+                            BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray600}}"
+                            VerticalOptions="Center">
+                        <Label Text="{Binding SeasonLabel}"
+                               FontSize="12"
+                               FontAttributes="Bold"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center" />
+                    </Border>
+                    <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                        <Label Text="{Binding Name}"
+                               FontAttributes="Bold"
+                               FontSize="16" />
+                        <Label Text="{Binding SubtitleLine}"
+                               FontSize="12"
+                               TextColor="{AppThemeBinding Light={StaticResource SecondaryTextLight}, Dark={StaticResource SecondaryTextDark}}" />
+                    </VerticalStackLayout>
+                    <!-- Бейдж live -->
+                    <Border Grid.Column="2"
+                            Style="{StaticResource StatusBadgeStyle}"
+                            VerticalOptions="Center"
+                            IsVisible="{Binding IsLive}"
+                            BackgroundColor="{AppThemeBinding Light={StaticResource StatusLiveSurface}, Dark={StaticResource StatusLiveSurfaceDark}}">
+                        <Label Text="live"
+                               FontSize="11"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource StatusLive}" />
+                    </Border>
+                </Grid>
+            </Border>
+        </DataTemplate>
+    </ContentPage.Resources>
+
     <ScrollView>
         <StackLayout Padding="0,0,0,24">
 
@@ -17,8 +65,89 @@
                         SelectedIndexChanged="OnThemeChanged" />
             </Grid>
 
-            <!-- Секция Турниры -->
+            <!-- Секция Лиги -->
             <Grid Padding="16,0,16,4" ColumnDefinitions="*,Auto">
+                <Label Grid.Column="0"
+                       Text="Мои лиги"
+                       FontSize="20"
+                       FontAttributes="Bold"
+                       VerticalOptions="Center" />
+                <Button Grid.Column="1"
+                        Text="+ Создать"
+                        Clicked="OnAddLeagueClicked" />
+            </Grid>
+
+            <CollectionView ItemsSource="{Binding Leagues}"
+                            SelectionMode="None"
+                            Margin="0,0,0,8">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <SwipeView Margin="12,4">
+                            <SwipeView.RightItems>
+                                <SwipeItems>
+                                    <SwipeItem Text="Изменить"
+                                               BackgroundColor="{StaticResource Brand}"
+                                               Invoked="OnEditLeagueInvoked" />
+                                    <SwipeItem Text="Удалить"
+                                               BackgroundColor="{StaticResource ZoneOut}"
+                                               Invoked="OnDeleteLeagueInvoked" />
+                                </SwipeItems>
+                            </SwipeView.RightItems>
+                            <Border Style="{StaticResource CardElevatedStyle}"
+                                    Padding="0">
+                                <VerticalStackLayout Spacing="0">
+                                    <!-- Красная плашка-заголовок лиги -->
+                                    <Grid Padding="12,10"
+                                          ColumnDefinitions="Auto,*,Auto"
+                                          ColumnSpacing="10"
+                                          BackgroundColor="{AppThemeBinding Light={StaticResource Brand}, Dark={StaticResource BrandDark}}">
+                                        <Grid.GestureRecognizers>
+                                            <TapGestureRecognizer Tapped="OnLeagueTapped" />
+                                        </Grid.GestureRecognizers>
+                                        <Border Grid.Column="0"
+                                                WidthRequest="40" HeightRequest="40"
+                                                StrokeThickness="0"
+                                                StrokeShape="RoundRectangle 8"
+                                                BackgroundColor="#33000000"
+                                                VerticalOptions="Center">
+                                            <Label Text="{Binding Initial}"
+                                                   TextColor="{StaticResource OnBrand}"
+                                                   HorizontalOptions="Center"
+                                                   VerticalOptions="Center"
+                                                   FontAttributes="Bold"
+                                                   FontSize="14" />
+                                        </Border>
+                                        <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                                            <Label Text="{Binding Name}"
+                                                   TextColor="{StaticResource OnBrand}"
+                                                   FontAttributes="Bold"
+                                                   FontSize="16" />
+                                            <Label Text="{Binding Subtitle}"
+                                                   TextColor="{StaticResource OnBrand}"
+                                                   Opacity="0.85"
+                                                   FontSize="12" />
+                                        </VerticalStackLayout>
+                                        <Label Grid.Column="2"
+                                               Text="⌄"
+                                               TextColor="{StaticResource OnBrand}"
+                                               FontSize="18"
+                                               VerticalOptions="Center" />
+                                    </Grid>
+                                    <!-- Вложенные турниры лиги -->
+                                    <VerticalStackLayout Spacing="0"
+                                                         Padding="0,4,0,8"
+                                                         IsVisible="{Binding IsExpanded}"
+                                                         BindableLayout.ItemsSource="{Binding Tournaments}"
+                                                         BindableLayout.ItemTemplate="{StaticResource TournamentRowTemplate}" />
+                                </VerticalStackLayout>
+                            </Border>
+                        </SwipeView>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <!-- Секция Турниры (без лиги) -->
+            <Grid Padding="16,8,16,4" ColumnDefinitions="*,Auto">
                 <Label Grid.Column="0"
                        Text="Мои турниры"
                        FontSize="20"
@@ -29,7 +158,7 @@
                         Clicked="OnAddTournamentClicked" />
             </Grid>
 
-            <CollectionView ItemsSource="{Binding Tournaments}"
+            <CollectionView ItemsSource="{Binding TournamentsWithoutLeague}"
                             SelectionMode="None"
                             Margin="0,0,0,8">
                 <CollectionView.ItemTemplate>
@@ -48,93 +177,38 @@
                                     <TapGestureRecognizer Tapped="OnTournamentTapped" />
                                 </Border.GestureRecognizers>
                                 <Grid Padding="12,10"
-                                      RowDefinitions="Auto,Auto"
-                                      ColumnDefinitions="*,Auto">
-                                    <Label Grid.Row="0" Grid.Column="0"
-                                           Text="{Binding Name}"
-                                           FontAttributes="Bold"
-                                           FontSize="16" />
-                                    <Border Grid.Row="0" Grid.Column="1"
-                                            Style="{StaticResource StatusBadgeStyle}"
-                                            BackgroundColor="{Binding Status, Converter={StaticResource StatusToBadgeColor}}"
-                                            VerticalOptions="Center">
-                                        <Label Text="{Binding Status, Converter={StaticResource TournamentStatusToString}}"
-                                               TextColor="{Binding Status, Converter={StaticResource StatusToBadgeTextColor}}"
-                                               FontSize="11" />
-                                    </Border>
-                                    <Label Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
-                                           FontSize="12"
-                                           TextColor="{AppThemeBinding Light={StaticResource SecondaryTextLight}, Dark={StaticResource SecondaryTextDark}}">
-                                        <Label.Text>
-                                            <MultiBinding StringFormat="{}{0:d} — {1:d}">
-                                                <Binding Path="StartDate" />
-                                                <Binding Path="EndDate" />
-                                            </MultiBinding>
-                                        </Label.Text>
-                                    </Label>
-                                </Grid>
-                            </Border>
-                        </SwipeView>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
-
-            <!-- Секция Лиги -->
-            <Grid Padding="16,8,16,4" ColumnDefinitions="*,Auto">
-                <Label Grid.Column="0"
-                       Text="Мои лиги"
-                       FontSize="20"
-                       FontAttributes="Bold"
-                       VerticalOptions="Center" />
-                <Button Grid.Column="1"
-                        Text="+ Создать"
-                        Clicked="OnAddLeagueClicked" />
-            </Grid>
-
-            <CollectionView ItemsSource="{Binding Leagues}"
-                            SelectionMode="None"
-                            Margin="0,0,0,8">
-                <CollectionView.ItemTemplate>
-                    <DataTemplate>
-                        <SwipeView>
-                            <SwipeView.RightItems>
-                                <SwipeItems>
-                                    <SwipeItem Text="Удалить"
-                                               BackgroundColor="{StaticResource ZoneOut}"
-                                               Invoked="OnDeleteLeagueInvoked" />
-                                </SwipeItems>
-                            </SwipeView.RightItems>
-                            <Border Style="{StaticResource CardElevatedStyle}"
-                                    Margin="12,4">
-                                <Border.GestureRecognizers>
-                                    <TapGestureRecognizer Tapped="OnLeagueTapped" />
-                                </Border.GestureRecognizers>
-                                <Grid Padding="12,10"
-                                      ColumnDefinitions="Auto,*,Auto">
-                                    <!-- Иконка-инициалы -->
+                                      ColumnDefinitions="Auto,*,Auto"
+                                      ColumnSpacing="10">
                                     <Border Grid.Column="0"
-                                            WidthRequest="40"
-                                            HeightRequest="40"
-                                            BackgroundColor="{AppThemeBinding Light={StaticResource Brand}, Dark={StaticResource BrandDark}}"
-                                            StrokeShape="RoundRectangle 8"
+                                            WidthRequest="40" HeightRequest="40"
                                             StrokeThickness="0"
-                                            VerticalOptions="Center"
-                                            Margin="0,0,10,0">
-                                        <Label Text="{Binding Initial}"
-                                               TextColor="{StaticResource OnBrand}"
-                                               HorizontalOptions="Center"
-                                               VerticalOptions="Center"
+                                            StrokeShape="RoundRectangle 8"
+                                            BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray600}}"
+                                            VerticalOptions="Center">
+                                        <Label Text="{Binding SeasonLabel}"
+                                               FontSize="12"
                                                FontAttributes="Bold"
-                                               FontSize="18" />
+                                               HorizontalOptions="Center"
+                                               VerticalOptions="Center" />
                                     </Border>
-                                    <StackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                                    <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
                                         <Label Text="{Binding Name}"
                                                FontAttributes="Bold"
                                                FontSize="16" />
-                                        <Label Text="{Binding TournamentCountLabel}"
+                                        <Label Text="{Binding SubtitleLine}"
                                                FontSize="12"
                                                TextColor="{AppThemeBinding Light={StaticResource SecondaryTextLight}, Dark={StaticResource SecondaryTextDark}}" />
-                                    </StackLayout>
+                                    </VerticalStackLayout>
+                                    <Border Grid.Column="2"
+                                            Style="{StaticResource StatusBadgeStyle}"
+                                            VerticalOptions="Center"
+                                            IsVisible="{Binding IsLive}"
+                                            BackgroundColor="{AppThemeBinding Light={StaticResource StatusLiveSurface}, Dark={StaticResource StatusLiveSurfaceDark}}">
+                                        <Label Text="live"
+                                               FontSize="11"
+                                               FontAttributes="Bold"
+                                               TextColor="{StaticResource StatusLive}" />
+                                    </Border>
                                 </Grid>
                             </Border>
                         </SwipeView>

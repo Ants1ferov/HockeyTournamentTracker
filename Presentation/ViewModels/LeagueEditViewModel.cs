@@ -16,6 +16,7 @@ public sealed class LeagueEditViewModel : INotifyPropertyChanged
     private string? _leagueIdStr;
     private string _name = string.Empty;
     private string? _description;
+    private string? _sport;
     private bool _isBusy;
 
     public string? LeagueIdStr
@@ -39,6 +40,12 @@ public sealed class LeagueEditViewModel : INotifyPropertyChanged
     {
         get => _description;
         set { _description = value; OnPropertyChanged(); }
+    }
+
+    public string? Sport
+    {
+        get => _sport;
+        set { _sport = value; OnPropertyChanged(); }
     }
 
     public bool IsBusy
@@ -67,6 +74,7 @@ public sealed class LeagueEditViewModel : INotifyPropertyChanged
             {
                 Name = league.Name;
                 Description = league.Description;
+                Sport = league.Sport;
             }
 
             await LoadTournamentsAsync(leagueId);
@@ -99,7 +107,8 @@ public sealed class LeagueEditViewModel : INotifyPropertyChanged
         {
             Id = _leagueId,
             Name = Name.Trim(),
-            Description = Description
+            Description = Description,
+            Sport = string.IsNullOrWhiteSpace(Sport) ? null : Sport.Trim()
         };
         await _leagueRepository.SaveAsync(league);
 
